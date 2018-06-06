@@ -4,12 +4,11 @@ var db, clientes, facturas, actualVersion;
 
 var DBname;
 
-var qeueObjectStore = [];
-var taskQeue=[];
+var pendingStore = [];
+var taskQueue = [];
 
 // Flags
-var addObjStoreWorking=false; // Function addObjStore is working
-var dbOpened=false; // Database connection is opened
+var dbOpened = false; // Database connection is opened
 
 //Objetos que queremos guardar en la base de datos
 
@@ -46,7 +45,7 @@ var arrayFacturas = [{
 }];
 
 
-//// Comprueba si indexedDB está disponible
+
 function isIndexedDBavailable() {
     var available = true;
     if (!('indexedDB' in window)) {
@@ -56,7 +55,6 @@ function isIndexedDBavailable() {
     return available;
 }
 
-//// Abre una base de datos
 function openDB(name, version) {
 
     var request = window.indexedDB.open(name, version);
@@ -66,87 +64,191 @@ function openDB(name, version) {
     };
 
     request.onsuccess = function (event) {
-        console.log('succes');
+        console.log('db opened');
         db = event.target.result;
         actualVersion = db.version;
-        dbOpened=true;
+        dbOpened = true;
     };
 
     request.onupgradeneeded = function (event) {
         db = event.target.result;
         actualVersion = db.version;
-        if (qeueObjectStore[0] != undefined) {
-            db.createObjectStore(qeueObjectStore[0], {
-                keyPath: qeueObjectStore[1],
-                autoIncrement: qeueObjectStore[2]
+
+        if (typeof pendingStore[0] == 'string') {
+            db.createObjectStore(pendingStore[0], {
+                keyPath: pendingStore[1],
+                autoIncrement: pendingStore[2]
             });
+
             console.log('New objectStore created');
-        };
-        dbOpened=true;
-    };
-};
-
-
-//// Cierra la base de datos
-function closeDB() {
-    db.close();
-    dbOpened=false;
-};
-
-
-
-function addObjStore(name, keyPath, autoincrement) {
-    
-    /*addObjStoreWorking=true;
-
-    if (db) {
-        qeueObjectStore[0] = name;
-        qeueObjectStore[1] = keyPath;
-        qeueObjectStore[2] = autoincrement;
-        var newVersion = actualVersion + 1;
-        var actualName = db.name;
-        closeDB();
-        openDB(actualName, newVersion);
-        addObjStoreWorking=false;
-    } else {
-        setTimeout(function () {
-            addObjStore(name, keyPath, autoincrement);
-            console.log('addObjStore retry');
-        }, 200);
-    };*/
-    var task = {type: 'newStore', name: name, keyPath: keyPath, autoIncrement: autoincrement};
-
-    taskQeue.push(task);
-
-
-};
-
-
-
-//// Añade registros a la base de datos. De uno en uno o un array.
-function addRecord(objStore, obj) {
-    if (!addObjStoreWorking && dbOpened) {
-        var facturasObjectStore = db.transaction(objStore, "readwrite").objectStore(objStore);
-        if (Array.isArray(obj)) {
-            var i, objSize;
-            objSize = obj.length;
-
-            for (i = 0; i < objSize; i++) {
-                facturasObjectStore.add(obj[i]);
+            console.log(pendingStore);
+            checkTasks();
+        } else if (typeof pendingStore[0] == 'object') {
+            var storesNumber = pendingStore.length;
+            console.log(storesNumber);
+            var i;
+            for (i = 0; i < storesNumber; i++) {
+                console.log(pendingStore[i]);
+                db.createObjectStore(pendingStore[i][0], {
+                    keyPath: pendingStore[i][1],
+                    autoIncrement: pendingStore[i][2]
+                });
             };
+            checkTasks();
 
-        } else {
-            facturasObjectStore.add(obj);
-            console.log('registro añadido');
         };
-    } else {
-        setTimeout(function () {
-            addRecord(objStore, obj);
-            console.log('addRecord retry');
-        }, 200);
+
+        dbOpened = true;
     };
 };
+
+function closeDB() {
+    if(dbOpened){
+    db.close();
+    console.log('db closed');
+    dbOpened = false;
+    }
+};
+
+function newObjStore(name, keyPath, autoincrement) {
+
+    var task = {
+        type: 'newStore',
+        name: name,
+        keyPath: keyPath,
+        autoIncrement: autoincrement
+    };
+
+    taskQueue.push(task);
+
+    checkTasks();
+};
+
+function newObjStores(storesArray) {
+
+    var task = {
+        type: 'newStores',
+        objStores: storesArray
+    };
+
+    taskQueue.push(task);
+
+    checkTasks();
+};
+
+function add(objStore, obj) {
+
+    var task = {
+        type: 'add',
+        name: objStore,
+        obj: obj
+    };
+
+    taskQueue.push(task);
+
+};
+
+
+function checkTasks() {
+
+    if (taskQueue.length == 0) {
+        return;
+    };
+
+    var type = taskQueue[0].type;
+
+    console.log(type);
+
+    switch (type) {
+
+        case 'newStore':
+
+            if (dbOpened) {
+                pendingStore = [];
+                pendingStore[0] = taskQueue[0].name;
+                pendingStore[1] = taskQueue[0].keyPath;
+                pendingStore[2] = taskQueue[0].autoIncrement;
+                var newVersion = actualVersion + 1;
+                var actualName = db.name;
+                closeDB();
+                console.log(taskQueue);
+                taskQueue.shift();
+                openDB(actualName, newVersion);
+            } else {
+                setTimeout(function () {
+                    console.log('addObjStore retry');
+                    checkTasks();
+
+                }, 100);
+            };
+            break;
+
+        case 'newStores':
+
+            if (dbOpened) {
+                pendingStore = [];
+                pendingStore = taskQueue[0].objStores;
+                var newVersion = actualVersion + 1;
+                var actualName = db.name;
+                closeDB();
+                console.log(taskQueue);
+                taskQueue.shift();
+                openDB(actualName, newVersion);
+            } else {
+                setTimeout(function () {
+                    console.log('addObjStores retry');
+                    checkTasks();
+                }, 100);
+            };
+            break;
+
+
+
+        case 'add':
+
+            if (dbOpened) {
+                var objStore = taskQueue[0].name;
+                var obj = taskQueue[0].obj;
+                var store = db.transaction(objStore, "readwrite").objectStore(objStore);
+                if (Array.isArray(obj)) {
+                    var i, objSize;
+                    objSize = obj.length;
+
+                    for (i = 0; i < objSize; i++) {
+                        store.add(obj[i]);
+                    };
+                    taskQueue.shift();
+                    console.log('records added');
+
+                } else {
+                    store.add(obj);
+                    taskQueue.shift();
+                    console.log('record added');
+                };
+            } else {
+
+                setTimeout(function () {
+                    console.log('addRecord retry in 100ms');
+                    checkTasks();
+                }, 100);
+            };
+            break;
+
+
+        default:
+        console.log('idle');
+            break;
+    }
+
+};
+
+
 
 openDB('test', 1);
-addObjStore('clientes', 'id', true);
-addRecord('clientes', cliente1);
+newObjStores([
+    ['clientes', 'id', true],
+    ['facturas', 'id2', true],
+    ['albaranes', 'id3', true]
+]);
+add('clientes', arrayFacturas);
+closeDB();

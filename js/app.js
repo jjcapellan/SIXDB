@@ -1,14 +1,7 @@
 /** Test indexedDb */
 
-var db, clientes, facturas, actualVersion;
 
-var DBname;
-
-var pendingStore = [];
 var taskQueue = [];
-
-// Flags
-var dbOpened = false; // Database connection is opened
 
 //Objetos que queremos guardar en la base de datos
 
@@ -44,7 +37,54 @@ var arrayFacturas = [{
     importe: '500'
 }];
 
+var add = {
 
+    db: function (dbName) {
+
+        var task = {
+            type: 'newDB',
+            dbName: dbName
+        };
+
+        taskQueue.push(task);
+
+        checkTasks();
+
+    },
+
+    store: function (dbName, storeName, keyPath, autoIncrement) {
+
+        // Make the task object
+        var task = {
+            type: 'newStore',
+            dbName: dbName,
+            storeName: storeName,
+            keyPath: keyPath,
+            autoIncrement: autoIncrement
+        };
+
+        // Add this task to taskQueue    
+        taskQueue.push(task);
+
+        checkTasks();
+
+    },
+
+    records: function (dbName, storeName, obj) {
+
+        var task = {
+            type: 'newRecords',
+            dbName: dbName,
+            storeName: storeName,
+            obj: obj
+        };
+
+        taskQueue.push(task);
+
+        checkTasks();
+
+    }
+}
 
 function isIndexedDBavailable() {
     var available = true;
@@ -55,96 +95,110 @@ function isIndexedDBavailable() {
     return available;
 }
 
-function openDB(name, version) {
+function newDB(dbName) {
 
-    var request = window.indexedDB.open(name, version);
+    var request = window.indexedDB.open(dbName);
 
     request.onerror = function (event) {
-        alert("Why didn't you allow my web app to use IndexedDB?!");
+        alert("Error. You must allow web app to use indexedDB.");
     };
 
     request.onsuccess = function (event) {
-        console.log('db opened');
-        db = event.target.result;
-        actualVersion = db.version;
-        dbOpened = true;
+        var db = event.target.result;
+        db.close();
+        console.log('Database ' + dbName + ' created');
+        taskQueue.shift();
+        checkTasks();
     };
 
-    request.onupgradeneeded = function (event) {
-        db = event.target.result;
-        actualVersion = db.version;
+};
 
-        if (typeof pendingStore[0] == 'string') {
-            db.createObjectStore(pendingStore[0], {
-                keyPath: pendingStore[1],
-                autoIncrement: pendingStore[2]
+function newStore(dbName, storeName, keyPath, autoIncrement) {
+
+    var db;
+    var version;
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+
+        var db = event.target.result;
+        version = db.version;
+        db.close();
+        console.log('Version tested');
+        var newVersion = version + 1;
+
+        request = window.indexedDB.open(dbName, newVersion);
+
+        request.onupgradeneeded = function (event) {
+
+            db = event.target.result;
+
+
+            db.createObjectStore(storeName, {
+                keyPath: keyPath,
+                autoIncrement: autoIncrement
             });
-
-            console.log('New objectStore created');
-            console.log(pendingStore);
-            checkTasks();
-        } else if (typeof pendingStore[0] == 'object') {
-            var storesNumber = pendingStore.length;
-            console.log(storesNumber);
-            var i;
-            for (i = 0; i < storesNumber; i++) {
-                console.log(pendingStore[i]);
-                db.createObjectStore(pendingStore[i][0], {
-                    keyPath: pendingStore[i][1],
-                    autoIncrement: pendingStore[i][2]
-                });
-            };
-            checkTasks();
-
         };
 
-        dbOpened = true;
+        request.onsuccess = function (event) {
+            db.close();
+            console.log('New objectStore ' + storeName + ' created');
+            taskQueue.shift();
+            checkTasks();
+        };
+
     };
-};
+}
 
-function closeDB() {
-    if(dbOpened){
-    db.close();
-    console.log('db closed');
-    dbOpened = false;
-    }
-};
+function newRecord(dbName, storeName, obj) {
 
-function newObjStore(name, keyPath, autoincrement) {
 
-    var task = {
-        type: 'newStore',
-        name: name,
-        keyPath: keyPath,
-        autoIncrement: autoincrement
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
     };
 
-    taskQueue.push(task);
+    request.onsuccess = function (event) {
+        var db = event.target.result;
+        console.log('Database ' + dbName + ' opened');
+        var counter = 0;
+        var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+        if (Array.isArray(obj)) {
+            var i, objSize;
+            objSize = obj.length;
 
-    checkTasks();
-};
+            for (i = 0; i < objSize; i++) {
+                var request = store.add(obj[i]);
+                request.onsuccess = function (event) {
+                    counter++;
+                    if (counter == objSize) {
+                        console.log('Records added in store ' + storeName);
+                        db.close();
+                        taskQueue.shift();
+                        console.log('Database ' + dbName + ' closed');
+                        checkTasks();
+                    };
+                };
+            };
 
-function newObjStores(storesArray) {
+        } else {
 
-    var task = {
-        type: 'newStores',
-        objStores: storesArray
+            var request = store.add(obj);
+            request.onsuccess = function (event) {
+                console.log('record added');
+                db.close();
+                taskQueue.shift()
+                console.log('Database ' + dbName + ' closed');
+                checkTasks();
+            };
+        };
+
     };
-
-    taskQueue.push(task);
-
-    checkTasks();
-};
-
-function add(objStore, obj) {
-
-    var task = {
-        type: 'add',
-        name: objStore,
-        obj: obj
-    };
-
-    taskQueue.push(task);
 
 };
 
@@ -156,87 +210,26 @@ function checkTasks() {
     };
 
     var type = taskQueue[0].type;
+    var task = taskQueue[0];
 
     console.log(type);
 
     switch (type) {
 
         case 'newStore':
-
-            if (dbOpened) {
-                pendingStore = [];
-                pendingStore[0] = taskQueue[0].name;
-                pendingStore[1] = taskQueue[0].keyPath;
-                pendingStore[2] = taskQueue[0].autoIncrement;
-                var newVersion = actualVersion + 1;
-                var actualName = db.name;
-                closeDB();
-                console.log(taskQueue);
-                taskQueue.shift();
-                openDB(actualName, newVersion);
-            } else {
-                setTimeout(function () {
-                    console.log('addObjStore retry');
-                    checkTasks();
-
-                }, 100);
-            };
+            newStore(task.dbName, task.storeName, task.keyPath, task.autoIncrement);
             break;
 
-        case 'newStores':
-
-            if (dbOpened) {
-                pendingStore = [];
-                pendingStore = taskQueue[0].objStores;
-                var newVersion = actualVersion + 1;
-                var actualName = db.name;
-                closeDB();
-                console.log(taskQueue);
-                taskQueue.shift();
-                openDB(actualName, newVersion);
-            } else {
-                setTimeout(function () {
-                    console.log('addObjStores retry');
-                    checkTasks();
-                }, 100);
-            };
+        case 'newRecords':
+            newRecord(task.dbName, task.storeName, task.obj);
             break;
 
-
-
-        case 'add':
-
-            if (dbOpened) {
-                var objStore = taskQueue[0].name;
-                var obj = taskQueue[0].obj;
-                var store = db.transaction(objStore, "readwrite").objectStore(objStore);
-                if (Array.isArray(obj)) {
-                    var i, objSize;
-                    objSize = obj.length;
-
-                    for (i = 0; i < objSize; i++) {
-                        store.add(obj[i]);
-                    };
-                    taskQueue.shift();
-                    console.log('records added');
-
-                } else {
-                    store.add(obj);
-                    taskQueue.shift();
-                    console.log('record added');
-                };
-            } else {
-
-                setTimeout(function () {
-                    console.log('addRecord retry in 100ms');
-                    checkTasks();
-                }, 100);
-            };
-            break;
-
+        case 'newDB':
+        newDB(task.dbName);
+        break;
 
         default:
-        console.log('idle');
+            console.log('No pending tasks');
             break;
     }
 
@@ -244,11 +237,19 @@ function checkTasks() {
 
 
 
-openDB('test', 1);
+
+/*openDB('test', 1);
 newObjStores([
     ['clientes', 'id', true],
     ['facturas', 'id2', true],
     ['albaranes', 'id3', true]
 ]);
 add('clientes', arrayFacturas);
-closeDB();
+closeDB();*/
+
+//newDB('test2');
+/*setTimeout(function(){ 
+    newStore('test2','Campo1','id',true);
+},3000);*/
+
+newRecord('test2', 'Campo1', arrayFacturas);

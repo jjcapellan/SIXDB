@@ -48,8 +48,6 @@ var add = {
 
         taskQueue.push(task);
 
-        checkTasks();
-
     },
 
     store: function (dbName, storeName, keyPath, autoIncrement) {
@@ -66,8 +64,6 @@ var add = {
         // Add this task to taskQueue    
         taskQueue.push(task);
 
-        checkTasks();
-
     },
 
     records: function (dbName, storeName, obj) {
@@ -81,10 +77,44 @@ var add = {
 
         taskQueue.push(task);
 
-        checkTasks();
-
     }
 }
+
+var remove = {
+
+    db: function (dbName) {
+
+        var task = {
+            type: 'removeDB',
+            dbName: dbName
+        };
+
+        taskQueue.push(task);
+
+    },
+
+    store: function (dbName, storeName) {
+        var task = {
+            type: 'removeStore',
+            dbName: dbName,
+            storeName: storeName
+        };
+
+        taskQueue.push(task);
+    },
+
+    record: function (dbName, storeName, recordKey) {
+        var task = {
+            type: 'removeRecord',
+            dbName: dbName,
+            storeName: storeName,
+            recordKey: recordKey
+        };
+
+        taskQueue.push(task);
+    }
+
+};
 
 function isIndexedDBavailable() {
     var available = true;
@@ -146,8 +176,8 @@ function newStore(dbName, storeName, keyPath, autoIncrement) {
 
         request.onsuccess = function (event) {
             db.close();
-            console.log('New objectStore ' + storeName + ' created');
             taskQueue.shift();
+            console.log('New objectStore ' + storeName + ' created');            
             checkTasks();
         };
 
@@ -202,6 +232,88 @@ function newRecord(dbName, storeName, obj) {
 
 };
 
+function removeStore(dbName, storeName) {
+    var db;
+    var version;
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+
+        var db = event.target.result;
+        version = db.version;
+        db.close();
+        console.log('Version tested');
+        var newVersion = version + 1;
+
+        request = window.indexedDB.open(dbName, newVersion);
+
+        request.onupgradeneeded = function (event) {
+
+            db = event.target.result;
+
+            db.deleteObjectStore(storeName);
+        };
+
+        request.onsuccess = function (event) {
+            db.close();
+            console.log('ObjectStore ' + storeName + ' deleted');
+            taskQueue.shift();
+            checkTasks();
+        };
+
+    };
+};
+
+function removeDB(dbName) {
+
+    var request = window.indexedDB.deleteDatabase(dbName);
+
+    request.onerror = function (event) {
+        console.log('Error deleting database ' + dbName);
+    };
+
+    request.onsuccess = function (event) {
+        taskQueue.shift();
+        console.log('Database ' + dbName + ' deleted');
+        checkTasks();
+    };
+};
+
+function removeRecord(dbName, storeName, recordKey) {
+
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+        var db = event.target.result;
+        console.log('Database ' + dbName + ' opened');
+        var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+        var removeRequest = store.delete(recordKey);
+
+        removeRequest.onsuccess = function (event) {
+            db.close();
+            console.log('Database closed');
+            taskQueue.shift();
+            console.log('Record with primary key ' + recordKey + ' deleted');
+            checkTasks();
+        };
+
+        removeRequest.onerror = function (event) {
+            console.log('Error deleting record: ' + removeRequest.error);
+        };
+
+    };
+
+    
+
+};
 
 function checkTasks() {
 
@@ -213,6 +325,7 @@ function checkTasks() {
     var task = taskQueue[0];
 
     console.log(type);
+    console.log(taskQueue[0]);
 
     switch (type) {
 
@@ -225,8 +338,20 @@ function checkTasks() {
             break;
 
         case 'newDB':
-        newDB(task.dbName);
-        break;
+            newDB(task.dbName);
+            break;
+
+        case 'removeStore':
+            removeStore(task.dbName, task.storeName);
+            break;
+
+        case 'removeDB':
+            removeDB(task.dbName);
+            break;
+
+        case 'removeRecord':
+            removeRecord(task.dbName, task.storeName, task.recordKey);
+            break;
 
         default:
             console.log('No pending tasks');
@@ -252,4 +377,14 @@ closeDB();*/
     newStore('test2','Campo1','id',true);
 },3000);*/
 
-newRecord('test2', 'Campo1', arrayFacturas);
+//newRecord('test2', 'Campo1', arrayFacturas);
+
+add.db('test3');
+add.db('test5');
+add.store('test3','campo1','id',true);
+add.store('test3','campo2','id',true);
+add.records('test3','campo1',arrayFacturas);
+checkTasks();
+remove.db('test5');
+remove.store('test3','campo2');
+remove.record('test3','campo1',2);

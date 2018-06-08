@@ -3,6 +3,8 @@
 
 var taskQueue = [];
 
+var idle = true;
+
 //Objetos que queremos guardar en la base de datos
 
 var cliente1 = {
@@ -116,6 +118,24 @@ var remove = {
 
 };
 
+var update = {
+
+    records: function (dbName, storeName, recordKey, prop, value) {
+
+        var task = {
+            type: 'updateRecords',
+            dbName: dbName,
+            storeName: storeName,
+            recordKey: recordKey,
+            prop: prop,
+            value: value
+        };
+
+        taskQueue.push(task);
+
+    }
+}
+
 function isIndexedDBavailable() {
     var available = true;
     if (!('indexedDB' in window)) {
@@ -177,7 +197,7 @@ function newStore(dbName, storeName, keyPath, autoIncrement) {
         request.onsuccess = function (event) {
             db.close();
             taskQueue.shift();
-            console.log('New objectStore ' + storeName + ' created');            
+            console.log('New objectStore ' + storeName + ' created');
             checkTasks();
         };
 
@@ -311,15 +331,63 @@ function removeRecord(dbName, storeName, recordKey) {
 
     };
 
-    
+
 
 };
+
+function updateRecords(dbName, storeName, recordKey, prop, value) {
+
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+        var db = event.target.result;
+        console.log('Database ' + dbName + ' opened');
+        var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+        var getRequest = store.get(recordKey);
+
+        getRequest.onsuccess = function (event) {
+            var record = event.target.result;
+
+            // set prop=value in record
+            record[prop] = value;
+
+            // Put modified record back in database
+            var updateRequest = store.put(record);
+
+            updateRequest.onsuccess = function (event) {
+                db.close();
+                console.log('Database closed');
+                taskQueue.shift();
+                console.log('Record with primary key ' + recordKey + ' updated');
+                checkTasks();
+            };
+
+            updateRequest.onerror = function (event) {
+                console.log('Error updating record: ' + updateRequest.error);
+            };
+
+        };
+
+        getRequest.onerror = function (event) {
+            console.log('Error getting record: ' + removeRequest.error);
+        };
+
+    };
+}
 
 function checkTasks() {
 
     if (taskQueue.length == 0) {
+        idle = true;
+        console.log('No pending tasks');
         return;
     };
+
+    idle = false;
 
     var type = taskQueue[0].type;
     var task = taskQueue[0];
@@ -353,38 +421,30 @@ function checkTasks() {
             removeRecord(task.dbName, task.storeName, task.recordKey);
             break;
 
+        case 'updateRecords':
+            updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value);
+            break;
+
         default:
-            console.log('No pending tasks');
             break;
     }
 
 };
 
+function execTasks() {
+    if (idle) {
+        checkTasks();
+    };
+};
 
-
-
-/*openDB('test', 1);
-newObjStores([
-    ['clientes', 'id', true],
-    ['facturas', 'id2', true],
-    ['albaranes', 'id3', true]
-]);
-add('clientes', arrayFacturas);
-closeDB();*/
-
-//newDB('test2');
-/*setTimeout(function(){ 
-    newStore('test2','Campo1','id',true);
-},3000);*/
-
-//newRecord('test2', 'Campo1', arrayFacturas);
-
+/*
 add.db('test3');
 add.db('test5');
-add.store('test3','campo1','id',true);
-add.store('test3','campo2','id',true);
-add.records('test3','campo1',arrayFacturas);
-checkTasks();
+add.store('test3', 'campo1', 'id', true);
+add.store('test3', 'campo2', 'id', true);
+add.records('test3', 'campo1', arrayFacturas);
 remove.db('test5');
-remove.store('test3','campo2');
-remove.record('test3','campo1',2);
+remove.store('test3', 'campo2');
+remove.record('test3', 'campo1', 2);*/
+update.records('test3','campo1',3,'importe',250);
+execTasks();

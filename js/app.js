@@ -127,6 +127,18 @@ var remove = {
         };
 
         taskQueue.push(task);
+    },
+
+    index: function (dbName, storeName, indexName) {
+
+        var task = {
+            type: 'removeIndex',
+            dbName: dbName,
+            storeName: storeName,
+            indexName: indexName
+        };
+
+        taskQueue.push(task);
     }
 
 };
@@ -307,8 +319,8 @@ function newIndex(dbName, storeName, indexName, keyPath) {
             db = event.target.result;
 
             var upgradeTransaction = event.target.transaction;
-            var store=upgradeTransaction.objectStore(storeName);
-            store.createIndex(indexName, keyPath);          
+            var store = upgradeTransaction.objectStore(storeName);
+            store.createIndex(indexName, keyPath);
 
         };
 
@@ -405,6 +417,46 @@ function removeRecord(dbName, storeName, recordKey) {
 
 };
 
+function removeIndex(dbName, storeName, indexName) {
+
+    var db;
+    var version;
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+
+        var db = event.target.result;
+        version = db.version;
+        db.close();
+        console.log('Version tested');
+        var newVersion = version + 1;
+
+        request = window.indexedDB.open(dbName, newVersion);
+
+        request.onupgradeneeded = function (event) {
+
+            db = event.target.result;
+
+            var upgradeTransaction = event.target.transaction;
+            var store = upgradeTransaction.objectStore(storeName);
+            store.deleteIndex(indexName);
+
+        };
+
+        request.onsuccess = function (event) {
+            db.close();
+            taskQueue.shift();
+            console.log('Index ' + indexName + ' in objectStore ' + storeName + ' deleted');
+            checkTasks();
+        };
+
+    };
+}
+
 function updateRecords(dbName, storeName, recordKey, prop, value) {
 
     var request = window.indexedDB.open(dbName);
@@ -491,6 +543,10 @@ function checkTasks() {
             removeRecord(task.dbName, task.storeName, task.recordKey);
             break;
 
+        case 'removeIndex':
+            removeIndex(task.dbName, task.storeName, task.indexName);
+            break;
+
         case 'updateRecords':
             updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value);
             break;
@@ -521,5 +577,6 @@ remove.db('test5');
 remove.store('test3', 'campo2');
 remove.record('test3', 'campo1', 2);*/
 //update.records('test3', 'campo1', 3, 'importe', 250);
-add.index('test3','campo1','indice1','importe');
+//add.index('test3', 'campo1', 'indice1', 'importe');
+remove.index('test3','campo1','indice1');
 execTasks();

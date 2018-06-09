@@ -30,13 +30,13 @@ var factura3 = {
 
 var arrayFacturas = [{
     idcliente: '1',
-    importe: '15'
+    importe: 15
 }, {
     idcliente: '2',
-    importe: '460'
+    importe: 460
 }, {
     idcliente: '2',
-    importe: '500'
+    importe: 500
 }];
 
 var add = {
@@ -79,6 +79,19 @@ var add = {
 
         taskQueue.push(task);
 
+    },
+
+    index: function (dbName, storeName, indexName, keyPath) {
+
+        var task = {
+            type: 'newIndex',
+            dbName: dbName,
+            storeName: storeName,
+            indexName: indexName,
+            keyPath: keyPath
+        };
+
+        taskQueue.push(task);
     }
 }
 
@@ -129,6 +142,23 @@ var update = {
             recordKey: recordKey,
             prop: prop,
             value: value
+        };
+
+        taskQueue.push(task);
+
+    }
+}
+
+var get = {
+
+    records: function (dbName, storeName, minKey, maxKey) {
+
+        var task = {
+            type: 'getRecords',
+            dbName: dbName,
+            storeName: storeName,
+            minKey: minKey,
+            maxKey: maxKey
         };
 
         taskQueue.push(task);
@@ -251,6 +281,46 @@ function newRecord(dbName, storeName, obj) {
     };
 
 };
+
+function newIndex(dbName, storeName, indexName, keyPath) {
+
+    var db;
+    var version;
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+        alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+
+        var db = event.target.result;
+        version = db.version;
+        db.close();
+        console.log('Version tested');
+        var newVersion = version + 1;
+
+        request = window.indexedDB.open(dbName, newVersion);
+
+        request.onupgradeneeded = function (event) {
+
+            db = event.target.result;
+
+            var upgradeTransaction = event.target.transaction;
+            var store=upgradeTransaction.objectStore(storeName);
+            store.createIndex(indexName, keyPath);          
+
+        };
+
+        request.onsuccess = function (event) {
+            db.close();
+            taskQueue.shift();
+            console.log('New index ' + indexName + ' created in objectStore ' + storeName);
+            checkTasks();
+        };
+
+    };
+}
 
 function removeStore(dbName, storeName) {
     var db;
@@ -425,6 +495,10 @@ function checkTasks() {
             updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value);
             break;
 
+        case 'newIndex':
+            newIndex(task.dbName, task.storeName, task.indexName, task.keyPath);
+            break;
+
         default:
             break;
     }
@@ -446,5 +520,6 @@ add.records('test3', 'campo1', arrayFacturas);
 remove.db('test5');
 remove.store('test3', 'campo2');
 remove.record('test3', 'campo1', 2);*/
-update.records('test3','campo1',3,'importe',250);
+//update.records('test3', 'campo1', 3, 'importe', 250);
+add.index('test3','campo1','indice1','importe');
 execTasks();

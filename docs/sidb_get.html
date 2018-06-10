@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>update - Documentation</title>
+    <title>get - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">update</h1>
+    <h1 class="page-title">get</h1>
     
 
     
@@ -43,7 +43,7 @@
         <h2>
             <span class="ancestors"><a href="sidb.html">sidb</a>#</span>
         
-        update
+        get
         </h2>
         
     
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line721">line 721</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line753">line 753</a>
     </li></ul></dd>
     
 
@@ -98,7 +98,7 @@
 
 
         
-            <div class="description">Contains update methods</div>
+            <div class="description">Contains get methods</div>
         
 
         
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(dbName, storeName, recordKey, prop, value)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="lastRecords"><span class="type-signature"></span>lastRecords<span class="signature">(dbName, storeName, maxResults, callback)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line733">line 733</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line764">line 764</a>
     </li></ul></dd>
     
 
@@ -177,7 +177,7 @@
 
 
 <div class="description">
-    Add an order to task queue which updates a property value in a record.
+    Add an order to task queue which gets last records from an object store
 </div>
 
 
@@ -221,7 +221,7 @@
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">strinf</span>
 
 
             
@@ -254,14 +254,14 @@
 
             
 
-            <td class="description last">Object store name</td>
+            <td class="description last">Store name</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>recordKey</code></td>
+                <td class="name"><code>maxResults</code></td>
             
 
             <td class="type">
@@ -277,20 +277,20 @@
 
             
 
-            <td class="description last">Record key</td>
+            <td class="description last">Limits the records retrieved</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>prop</code></td>
+                <td class="name"><code>callback</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">function</span>
 
 
             
@@ -300,30 +300,7 @@
 
             
 
-            <td class="description last">Property name</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>value</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">any</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Property value</td>
+            <td class="description last">Callback called when done. Receives as parameter the retrieved records in an array.</td>
         </tr>
 
     

@@ -41,7 +41,7 @@ var sidb = function () {
      * @type {object[]}
      */
     var taskQueue = [];
-    
+
     /**
      * Flag to check if all task were completed (= tasqQueue is empty)
      * @type {boolean}
@@ -49,6 +49,51 @@ var sidb = function () {
     var idle = true;
 
     var t = this;
+
+    /**
+     * Gets last records from an object store
+     * @private
+     * @param {strinf} dbName Database name
+     * @param {string} storeName Store name
+     * @param {number} maxResults Limits the records retrieved 
+     * @param {function(object[])} callback Callback called when done. Receives the retrieved records in an array.
+     */
+    function getLastRecords(dbName, storeName, maxResults, callback) {
+
+        var request = window.indexedDB.open(dbName);
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+            var storeSize = store.count();
+            var getRequest;
+
+            storeSize.onsuccess = function () {
+                var keyRange = IDBKeyRange.lowerBound(storeSize.result - maxResults, true);
+                getRequest = store.getAll(keyRange);
+
+                getRequest.onsuccess = function (event) {
+                    callback(event.target.result);
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Last ' + maxResults + 'records retrieved from object store ' + storeName);
+                    checkTasks();
+                };
+
+                getRequest.onerror = function (event) {
+                    console.log('Error getting records: ' + getRequest.error);
+                };
+
+            };
+
+        };
+    };
 
     /**
      * Creates a new Database.
@@ -484,6 +529,10 @@ var sidb = function () {
                 newIndex(task.dbName, task.storeName, task.indexName, task.keyPath);
                 break;
 
+            case 'getLastRecords':
+                getLastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
+                break;
+
             default:
                 break;
         }
@@ -697,16 +746,29 @@ var sidb = function () {
         }
     };
 
+    /**
+     * Contains get methods
+     * @namespace
+     */
     this.get = {
 
-        records: function (dbName, storeName, minKey, maxKey) {
+        /**
+         * Add an order to task queue which gets last records from an object store
+         * @public
+         * @instance
+         * @param {strinf} dbName Database name
+         * @param {string} storeName Store name
+         * @param {number} maxResults Limits the records retrieved 
+         * @param {function} callback Callback called when done. Receives as parameter the retrieved records in an array.
+         */
+        lastRecords: function (dbName, storeName, maxResults, callback) {
 
             var task = {
-                type: 'getRecords',
+                type: 'getLastRecords',
                 dbName: dbName,
                 storeName: storeName,
-                minKey: minKey,
-                maxKey: maxKey
+                maxResults: maxResults,
+                callback: callback
             };
 
             taskQueue.push(task);

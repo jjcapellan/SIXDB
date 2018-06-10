@@ -37,6 +37,11 @@ var arrayFacturas = [{
 // Commands using the indexedDB wrapper
 
 var wrapper = new sidb();
+var contenedor=[];
+
+var callback1 = function(resultsArray){
+    console.log(resultsArray);
+};
 
 /*
 add.db('test3');
@@ -50,5 +55,10 @@ remove.record('test3', 'campo1', 2);*/
 //update.records('test3', 'campo1', 3, 'importe', 250);
 //add.index('test3', 'campo1', 'indice1', 'importe');
 //remove.index('test3','campo1','indice1');
-wrapper.remove.db('test3');
+//wrapper.remove.db('test3');
+//wrapper.get.allRecords('test3','campo1',2);
+/*wrapper.add.db('test');
+wrapper.add.store('test','store1','id',true);
+wrapper.add.records('test','store1',arrayFacturas);*/
+wrapper.get.lastRecords('test','store1',2,callback1);
 wrapper.execTasks();

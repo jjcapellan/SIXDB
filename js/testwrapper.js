@@ -60,5 +60,7 @@ remove.record('test3', 'campo1', 2);*/
 /*wrapper.add.db('test');
 wrapper.add.store('test','store1','id',true);
 wrapper.add.records('test','store1',arrayFacturas);*/
-wrapper.get.lastRecords('test','store1',2,callback1);
+//wrapper.get.lastRecords('test','store1',2,callback1);
+//wrapper.add.index('test', 'store1', 'cantidad', 'importe');
+wrapper.get.recordsByIndex('test','store1','cantidad',{min: 400},callback1);
 wrapper.execTasks();

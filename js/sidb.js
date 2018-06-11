@@ -53,12 +53,12 @@ var sidb = function () {
     /**
      * Gets last records from an object store
      * @private
-     * @param {strinf} dbName Database name
+     * @param {string} dbName Database name
      * @param {string} storeName Store name
      * @param {number} maxResults Limits the records retrieved 
      * @param {function(object[])} callback Callback called when done. Receives the retrieved records in an array.
      */
-    function getLastRecords(dbName, storeName, maxResults, callback) {
+    function lastRecords(dbName, storeName, maxResults, callback) {
 
         var request = window.indexedDB.open(dbName);
 
@@ -94,6 +94,75 @@ var sidb = function () {
 
         };
     };
+
+    /**
+     * Gets records from an object store, using an index to filter the results.
+     * At least one of the properties of the filterObject must be defined.
+     * @private
+     * @param {string} dbName Database name.
+     * @param {string} storeName Store name.
+     * @param {string} indexName Index name.
+     * @param {Object} filterObject Contains filter data.
+     * @param {string | number} [filterObject.key] Exact value to search. If exists, max and min parameters will be ignored.
+     * @param {string | number} [filterObject.min] Min value to filter the search.
+     * @param {string | number} [filterObject.max] Max value to filter the search.
+     * @param {function(object[])} callback Receives as parameter the results array
+     */
+    function recordsByIndex(dbName, storeName, indexName, filterObject, callback) {
+
+        var request = window.indexedDB.open(dbName);
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+            var keyRange;
+
+            // Gets the keyRange from parameter filterObject
+            if (filterObject.key) {
+
+                keyRange = filterObject.key;
+
+            } else if (filterObject.max && filterObject.min) {
+
+                keyRange = IDBKeyRange.bound(filterObject.min, filterObject.max);
+
+            } else if (filterObject.min) {
+
+                keyRange = IDBKeyRange.lowerBound(filterObject.min);
+
+            } else if (filterObject.max) {
+
+                keyRange = IDBKeyRange.upperBound(filterObject.max);
+
+            };
+
+
+
+            var index = store.index(indexName);
+            var getRequest = index.get(keyRange);
+
+            getRequest.onsuccess = function (event) {
+
+                callback(event.target.result);
+                db.close();
+                console.log('Database closed');
+                taskQueue.shift();
+                console.log('Records filtered by index ' + indexName + ' retrieved from object store ' + storeName);
+                checkTasks();
+
+            };
+
+            getRequest.onerror = function (event) {
+                console.log('Error getting records: ' + getRequest.error);
+            };
+
+        };
+    }
 
     /**
      * Creates a new Database.
@@ -529,8 +598,12 @@ var sidb = function () {
                 newIndex(task.dbName, task.storeName, task.indexName, task.keyPath);
                 break;
 
-            case 'getLastRecords':
-                getLastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
+            case 'lastRecords':
+                lastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
+                break;
+
+            case 'recordsByIndex':
+                recordsByIndex(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
                 break;
 
             default:
@@ -764,7 +837,7 @@ var sidb = function () {
         lastRecords: function (dbName, storeName, maxResults, callback) {
 
             var task = {
-                type: 'getLastRecords',
+                type: 'lastRecords',
                 dbName: dbName,
                 storeName: storeName,
                 maxResults: maxResults,
@@ -773,7 +846,38 @@ var sidb = function () {
 
             taskQueue.push(task);
 
+        },
+
+        /**
+         * Gets records from an object store, using an index to filter the results.
+         * At least one of the properties of the filterObject must be defined.
+         * @public
+         * @instance
+         * @param {string} dbName Database name.
+         * @param {string} storeName Store name.
+         * @param {string} indexName Index name.
+         * @param {Object} filterObject Contains filter data.
+         * @param {string | number} [filterObject.key] Exact value to search. If exists, max and min parameters will be ignored.
+         * @param {string | number} [filterObject.min] Min value to filter the search.
+         * @param {string | number} [filterObject.max] Max value to filter the search.
+         * @param {function(object[])} callback Receives as parameter the results array
+         */
+        recordsByIndex: function (dbName, storeName, indexName, filterObject, callback) {
+
+            var task = {
+
+                type: 'recordsByIndex',
+                dbName: dbName,
+                storeName: storeName,
+                indexName: indexName,
+                filterObject: filterObject,
+                callback: callback
+            };
+
+            taskQueue.push(task);
+
         }
+
     };
 
     /**

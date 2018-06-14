@@ -43,18 +43,12 @@ var callback1 = function(resultsArray){
     console.log(resultsArray);
 };
 
+var callback2= function(event){
+    console.log(event.target.error);
+};
+
 /*
-add.db('test3');
-add.db('test5');
-add.store('test3', 'campo1', 'id', true);
-add.store('test3', 'campo2', 'id', true);
-add.records('test3', 'campo1', arrayFacturas);
-remove.db('test5');
-remove.store('test3', 'campo2');
-remove.record('test3', 'campo1', 2);*/
-//update.records('test3', 'campo1', 3, 'importe', 250);
-//add.index('test3', 'campo1', 'indice1', 'importe');
-//remove.index('test3','campo1','indice1');
+
 //wrapper.remove.db('test3');
 //wrapper.get.allRecords('test3','campo1',2);
 /*wrapper.add.db('test');
@@ -62,5 +56,9 @@ wrapper.add.store('test','store1','id',true);
 wrapper.add.records('test','store1',arrayFacturas);*/
 //wrapper.get.lastRecords('test','store1',2,callback1);
 //wrapper.add.index('test', 'store1', 'cantidad', 'importe');
-wrapper.get.recordsByIndex('test','store1','cantidad',{min: 400},callback1);
+//wrapper.get.recordsByIndex('test','store1','cantidad',{min: 400},callback1);
+wrapper.add.store('test20','store6');
+wrapper.add.store('test20','store7');
+wrapper.add.store('test20','store8');
+wrapper.add.store('test20','store9');
 wrapper.execTasks();

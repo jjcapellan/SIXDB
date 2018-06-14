@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line713">line 713</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line810">line 810</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(dbName)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(dbName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line721">line 721</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line819">line 819</a>
     </li></ul></dd>
     
 
@@ -177,7 +177,7 @@
 
 
 <div class="description">
-    Add an order to task queue which removes a database
+    Removes an order to task queue which removes a database
 </div>
 
 
@@ -202,6 +202,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -228,10 +230,51 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">Database name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>errorCallback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Function called on error. Receives event parameter.</td>
         </tr>
 
     
@@ -258,7 +301,7 @@
 
     
 
-    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(dbName, storeName, indexName)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(dbName, storeName, indexName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -270,7 +313,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line776">line 776</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line880">line 880</a>
     </li></ul></dd>
     
 
@@ -310,7 +353,7 @@
 
 
 <div class="description">
-    Add an order in task queue which removes an index.
+    Removes an order in task queue which removes an index.
 </div>
 
 
@@ -335,6 +378,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -361,6 +406,14 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -383,6 +436,14 @@
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -407,10 +468,51 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">Index name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>errorCallback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Function called on error. Receives event parameter.</td>
         </tr>
 
     
@@ -437,7 +539,7 @@
 
     
 
-    <h4 class="name" id="record"><span class="type-signature"></span>record<span class="signature">(dbName, storeName, recordKey)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="record"><span class="type-signature"></span>record<span class="signature">(dbName, storeName, recordKey, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -449,7 +551,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line757">line 757</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line859">line 859</a>
     </li></ul></dd>
     
 
@@ -489,7 +591,7 @@
 
 
 <div class="description">
-    Add an order in task queue which removes a record.
+    Removes an order in task queue which removes a record.
 </div>
 
 
@@ -514,6 +616,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -540,6 +644,14 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -562,6 +674,14 @@
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -586,10 +706,51 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">Record key</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>errorCallback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Function called on error. Receives event parameter.</td>
         </tr>
 
     
@@ -616,7 +777,7 @@
 
     
 
-    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(dbName, storeName)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(dbName, storeName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -628,7 +789,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line739">line 739</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line839">line 839</a>
     </li></ul></dd>
     
 
@@ -668,7 +829,7 @@
 
 
 <div class="description">
-    Add an order in task queue which removes an object store.
+    Removes an order in task queue which removes an object store.
 </div>
 
 
@@ -693,6 +854,8 @@
 
         <th>Type</th>
 
+        
+        <th>Attributes</th>
         
 
         
@@ -719,6 +882,14 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -742,10 +913,51 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last">Object store name</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>errorCallback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Function called on error. Receives event parameter.</td>
         </tr>
 
     
@@ -785,7 +997,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Jun 11 2018 21:46:05 GMT+0200 (Hora de verano romance) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jun 12 2018 20:06:39 GMT+0200 (Hora de verano romance) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

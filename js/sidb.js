@@ -51,9 +51,9 @@ var sidb = function () {
     var bloquedDbName = '';
 
     var t = this;
-    
+
     // Object to keep cursor position
-    var marker = function(){
+    var marker = function () {
         this.position = 1;
     };
 
@@ -215,7 +215,84 @@ var sidb = function () {
             };
 
         };
-    }    
+    }
+
+    function recordsFiltered(dbName, storeName, indexName, filterObject, callback) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
+        var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+            var resultFiltered = [];
+
+            var index = store.index(indexName);
+
+            index.openCursor().onsuccess = function (event) {
+
+                var cursor = event.target.result;
+
+                var i = 0;
+                var filterObjectSize = filterObject.length;
+                var test;
+
+                if (cursor) {
+                    test = true;
+                    for (i = 0; i < filterObjectSize; i++) {
+                        test = testCondition(cursor.value[filterObject[i].keyPath], filterObject[i].cond, filterObject[i].value);
+                        if (!test) {
+                            break;
+                        };
+                    };
+                    if (test) {
+                        resultFiltered.push(cursor.value);
+                    };
+                    cursor.continue();
+                } else {
+
+                    callback(resultFiltered);
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Records filtered by index ' + indexName + ' retrieved from object store ' + storeName);
+                    checkTasks();
+
+                }
+
+
+
+            };
+
+        };
+    }
 
     /**
      * Creates a new Database.
@@ -381,7 +458,7 @@ var sidb = function () {
         };
 
         request.onsuccess = function (event) {
-            
+
             var db = event.target.result;
 
             if (noDb) {
@@ -960,6 +1037,10 @@ var sidb = function () {
                 recordsByIndex(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
                 break;
 
+            case 'recordsFiltered':
+                recordsFiltered(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
+                break;
+
             default:
                 break;
         }
@@ -1278,6 +1359,22 @@ var sidb = function () {
             var task = {
 
                 type: 'recordsByIndex',
+                dbName: dbName,
+                storeName: storeName,
+                indexName: indexName,
+                filterObject: filterObject,
+                callback: callback
+            };
+
+            taskQueue.push(task);
+
+        },
+
+        recordsFiltered: function (dbName, storeName, indexName, filterObject, callback) {
+
+            var task = {
+
+                type: 'recordsFiltered',
                 dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,

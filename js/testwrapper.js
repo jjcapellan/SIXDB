@@ -23,14 +23,20 @@ var factura3 = {
 };
 
 var arrayFacturas = [{
-    idcliente: '1',
+    idcliente: 1,
     importe: 15
 }, {
-    idcliente: '2',
+    idcliente: 1,
     importe: 460
 }, {
-    idcliente: '2',
+    idcliente: 2,
     importe: 500
+}, {
+    idcliente: 5,
+    importe: 800
+}, {
+    idcliente: 6,
+    importe: 490
 }];
 
 
@@ -51,14 +57,17 @@ var callback2= function(event){
 
 //wrapper.remove.db('test3');
 //wrapper.get.allRecords('test3','campo1',2);
-/*wrapper.add.db('test');
-wrapper.add.store('test','store1','id',true);
-wrapper.add.records('test','store1',arrayFacturas);*/
+
 //wrapper.get.lastRecords('test','store1',2,callback1);
 //wrapper.add.index('test', 'store1', 'cantidad', 'importe');
 //wrapper.get.recordsByIndex('test','store1','cantidad',{min: 400},callback1);
-wrapper.add.store('test20','store6');
-wrapper.add.store('test20','store7');
-wrapper.add.store('test20','store8');
-wrapper.add.store('test20','store9');
+wrapper.add.db('test');
+wrapper.add.store('test','store1','id',true);
+wrapper.add.index('test', 'store1', 'cantidad', 'importe');
+wrapper.add.records('test','store1',arrayFacturas);
+wrapper.get.recordsFiltered('test','store1','cantidad',
+[{keyPath: 'idcliente', cond: '>',value: 1},
+{keyPath: 'importe', cond: '>',value: 400},
+{keyPath: 'importe', cond: '<',value: 750}],callback1);*/
+
 wrapper.execTasks();

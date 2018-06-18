@@ -48,9 +48,14 @@ var sidb = function () {
      */
     var idle = true;
 
-    var bloquedDbName='';
+    var bloquedDbName = '';
 
     var t = this;
+    
+    // Object to keep cursor position
+    var marker = function(){
+        this.position = 1;
+    };
 
     /**
      * Gets last records from an object store
@@ -62,8 +67,8 @@ var sidb = function () {
      */
     function lastRecords(dbName, storeName, maxResults, callback) {
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -71,10 +76,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -86,9 +91,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -135,8 +140,8 @@ var sidb = function () {
      */
     function recordsByIndex(dbName, storeName, indexName, filterObject, callback) {
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -144,10 +149,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -159,9 +164,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -210,7 +215,7 @@ var sidb = function () {
             };
 
         };
-    }
+    }    
 
     /**
      * Creates a new Database.
@@ -252,39 +257,39 @@ var sidb = function () {
         var db;
         var version;
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
         };
 
         var request = window.indexedDB.open(dbName);
-        
+
 
         request.onerror = function (event) {
             if (errorCallback) {
                 errorCallback(event);
             } else {
                 console.log('Error opening database ' + dbName + ' : ' + request.error);
-            }
+            };
         };
-        
-        var noDb=false; // Boolean: Database doesn't exist
+
+        var noDb = false; // Boolean: Database doesn't exist
 
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
-        request.onsuccess = function (event) {            
+        request.onsuccess = function (event) {
 
             var db = event.target.result;
 
-            if(noDb){
+            if (noDb) {
                 db.close();
                 bloquedDbName = dbName;
-                console.log('Database '+ dbName +' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             }
@@ -348,8 +353,8 @@ var sidb = function () {
      */
     function newRecord(dbName, storeName, obj, errorCallback) {
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -358,14 +363,14 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
-        
+
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -376,14 +381,15 @@ var sidb = function () {
         };
 
         request.onsuccess = function (event) {
-            var db = event.target.result;
             
-            if(noDb){
+            var db = event.target.result;
+
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
-            }          
+            }
 
             console.log('Database ' + dbName + ' opened');
             var counter = 0;
@@ -452,8 +458,8 @@ var sidb = function () {
         var db;
         var version;
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -469,10 +475,10 @@ var sidb = function () {
             };
         };
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -481,9 +487,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             }
@@ -544,8 +550,8 @@ var sidb = function () {
         var db;
         var version;
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -553,10 +559,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -573,9 +579,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -620,8 +626,8 @@ var sidb = function () {
      */
     function removeDB(dbName, errorCallback) {
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -641,7 +647,7 @@ var sidb = function () {
             taskQueue.shift();
             console.log('Database ' + dbName + ' deleted');
             checkTasks();
-            bloquedDbName='';
+            bloquedDbName = '';
         };
     };
 
@@ -657,10 +663,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -676,9 +682,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -718,8 +724,8 @@ var sidb = function () {
         var db;
         var version;
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -727,10 +733,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -747,9 +753,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -801,8 +807,8 @@ var sidb = function () {
      */
     function updateRecords(dbName, storeName, recordKey, prop, value, errorCallback) {
 
-        if(bloquedDbName == dbName){
-            console.log('Database '+dbName+' doesn\'t exist');
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
             taskQueue.shift();
             checkTasks();
             return;
@@ -810,10 +816,10 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
-        var noDb=false; // Boolean: Database doesn't exist
-        
+        var noDb = false; // Boolean: Database doesn't exist
+
         // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function(event){
+        request.onupgradeneeded = function (event) {
             noDb = true;
         };
 
@@ -829,9 +835,9 @@ var sidb = function () {
             var db = event.target.result;
 
             // If database doesn't exist ...
-            if(noDb){
+            if (noDb) {
                 db.close();
-                console.log('Database '+dbName+' doesn\'t exist');
+                console.log('Database ' + dbName + ' doesn\'t exist');
                 removeDB('dbName');
                 return;
             };
@@ -959,6 +965,44 @@ var sidb = function () {
         }
 
     };
+
+    function testCondition(value1, condition, value2) {
+        var result;
+        switch (condition) {
+            case '=':
+                result = (value1 == value2) ? true : false;
+                return result;
+                break;
+
+            case '>':
+                result = (value1 > value2) ? true : false;
+                return result;
+                break;
+
+            case '<':
+                result = (value1 < value2) ? true : false;
+                return result;
+                break;
+
+            case '>=':
+                result = (value1 >= value2) ? true : false;
+                return result;
+                break;
+
+            case '<=':
+                result = (value1 <= value2) ? true : false;
+                return result;
+                break;
+
+            case '!=':
+                result = (value1 != value2) ? true : false;
+                return result;
+                break;
+
+            default:
+                break;
+        }
+    }
 
     //// Public //////////////////////////////////
 
@@ -1271,6 +1315,6 @@ var sidb = function () {
         return available;
     };
 
-    
+
 
 };

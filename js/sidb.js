@@ -52,7 +52,7 @@ var sidb = function () {
 
     var t = this;
 
-    // Object to keep cursor position
+    // Object to save cursor position
     var marker = function () {
         this.position = 1;
     };
@@ -1047,6 +1047,14 @@ var sidb = function () {
 
     };
 
+    /**
+     * Test a conditional expression as false or true
+     * @private
+     * @param {string | number} value1 First value to compare
+     * @param {string} condition Comparison operator ( = , > , < , >= , <= , != )
+     * @param {string | number} value2 Second value to compare
+     * @returns {boolean}
+     */
     function testCondition(value1, condition, value2) {
         var result;
         switch (condition) {
@@ -1387,6 +1395,27 @@ var sidb = function () {
         }
 
     };
+
+    /**
+     * Contains some util methods
+     * @namespace
+     */
+    this.utils = {
+
+        /**
+         * Extracts a part of n elements from an array wich represents a data page.
+         * @public
+         * @instance
+         * @param {object[]} array Array from the "page" is extracted
+         * @param {number} elementsPerPage Number of elements per page
+         * @param {number} page The page wich will be extracted from array
+         * @returns {Array} The part of original array wich represents the page
+         */
+        pageFromArray: function(array, elementsPerPage, page){
+            var page = array.slice((page-1)*elementsPerPage,page*elementsPerPage);
+            return page;
+        }
+    }
 
     /**
      * Executes pending tasks

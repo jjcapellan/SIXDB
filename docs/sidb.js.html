@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordsByIndex">recordsByIndex</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordsByIndex">recordsByIndex</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -88,7 +88,14 @@ var sidb = function () {
      */
     var idle = true;
 
+    var bloquedDbName = '';
+
     var t = this;
+
+    // Object to save cursor position
+    var marker = function () {
+        this.position = 1;
+    };
 
     /**
      * Gets last records from an object store
@@ -100,7 +107,21 @@ var sidb = function () {
      */
     function lastRecords(dbName, storeName, maxResults, callback) {
 
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -108,6 +129,15 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
             var storeSize = store.count();
@@ -150,7 +180,21 @@ var sidb = function () {
      */
     function recordsByIndex(dbName, storeName, indexName, filterObject, callback) {
 
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -158,6 +202,15 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
             var keyRange;
@@ -204,6 +257,83 @@ var sidb = function () {
         };
     }
 
+    function recordsFiltered(dbName, storeName, indexName, filterObject, callback) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
+        var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+            var resultFiltered = [];
+
+            var index = store.index(indexName);
+
+            index.openCursor().onsuccess = function (event) {
+
+                var cursor = event.target.result;
+
+                var i = 0;
+                var filterObjectSize = filterObject.length;
+                var test;
+
+                if (cursor) {
+                    test = true;
+                    for (i = 0; i &lt; filterObjectSize; i++) {
+                        test = testCondition(cursor.value[filterObject[i].keyPath], filterObject[i].cond, filterObject[i].value);
+                        if (!test) {
+                            break;
+                        };
+                    };
+                    if (test) {
+                        resultFiltered.push(cursor.value);
+                    };
+                    cursor.continue();
+                } else {
+
+                    callback(resultFiltered);
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Records filtered by index ' + indexName + ' retrieved from object store ' + storeName);
+                    checkTasks();
+
+                }
+
+
+
+            };
+
+        };
+    }
+
     /**
      * Creates a new Database.
      * @private
@@ -243,19 +373,55 @@ var sidb = function () {
 
         var db;
         var version;
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
+
 
         request.onerror = function (event) {
             if (errorCallback) {
                 errorCallback(event);
             } else {
                 console.log('Error opening database ' + dbName + ' : ' + request.error);
-            }
+            };
+        };
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
         };
 
         request.onsuccess = function (event) {
 
             var db = event.target.result;
+
+            if (noDb) {
+                db.close();
+                bloquedDbName = dbName;
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            }
+
+            // If store already exist then returns
+            if (db.objectStoreNames.contains(storeName)) {
+
+                db.close();
+                taskQueue.shift();
+                console.log('Object store ' + storeName + ' already exists');
+                checkTasks();
+                return;
+
+            }
+
             version = db.version;
             db.close();
             console.log('Version tested');
@@ -304,8 +470,24 @@ var sidb = function () {
      */
     function newRecord(dbName, storeName, obj, errorCallback) {
 
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
 
         var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
+
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -316,7 +498,16 @@ var sidb = function () {
         };
 
         request.onsuccess = function (event) {
+
             var db = event.target.result;
+
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            }
+
             console.log('Database ' + dbName + ' opened');
             var counter = 0;
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -371,7 +562,7 @@ var sidb = function () {
     };
 
     /**
-     * Creates a new index in a object store.
+     * Creates a new index in an object store.
      * @private
      * @param {string} dbName Database name
      * @param {string} storeName Object store name
@@ -383,6 +574,14 @@ var sidb = function () {
 
         var db;
         var version;
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
 
         request.onerror = function (event) {
@@ -390,12 +589,28 @@ var sidb = function () {
                 errorCallback(event);
             } else {
                 console.log('Error opening database ' + dbName + ' : ' + request.error);
-            }
+            };
+        };
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
         };
 
         request.onsuccess = function (event) {
 
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            }
+
             version = db.version;
             db.close();
             console.log('Version tested');
@@ -409,7 +624,17 @@ var sidb = function () {
 
                 var upgradeTransaction = event.target.transaction;
                 var store = upgradeTransaction.objectStore(storeName);
-                store.createIndex(indexName, keyPath);
+                if (!store.indexNames.contains(indexName)) {
+                    store.createIndex(indexName, keyPath);
+                } else {
+
+                    db.close();
+                    taskQueue.shift();
+                    console.log('Index \"' + indexName + '\" already exists in object store ' + storeName);
+                    checkTasks();
+                    return;
+
+                }
 
             };
 
@@ -441,7 +666,22 @@ var sidb = function () {
     function removeStore(dbName, storeName, errorCallback) {
         var db;
         var version;
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -454,6 +694,15 @@ var sidb = function () {
         request.onsuccess = function (event) {
 
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             version = db.version;
             db.close();
             console.log('Version tested');
@@ -494,6 +743,13 @@ var sidb = function () {
      */
     function removeDB(dbName, errorCallback) {
 
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.deleteDatabase(dbName);
 
         request.onerror = function (event) {
@@ -508,6 +764,7 @@ var sidb = function () {
             taskQueue.shift();
             console.log('Database ' + dbName + ' deleted');
             checkTasks();
+            bloquedDbName = '';
         };
     };
 
@@ -523,6 +780,13 @@ var sidb = function () {
 
         var request = window.indexedDB.open(dbName);
 
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
         request.onerror = function (event) {
             if (errorCallback) {
                 errorCallback(event);
@@ -533,6 +797,15 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
             var removeRequest = store.delete(recordKey);
@@ -567,7 +840,22 @@ var sidb = function () {
 
         var db;
         var version;
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
         var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -580,6 +868,15 @@ var sidb = function () {
         request.onsuccess = function (event) {
 
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             version = db.version;
             db.close();
             console.log('Version tested');
@@ -623,17 +920,45 @@ var sidb = function () {
      * @param {number} recordKey Record key
      * @param {string} prop Property name
      * @param {any} value Property value
+     * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function updateRecords(dbName, storeName, recordKey, prop, value) {
+    function updateRecords(dbName, storeName, recordKey, prop, value, errorCallback) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
 
         var request = window.indexedDB.open(dbName);
 
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
         request.onerror = function (event) {
-            alert("Error. You must allow web app to use indexedDB.");
+            if (errorCallback) {
+                errorCallback(event);
+            } else {
+                console.log('Error opening database ' + dbName + ' : ' + request.error);
+            };
         };
 
         request.onsuccess = function (event) {
             var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
             var getRequest = store.get(recordKey);
@@ -641,11 +966,21 @@ var sidb = function () {
             getRequest.onsuccess = function (event) {
                 var record = event.target.result;
 
+                if (!record) {
+                    console.log('Error getting record, the key ' + recordKey + ' does\'nt exists');
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    checkTasks();
+                    return;
+                };
+
                 // set prop=value in record
                 record[prop] = value;
 
                 // Put modified record back in database
                 var updateRequest = store.put(record);
+
 
                 updateRequest.onsuccess = function (event) {
                     db.close();
@@ -656,13 +991,21 @@ var sidb = function () {
                 };
 
                 updateRequest.onerror = function (event) {
-                    console.log('Error updating record: ' + updateRequest.error);
+                    if (errorCallback) {
+                        errorCallback(event);
+                    } else {
+                        console.log('Error updating record in object store ' + storeName + ' in database ' + dbName + ' : ' + updateRequest.error);
+                    };
                 };
 
             };
 
             getRequest.onerror = function (event) {
-                console.log('Error getting record: ' + removeRequest.error);
+                if (errorCallback) {
+                    errorCallback(event);
+                } else {
+                    console.log('Error getting record in object store ' + storeName + ' in database ' + dbName + ' : ' + getRequest.error);
+                };
             };
 
         };
@@ -719,7 +1062,7 @@ var sidb = function () {
                 break;
 
             case 'updateRecords':
-                updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value);
+                updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value, task.errorCallback);
                 break;
 
             case 'newIndex':
@@ -734,11 +1077,61 @@ var sidb = function () {
                 recordsByIndex(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
                 break;
 
+            case 'recordsFiltered':
+                recordsFiltered(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
+                break;
+
             default:
                 break;
         }
 
     };
+
+    /**
+     * Test a conditional expression as false or true
+     * @private
+     * @param {string | number} value1 First value to compare
+     * @param {string} condition Comparison operator ( = , > , &lt; , >= , &lt;= , != )
+     * @param {string | number} value2 Second value to compare
+     * @returns {boolean}
+     */
+    function testCondition(value1, condition, value2) {
+        var result;
+        switch (condition) {
+            case '=':
+                result = (value1 == value2) ? true : false;
+                return result;
+                break;
+
+            case '>':
+                result = (value1 > value2) ? true : false;
+                return result;
+                break;
+
+            case '&lt;':
+                result = (value1 &lt; value2) ? true : false;
+                return result;
+                break;
+
+            case '>=':
+                result = (value1 >= value2) ? true : false;
+                return result;
+                break;
+
+            case '&lt;=':
+                result = (value1 &lt;= value2) ? true : false;
+                return result;
+                break;
+
+            case '!=':
+                result = (value1 != value2) ? true : false;
+                return result;
+                break;
+
+            default:
+                break;
+        }
+    }
 
     //// Public //////////////////////////////////
 
@@ -947,8 +1340,9 @@ var sidb = function () {
          * @param {number} recordKey Record key
          * @param {string} prop Property name
          * @param {any} value Property value
+         * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
-        records: function (dbName, storeName, recordKey, prop, value) {
+        records: function (dbName, storeName, recordKey, prop, value, errorCallback) {
 
             var task = {
                 type: 'updateRecords',
@@ -956,7 +1350,8 @@ var sidb = function () {
                 storeName: storeName,
                 recordKey: recordKey,
                 prop: prop,
-                value: value
+                value: value,
+                errorCallback: errorCallback
             };
 
             taskQueue.push(task);
@@ -1021,9 +1416,46 @@ var sidb = function () {
 
             taskQueue.push(task);
 
+        },
+
+        recordsFiltered: function (dbName, storeName, indexName, filterObject, callback) {
+
+            var task = {
+
+                type: 'recordsFiltered',
+                dbName: dbName,
+                storeName: storeName,
+                indexName: indexName,
+                filterObject: filterObject,
+                callback: callback
+            };
+
+            taskQueue.push(task);
+
         }
 
     };
+
+    /**
+     * Contains some util methods
+     * @namespace
+     */
+    this.utils = {
+
+        /**
+         * Extracts a part of n elements from an array wich represents a data page.
+         * @public
+         * @instance
+         * @param {object[]} array Array from the "page" is extracted
+         * @param {number} elementsPerPage Number of elements per page
+         * @param {number} page The page wich will be extracted from array
+         * @returns {Array} The part of original array wich represents the page
+         */
+        pageFromArray: function(array, elementsPerPage, page){
+            var page = array.slice((page-1)*elementsPerPage,page*elementsPerPage);
+            return page;
+        }
+    }
 
     /**
      * Executes pending tasks
@@ -1049,6 +1481,8 @@ var sidb = function () {
         return available;
     };
 
+
+
 };</code></pre>
         </article>
     </section>
@@ -1061,7 +1495,7 @@ var sidb = function () {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jun 12 2018 20:06:39 GMT+0200 (Hora de verano romance) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jun 19 2018 18:12:20 GMT+0200 (Hora de verano romance) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

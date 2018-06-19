@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>update - Documentation</title>
+    <title>utils - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">update</h1>
+    <h1 class="page-title">utils</h1>
     
 
     
@@ -43,7 +43,7 @@
         <h2>
             <span class="ancestors"><a href="sidb.html">sidb</a>#</span>
         
-        update
+        utils
         </h2>
         
     
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1292">line 1292</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1403">line 1403</a>
     </li></ul></dd>
     
 
@@ -98,7 +98,7 @@
 
 
         
-            <div class="description">Contains update methods</div>
+            <div class="description">Contains some util methods</div>
         
 
         
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(dbName, storeName, recordKey, prop, value, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="pageFromArray"><span class="type-signature"></span>pageFromArray<span class="signature">(array, elementsPerPage, page)</span><span class="type-signature"> &rarr; {Array}</span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1305">line 1305</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1414">line 1414</a>
     </li></ul></dd>
     
 
@@ -177,7 +177,7 @@
 
 
 <div class="description">
-    Add an order to task queue which updates a property value in a record.
+    Extracts a part of n elements from an array wich represents a data page.
 </div>
 
 
@@ -203,8 +203,6 @@
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -217,69 +215,30 @@
 
         <tr>
             
-                <td class="name"><code>dbName</code></td>
+                <td class="name"><code>array</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">Array.&lt;object></span>
 
 
             
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Database name</td>
+            <td class="description last">Array from the "page" is extracted</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>storeName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Object store name</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>recordKey</code></td>
+                <td class="name"><code>elementsPerPage</code></td>
             
 
             <td class="type">
@@ -292,113 +251,33 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Record key</td>
+            <td class="description last">Number of elements per page</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>prop</code></td>
+                <td class="name"><code>page</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
+<span class="param-type">number</span>
 
 
             
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Property name</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>value</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">any</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Property value</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>errorCallback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Function called on error. Receives event parameter.</td>
+            <td class="description last">The page wich will be extracted from array</td>
         </tr>
 
     
@@ -418,6 +297,28 @@
 
 
 
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The part of original array wich represents the page
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Array</span>
+
+
+    </dd>
+</dl>
+
+    
 
 
         

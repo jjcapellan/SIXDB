@@ -47,6 +47,8 @@ var contenedor=[];
 
 var callback1 = function(resultsArray){
     console.log(resultsArray);
+    //var array = wrapper.utils.pageFromArray(resultsArray,2,2);
+    //console.log(array);
 };
 
 var callback2= function(event){
@@ -60,7 +62,7 @@ var callback2= function(event){
 
 //wrapper.get.lastRecords('test','store1',2,callback1);
 //wrapper.add.index('test', 'store1', 'cantidad', 'importe');
-//wrapper.get.recordsByIndex('test','store1','cantidad',{min: 400},callback1);
+
 wrapper.add.db('test');
 wrapper.add.store('test','store1','id',true);
 wrapper.add.index('test', 'store1', 'cantidad', 'importe');
@@ -69,5 +71,13 @@ wrapper.get.recordsFiltered('test','store1','cantidad',
 [{keyPath: 'idcliente', cond: '>',value: 1},
 {keyPath: 'importe', cond: '>',value: 400},
 {keyPath: 'importe', cond: '<',value: 750}],callback1);*/
+
+//wrapper.get.lastRecords('test', 'store1',5,callback1);
+//
+
+//wrapper.get.recordsFiltered('test','store1','cantidad',
+//[{keyPath: 'importe', cond: '>',value: 15}],callback1);
+
+wrapper.get.recordByIndex('test','store1','cantidad',460,callback1);
 
 wrapper.execTasks();

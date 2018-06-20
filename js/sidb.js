@@ -126,19 +126,15 @@ var sidb = function () {
     };
 
     /**
-     * Gets records from an object store, using an index to filter the results.
-     * At least one of the properties of the filterObject must be defined.
+     * Gets a record from an object store, using a key value from an index.
      * @private
      * @param {string} dbName Database name.
      * @param {string} storeName Store name.
      * @param {string} indexName Index name.
-     * @param {Object} filterObject Contains filter data.
-     * @param {string | number} [filterObject.key] Exact value to search. If exists, max and min parameters will be ignored.
-     * @param {string | number} [filterObject.min] Min value to filter the search.
-     * @param {string | number} [filterObject.max] Max value to filter the search.
-     * @param {function(object[])} callback Receives as parameter the results array
+     * @param {any} keyValue Contains key value.
+     * @param {function(object[])} callback Receives as parameter the result
      */
-    function recordsByIndex(dbName, storeName, indexName, filterObject, callback) {
+    function recordByIndex(dbName, storeName, indexName, keyValue, callback) {
 
         if (bloquedDbName == dbName) {
             console.log('Database ' + dbName + ' doesn\'t exist');
@@ -173,31 +169,11 @@ var sidb = function () {
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-            var keyRange;
-
-            // Gets the keyRange from parameter filterObject
-            if (filterObject.key) {
-
-                keyRange = filterObject.key;
-
-            } else if (filterObject.max && filterObject.min) {
-
-                keyRange = IDBKeyRange.bound(filterObject.min, filterObject.max);
-
-            } else if (filterObject.min) {
-
-                keyRange = IDBKeyRange.lowerBound(filterObject.min);
-
-            } else if (filterObject.max) {
-
-                keyRange = IDBKeyRange.upperBound(filterObject.max);
-
-            };
 
 
 
             var index = store.index(indexName);
-            var getRequest = index.get(keyRange);
+            var getRequest = index.get(keyValue);
 
             getRequest.onsuccess = function (event) {
 
@@ -205,19 +181,19 @@ var sidb = function () {
                 db.close();
                 console.log('Database closed');
                 taskQueue.shift();
-                console.log('Records filtered by index ' + indexName + ' retrieved from object store ' + storeName);
+                console.log('Record with key value ' + keyValue + ' retrieved from index ' + indexName + ' in object store ' + storeName);
                 checkTasks();
 
             };
 
             getRequest.onerror = function (event) {
-                console.log('Error getting records: ' + getRequest.error);
+                console.log('Error getting record: ' + getRequest.error);
             };
 
         };
     }
 
-    function recordsFiltered(dbName, storeName, indexName, filterObject, callback) {
+    function recordsByFilter(dbName, storeName, indexName, filterObject, callback) {
 
         if (bloquedDbName == dbName) {
             console.log('Database ' + dbName + ' doesn\'t exist');
@@ -1033,12 +1009,12 @@ var sidb = function () {
                 lastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
                 break;
 
-            case 'recordsByIndex':
-                recordsByIndex(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
+            case 'recordByIndex':
+                recordByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.callback);
                 break;
 
-            case 'recordsFiltered':
-                recordsFiltered(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
+            case 'recordsByFilter':
+                recordsByFilter(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
                 break;
 
             default:
@@ -1349,28 +1325,24 @@ var sidb = function () {
         },
 
         /**
-         * Gets records from an object store, using an index to filter the results.
-         * At least one of the properties of the filterObject must be defined.
+         * Gets a record from an object store, using a key value from an index.
          * @public
          * @instance
          * @param {string} dbName Database name.
          * @param {string} storeName Store name.
          * @param {string} indexName Index name.
-         * @param {Object} filterObject Contains filter data.
-         * @param {string | number} [filterObject.key] Exact value to search. If exists, max and min parameters will be ignored.
-         * @param {string | number} [filterObject.min] Min value to filter the search.
-         * @param {string | number} [filterObject.max] Max value to filter the search.
-         * @param {function(object[])} callback Receives as parameter the results array
+         * @param {any} keyValue Contains the key value.
+         * @param {function(object[])} callback Receives as parameter the result
          */
-        recordsByIndex: function (dbName, storeName, indexName, filterObject, callback) {
+        recordByIndex: function (dbName, storeName, indexName, keyValue, callback) {
 
             var task = {
 
-                type: 'recordsByIndex',
+                type: 'recordByIndex',
                 dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
-                filterObject: filterObject,
+                keyValue: keyValue,
                 callback: callback
             };
 
@@ -1378,11 +1350,11 @@ var sidb = function () {
 
         },
 
-        recordsFiltered: function (dbName, storeName, indexName, filterObject, callback) {
+        recordsByFilter: function (dbName, storeName, indexName, filterObject, callback) {
 
             var task = {
 
-                type: 'recordsFiltered',
+                type: 'recordsByFilter',
                 dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
@@ -1411,9 +1383,10 @@ var sidb = function () {
          * @param {number} page The page wich will be extracted from array
          * @returns {Array} The part of original array wich represents the page
          */
-        pageFromArray: function(array, elementsPerPage, page){
-            var page = array.slice((page-1)*elementsPerPage,page*elementsPerPage);
-            return page;
+        pageFromArray: function (array, elementsPerPage, page) {
+            console.log(Array.isArray(array));
+            var pageArray = array.slice((page - 1) * elementsPerPage, page * elementsPerPage);
+            return pageArray;
         }
     }
 

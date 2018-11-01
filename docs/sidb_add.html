@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordByIndex">recordByIndex</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordByIndex">recordByIndex</a></li><li data-type='method'><a href="sidb_get.html#recordsByFilter">recordsByFilter</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1078">line 1078</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1130">line 1130</a>
     </li></ul></dd>
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1087">line 1087</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1139">line 1139</a>
     </li></ul></dd>
     
 
@@ -177,7 +177,7 @@
 
 
 <div class="description">
-    Add an order in task queue that creates a new database
+    Add the task "create new database" to the task queue.
 </div>
 
 
@@ -241,7 +241,7 @@
 
             
 
-            <td class="description last"></td>
+            <td class="description last">Database name.</td>
         </tr>
 
     
@@ -313,7 +313,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1160">line 1160</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1257">line 1257</a>
     </li></ul></dd>
     
 
@@ -353,7 +353,7 @@
 
 
 <div class="description">
-    Add an order in task queue that "creates a new index in a object store".
+    Adds the task "create a new index" to the task queue.
 </div>
 
 
@@ -362,6 +362,11 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var idb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".idb.add.index('databaseName', 'objectStoreName', 'ages', 'age', myErrorCallback);execTasks();</code></pre>
 
 
 
@@ -417,7 +422,7 @@
 
             
 
-            <td class="description last">Database name</td>
+            <td class="description last">Database name.</td>
         </tr>
 
     
@@ -448,7 +453,7 @@
 
             
 
-            <td class="description last">Object store name</td>
+            <td class="description last">Object store name where the index is created.</td>
         </tr>
 
     
@@ -479,7 +484,7 @@
 
             
 
-            <td class="description last">Index name</td>
+            <td class="description last">Index name.</td>
         </tr>
 
     
@@ -510,7 +515,7 @@
 
             
 
-            <td class="description last">Key that the index use</td>
+            <td class="description last">Key (property of stored objects) that the index use to order and filter.</td>
         </tr>
 
     
@@ -582,7 +587,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1136">line 1136</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1213">line 1213</a>
     </li></ul></dd>
     
 
@@ -622,7 +627,7 @@
 
 
 <div class="description">
-    Add an order in task queue that "inserts new record/s in a object store".
+    Add the task "insert new record in object store" to the task queue.
 </div>
 
 
@@ -631,6 +636,11 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var idb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}// This code adds the task "insert new record in object store" to the task queueidb.add.records('databaseName', 'objectStoreName', person, myErrorCallback);execTasks();</code></pre>
 
 
 
@@ -686,7 +696,7 @@
 
             
 
-            <td class="description last">Database name</td>
+            <td class="description last">Database name.</td>
         </tr>
 
     
@@ -717,7 +727,7 @@
 
             
 
-            <td class="description last">Object store name</td>
+            <td class="description last">Object store name where the record is added.</td>
         </tr>
 
     
@@ -751,7 +761,7 @@
 
             
 
-            <td class="description last">An object or objects array to insert in object store</td>
+            <td class="description last">An object or objects array to insert in the object store.</td>
         </tr>
 
     
@@ -823,7 +833,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1112">line 1112</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1171">line 1171</a>
     </li></ul></dd>
     
 
@@ -863,7 +873,7 @@
 
 
 <div class="description">
-    Add an order in task queue that creates a new object store.
+    Adds the task "create a new object store" to the task queue.
 </div>
 
 
@@ -876,7 +886,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mycallback = function(event){  console.log('Error creating new object store:' + event.target.error);}sidbobject.add.newStore('myDatabase','myStore',mycallback);</code></pre>
+    <pre class="prettyprint"><code>var idb = new sidb();// Callback function to process a possible errorvar myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}// This code adds the task "create a new object store" to the task queueidb.add.store('databaseName', 'objectStoreName', myErrorCallback);execTasks();</code></pre>
 
 
 
@@ -932,7 +942,7 @@
 
             
 
-            <td class="description last">Database name</td>
+            <td class="description last">Database name where the object store is created.</td>
         </tr>
 
     
@@ -963,7 +973,7 @@
 
             
 
-            <td class="description last">Objects store name</td>
+            <td class="description last">Object store name.</td>
         </tr>
 
     
@@ -1036,7 +1046,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Jun 20 2018 18:00:28 GMT+0200 (Hora de verano romance) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 01 2018 21:48:51 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

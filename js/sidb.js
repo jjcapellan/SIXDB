@@ -29,7 +29,7 @@
 
 
 /**
- * Creates an sidb (simple indexedDB) object
+ * Creates an sidb (simple indexedDB) object that manage the indexedDB databases. 
  * @class
  */
 var sidb = function () {
@@ -43,7 +43,7 @@ var sidb = function () {
     var taskQueue = [];
 
     /**
-     * Flag to check if all task were completed (= tasqQueue is empty)
+     * Flag to check if all task were completed (tasqQueue is empty)
      * @type {boolean}
      */
     var idle = true;
@@ -132,7 +132,7 @@ var sidb = function () {
      * @param {string} storeName Store name.
      * @param {string} indexName Index name.
      * @param {any} keyValue Contains key value.
-     * @param {function(object[])} callback Receives as parameter the result
+     * @param {function(object)} callback Receives as parameter the result (an object)
      */
     function recordByIndex(dbName, storeName, indexName, keyValue, callback) {
 
@@ -173,6 +173,8 @@ var sidb = function () {
 
 
             var index = store.index(indexName);
+            
+
             var getRequest = index.get(keyValue);
 
             getRequest.onsuccess = function (event) {
@@ -193,6 +195,33 @@ var sidb = function () {
         };
     }
 
+    /**
+     * The conditionObject contains the three elements to test a condition.
+     * @typedef {Object} conditionObject
+     * @property {string} keyPath Indicates a key path to test.
+     * @property {string} condition A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=" ).
+     * @property {any} value Indicates the value to test.
+     * @example
+     * 
+     * //Object to store in the object store
+     * var person = {
+     *     name: 'Peter',
+     *     age: 32
+     * }
+     * 
+     * // Example of conditionObject
+     * var condition = {'age', '<', 45};
+     */
+
+    /**
+     * Gets records filtered by an filterObject.
+     * @private
+     * @param {string} dbName Database name.
+     * @param {string} storeName Object store name.
+     * @param {string} indexName Index name.
+     * @param {conditionObject[]} filterObject An array with conditionObject objects
+     * @param {function(object[])} callback This callback receives the results
+     */
     function recordsByFilter(dbName, storeName, indexName, filterObject, callback) {
 
         if (bloquedDbName == dbName) {
@@ -422,7 +451,6 @@ var sidb = function () {
         request.onupgradeneeded = function (event) {
             noDb = true;
         };
-
 
 
         request.onerror = function (event) {
@@ -705,14 +733,21 @@ var sidb = function () {
     };
 
     /**
-     * Removes a record in object store
+     * Removes a record/s from an index
      * @private
-     * @param {string} dbName Database name
-     * @param {string} storeName Object store name
-     * @param {number} recordKey Record key
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {string} dbName Database name.
+     * @param {string} storeName Object store name.
+     * @param {string} indexName Index name.
+     * @param {any} keyValue Value of the index keyPath which object will be deleted.
      */
-    function removeRecord(dbName, storeName, recordKey, errorCallback) {
+    function removeRecord(dbName, storeName, indexName, keyValue) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
 
         var request = window.indexedDB.open(dbName);
 
@@ -724,11 +759,7 @@ var sidb = function () {
         };
 
         request.onerror = function (event) {
-            if (errorCallback) {
-                errorCallback(event);
-            } else {
-                console.log('Error opening database ' + dbName + ' : ' + request.error);
-            };
+            alert("Error. You must allow web app to use indexedDB.");
         };
 
         request.onsuccess = function (event) {
@@ -744,25 +775,39 @@ var sidb = function () {
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-            var removeRequest = store.delete(recordKey);
 
-            removeRequest.onsuccess = function (event) {
-                db.close();
-                console.log('Database closed');
-                taskQueue.shift();
-                console.log('Record with primary key ' + recordKey + ' deleted');
-                checkTasks();
-            };
+            var index = store.index(indexName);
 
-            removeRequest.onerror = function (event) {
-                console.log('Error deleting record: ' + removeRequest.error);
+            index.openCursor().onsuccess = function (event) {
+
+                var cursor = event.target.result;
+
+                if (cursor) {
+                    if (cursor.value[index.keyPath] == keyValue) {
+                        var request = cursor.delete();
+                        request.onsuccess = function () {
+                            console.log('Record deleted');
+                        };
+                    }
+
+                    cursor.continue();
+
+                } else {                   
+                    
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    db.close();
+                    console.log('Records with property ' + index.keyPath + ' = ' + keyValue + ' were deleted from object store' + storeName);
+                    checkTasks();
+
+                }
+
+
+
             };
 
         };
-
-
-
-    };
+    }
 
     /**
      * Remove an index
@@ -947,6 +992,8 @@ var sidb = function () {
         };
     };
 
+    
+
     /**
      * Manage the task queue
      * @private
@@ -990,7 +1037,8 @@ var sidb = function () {
                 break;
 
             case 'removeRecord':
-                removeRecord(task.dbName, task.storeName, task.recordKey, task.errorCallback);
+                //removeRecord(task.dbName, task.storeName, task.recordKey, task.errorCallback);
+                removeRecord(task.dbName, task.storeName, task.indexName, task.keyValue);
                 break;
 
             case 'removeIndex':
@@ -1069,6 +1117,10 @@ var sidb = function () {
         }
     }
 
+
+
+
+
     //// Public //////////////////////////////////
 
     /** 
@@ -1078,10 +1130,10 @@ var sidb = function () {
     this.add = {
 
         /**
-         * Add an order in task queue that creates a new database
+         * Add the task "create new database" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName
+         * @param {string} dbName Database name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
         db: function (dbName, errorCallback) {
@@ -1097,17 +1149,24 @@ var sidb = function () {
         },
 
         /**
-         * Add an order in task queue that creates a new object store.
+         * Adds the task "create a new object store" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
-         * @param {string} storeName Objects store name
+         * @param {string} dbName Database name where the object store is created.
+         * @param {string} storeName Object store name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          * @example
-         * var mycallback = function(event){
+         * var idb = new sidb();
+         * 
+         * // Callback function to process a possible error
+         * var myErrorCallback = function(event){
          *   console.log('Error creating new object store:' + event.target.error);
          * }
-         * sidbobject.add.newStore('myDatabase','myStore',mycallback);
+         * 
+         * // This code adds the task "create a new object store" to the task queue
+         * idb.add.store('databaseName', 'objectStoreName', myErrorCallback);
+         * 
+         * execTasks();
          */
         store: function (dbName, storeName, errorCallback) {
 
@@ -1119,19 +1178,37 @@ var sidb = function () {
                 errorCallback: errorCallback
             };
 
-            // Add this task to taskQueue    
+            // Adds this task to taskQueue    
             taskQueue.push(task);
 
         },
 
         /**
-         * Add an order in task queue that "inserts new record/s in a object store".
+         * Add the task "insert new record in object store" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
-         * @param {string} storeName Object store name
-         * @param {(object | object[])} obj An object or objects array to insert in object store
+         * @param {string} dbName Database name.
+         * @param {string} storeName Object store name where the record is added.
+         * @param {(object | object[])} obj An object or objects array to insert in the object store.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
+         * @example
+         * var idb = new sidb();
+         * 
+         * // Object to insert in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // Callback function to process a possible error
+         * var myErrorCallback = function(event){
+         *     console.log('Error inserting the new record: ' + event.target.error);
+         * }
+         * 
+         * // This code adds the task "insert new record in object store" to the task queue
+         * idb.add.records('databaseName', 'objectStoreName', person, myErrorCallback);
+         * 
+         * execTasks();
          */
         records: function (dbName, storeName, obj, errorCallback) {
 
@@ -1148,14 +1225,34 @@ var sidb = function () {
         },
 
         /**
-         * Add an order in task queue that "creates a new index in a object store".
+         * Adds the task "create a new index" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
-         * @param {string} storeName Object store name
-         * @param {string} indexName Index name
-         * @param {string} keyPath Key that the index use
+         * @param {string} dbName Database name.
+         * @param {string} storeName Object store name where the index is created.
+         * @param {string} indexName Index name.
+         * @param {string} keyPath Key (property of stored objects) that the index use to order and filter.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
+         * @example
+         * var idb = new sidb();
+         * 
+         * // Object to insert in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // Callback function to process a possible error
+         * var myErrorCallback = function(event){
+         *     console.log('Error creating the new index: ' + event.target.error);
+         * }
+         * 
+         * // This code adds the task "create a new index" to the task queue.
+         * // In this case the new index "ages" order the records by the record property "age".
+         * // Only records with a property named "age" are in the index "ages".
+         * idb.add.index('databaseName', 'objectStoreName', 'ages', 'age', myErrorCallback);
+         * 
+         * execTasks();
          */
         index: function (dbName, storeName, indexName, keyPath, errorCallback) {
 
@@ -1179,10 +1276,10 @@ var sidb = function () {
     this.remove = {
 
         /**
-         * Removes an order to task queue which removes a database
+         * Adds the task "remove a database" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
+         * @param {string} dbName Database name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
         db: function (dbName, errorCallback) {
@@ -1198,7 +1295,7 @@ var sidb = function () {
         },
 
         /**
-         * Removes an order in task queue which removes an object store.
+         * Adds the task "remove a store from database" to the task queue.
          * @public
          * @instance
          * @param {string} dbName Database name
@@ -1217,28 +1314,41 @@ var sidb = function () {
         },
 
         /**
-         * Removes an order in task queue which removes a record.
+         * Adds the task "remove a record/s from an index whose keypath value is equal to this value" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
-         * @param {string} storeName Object store name
-         * @param {number} recordKey Record key
-         * @param {function} [errorCallback] Function called on error. Receives event parameter.
+         * @param {string} dbName Database name.
+         * @param {string} storeName Object store name.
+         * @param {string} indexName Index name
+         * @param {any} keyValue Value of the index keyPath which object will be deleted.
+         * @example
+         * var idb = new sidb();
+         * 
+         * // An example of object stored in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.
+         * idb.remove.record('databaseName', 'objectStoreName', 'ages', 40);
+         * 
+         * idb.execTasks();
          */
-        record: function (dbName, storeName, recordKey, errorCallback) {
+        record: function (dbName, storeName, indexName, keyValue) {
             var task = {
                 type: 'removeRecord',
                 dbName: dbName,
                 storeName: storeName,
-                recordKey: recordKey,
-                errorCallback: errorCallback
+                indexName: indexName,
+                keyValue: keyValue
             };
 
             taskQueue.push(task);
         },
 
         /**
-         * Removes an order in task queue which removes an index.
+         * Adds the task "remove an index from an object store" to the task queue.
          * @public
          * @instance
          * @param {string} dbName Database name
@@ -1268,7 +1378,7 @@ var sidb = function () {
     this.update = {
 
         /**
-         * Add an order to task queue which updates a property value in a record.
+         * Adds an order to task queue which updates a property value in a record.
          * @public
          * @instance
          * @param {string} dbName Database name
@@ -1302,13 +1412,35 @@ var sidb = function () {
     this.get = {
 
         /**
-         * Add an order to task queue which gets last records from an object store
+         * Adds the task "get the last records from the object store" to the task queue.
          * @public
          * @instance
-         * @param {strinf} dbName Database name
-         * @param {string} storeName Store name
-         * @param {number} maxResults Limits the records retrieved 
+         * @param {strinf} dbName Database name.
+         * @param {string} storeName Store name.
+         * @param {number} maxResults Limits the records retrieved. 
          * @param {function} callback Callback called when done. Receives as parameter the retrieved records in an array.
+         * @example
+         * var idb = new sidb();
+         * 
+         * // An example of object stored in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // Callback function to process the results
+         * var myCallback = function(resultsArray){
+         *     var size = resultsArray.length();
+         *     var i=0;
+         *     for(i=0;i<size;i++){
+         *         console.log('Name: ' + resultsArray[i].name + ' Age: ' + resultsArray[i].age + '\n');
+         *     }
+         * }
+         * 
+         * // This code adds the task "get the last 200 records from the object store" to the task queue
+         * idb.get.lastRecords('databaseName', 'objectStoreName', 200, myCallback);
+         * 
+         * idb.execTasks();
          */
         lastRecords: function (dbName, storeName, maxResults, callback) {
 
@@ -1325,14 +1457,32 @@ var sidb = function () {
         },
 
         /**
-         * Gets a record from an object store, using a key value from an index.
+         * Adds the task "get a record from the object store using a key value from an index" to the task queue.
          * @public
          * @instance
          * @param {string} dbName Database name.
          * @param {string} storeName Store name.
          * @param {string} indexName Index name.
-         * @param {any} keyValue Contains the key value.
-         * @param {function(object[])} callback Receives as parameter the result
+         * @param {any} keyValue Contains the key value (property value).
+         * @param {function(object[])} callback Receives as parameter the result (the object)
+         * @example
+         * var idb = new sidb();
+         * 
+         * // An example of object stored in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // Callback function to process the result
+         * var myCallback = function(result){
+         *     console.log('Name: ' + result.name + ' Age: ' + result.age + '\n');
+         * }
+         * 
+         * // If there is an index named "ages" based on property "age", we can get a person by his age.
+         * idb.get.recordByIndex('databaseName', 'objectStoreName', 'ages', 32, myCallback);
+         * 
+         * idb.execTasks();
          */
         recordByIndex: function (dbName, storeName, indexName, keyValue, callback) {
 
@@ -1350,6 +1500,43 @@ var sidb = function () {
 
         },
 
+        /**
+         * Gets records filtered by an filterObject.
+         * @public
+         * @instance
+         * @param {string} dbName Database name.
+         * @param {string} storeName Object store name.
+         * @param {string} indexName Index name.
+         * @param {conditionObject[]} filterObject An array with conditionObject objects
+         * @param {function(object[])} callback This callback receives the results
+         * @example
+         * var idb = new sidb();
+         * 
+         * // An example of object stored in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32
+         * }
+         * 
+         * // An example of filter object with 2 conditions: age > 30 and age < 45
+         * var myFilter = [
+         *     {keyPath: 'age', cond: '>',value: 30},
+         *     {keyPath: 'age', cond: '<',value: 45}
+         * ];
+         * 
+         * // Callback function to process the results
+         * var myCallback = function(resultsArray){
+         *     var size = resultsArray.length();
+         *     var i=0;
+         *     for(i=0;i<size;i++){
+         *         console.log('Name: ' + resultsArray[i].name + ' Age: ' + resultsArray[i].age + '\n');
+         *     }
+         * 
+         * // If there is an index named "ages" based on property "age", we can get a persons filtered by the age.
+         * idb.get.recordsByFilter('databaseName', 'objectStoreName', 'ages', myFilter, myCallback);
+         * 
+         * idb.execTasks();
+         */
         recordsByFilter: function (dbName, storeName, indexName, filterObject, callback) {
 
             var task = {
@@ -1378,7 +1565,7 @@ var sidb = function () {
          * Extracts a part of n elements from an array wich represents a data page.
          * @public
          * @instance
-         * @param {object[]} array Array from the "page" is extracted
+         * @param {object[]} array Array where the "page" is extracted
          * @param {number} elementsPerPage Number of elements per page
          * @param {number} page The page wich will be extracted from array
          * @returns {Array} The part of original array wich represents the page
@@ -1391,7 +1578,7 @@ var sidb = function () {
     }
 
     /**
-     * Executes pending tasks
+     * Executes pending tasks. The tasks are executed sequentially. A task does not run until the previous one ends. This avoids problems arising from the asynchronous nature of the indexedDB api.
      * @public
      */
     this.execTasks = function () {

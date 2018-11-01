@@ -18,8 +18,8 @@ var factura2 = {
     importe: 320
 };
 var factura3 = {
-    idcliente: '1',
-    importe: 145
+    idcliente: '2',
+    importe: 490
 };
 
 var arrayFacturas = [{
@@ -46,7 +46,7 @@ var wrapper = new sidb();
 var contenedor=[];
 
 var callback1 = function(resultsArray){
-    console.log(resultsArray);
+    console.log('Resultados: \n' + resultsArray);
     //var array = wrapper.utils.pageFromArray(resultsArray,2,2);
     //console.log(array);
 };
@@ -55,7 +55,7 @@ var callback2= function(event){
     console.log(event.target.error);
 };
 
-/*
+
 
 //wrapper.remove.db('test3');
 //wrapper.get.allRecords('test3','campo1',2);
@@ -63,17 +63,18 @@ var callback2= function(event){
 //wrapper.get.lastRecords('test','store1',2,callback1);
 //wrapper.add.index('test', 'store1', 'cantidad', 'importe');
 
-wrapper.add.db('test');
-wrapper.add.store('test','store1','id',true);
-wrapper.add.index('test', 'store1', 'cantidad', 'importe');
-wrapper.add.records('test','store1',arrayFacturas);
-wrapper.get.recordsFiltered('test','store1','cantidad',
-[{keyPath: 'idcliente', cond: '>',value: 1},
-{keyPath: 'importe', cond: '>',value: 400},
-{keyPath: 'importe', cond: '<',value: 750}],callback1);*/
-
+//wrapper.add.db('test');
+//wrapper.add.store('test','store1');
+//wrapper.add.index('test', 'store1', 'cantidad', 'importe');
+//wrapper.add.records('test','store1',arrayFacturas);
+//wrapper.get.recordsFiltered('test','store1','cantidad',
+//[{keyPath: 'idcliente', cond: '>',value: 1},
+//{keyPath: 'importe', cond: '>',value: 400},
+//{keyPath: 'importe', cond: '<',value: 750}],callback1);
+//wrapper.add.records('test','store1',factura3);
+//wrapper.indexKey('test','store1','cantidad',490,null);
 //wrapper.get.lastRecords('test', 'store1',5,callback1);
-//
+//wrapper.remove.record('test','store1','cantidad',490);
 
 //wrapper.get.recordsFiltered('test','store1','cantidad',
 //[{keyPath: 'importe', cond: '>',value: 15}],callback1);

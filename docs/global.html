@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>update - Documentation</title>
+    <title>Global - Documentation</title>
 
     <script src="scripts/prettify/prettify.js"></script>
     <script src="scripts/prettify/lang-css.js"></script>
@@ -28,7 +28,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">update</h1>
+    <h1 class="page-title">Global</h1>
     
 
     
@@ -41,9 +41,7 @@
 <header>
     
         <h2>
-            <span class="ancestors"><a href="sidb.html">sidb</a>#</span>
         
-        update
         </h2>
         
     
@@ -56,11 +54,6 @@
 
 <dl class="details">
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1378">line 1378</a>
-    </li></ul></dd>
     
 
     
@@ -97,8 +90,6 @@
 
 
 
-        
-            <div class="description">Contains update methods</div>
         
 
         
@@ -118,16 +109,14 @@
     
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
 
         
-            
+                
+<h4 class="name" id="conditionObject">conditionObject</h4>
 
-    
-
-    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(dbName, storeName, recordKey, prop, value, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
-
-    
 
 
 
@@ -137,7 +126,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1391">line 1391</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line198">line 198</a>
     </li></ul></dd>
     
 
@@ -174,26 +163,11 @@
 
 
 
+    <h5 class="subsection-title">Properties:</h5>
 
-
-<div class="description">
-    Adds an order to task queue which updates a property value in a record.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
     
 
-<table class="params">
+<table class="props">
     <thead>
     <tr>
         
@@ -202,8 +176,6 @@
 
         <th>Type</th>
 
-        
-        <th>Attributes</th>
         
 
         
@@ -217,7 +189,7 @@
 
         <tr>
             
-                <td class="name"><code>dbName</code></td>
+                <td class="name"><code>keyPath</code></td>
             
 
             <td class="type">
@@ -230,25 +202,17 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Database name</td>
+            <td class="description last">Indicates a key path to test.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>storeName</code></td>
+                <td class="name"><code>condition</code></td>
             
 
             <td class="type">
@@ -261,80 +225,10 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Object store name</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>recordKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Record key</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>prop</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Property name</td>
+            <td class="description last">A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=" ).</td>
         </tr>
 
     
@@ -354,51 +248,10 @@
             </td>
 
             
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
 
             
 
-            <td class="description last">Property value</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>errorCallback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Function called on error. Receives event parameter.</td>
+            <td class="description last">Indicates the value to test.</td>
         </tr>
 
     
@@ -410,19 +263,33 @@
 
 
 
+<div class="description">
+    The conditionObject contains the three elements to test a condition.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+        </li>
+    </ul>
 
 
 
 
 
-
-
-
-
-
-        
+    <h5>Example</h5>
     
+    <pre class="prettyprint"><code>//Object to store in the object storevar person = {    name: 'Peter',    age: 32}// Example of conditionObjectvar condition = {'age', '&lt;', 45};</code></pre>
 
+
+
+            
     
 
     

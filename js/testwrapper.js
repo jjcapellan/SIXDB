@@ -78,7 +78,7 @@ var callback2= function(event){
 
 //wrapper.get.recordsFiltered('test','store1','cantidad',
 //[{keyPath: 'importe', cond: '>',value: 15}],callback1);
-
+//wrapper.update.recordsByIndex('test','store1','cantidad',500,'idcliente',6);
 wrapper.get.recordByIndex('test','store1','cantidad',460,callback1);
 
 wrapper.execTasks();

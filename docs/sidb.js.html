@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordByIndex">recordByIndex</a></li><li data-type='method'><a href="sidb_get.html#recordsByFilter">recordsByFilter</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordByIndex">recordByIndex</a></li><li data-type='method'><a href="sidb_get.html#recordsByFilter">recordsByFilter</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -72,6 +72,7 @@
  * Creates an sidb (simple indexedDB) object that manage the indexedDB databases. 
  * @class
  */
+
 var sidb = function () {
 
     //// Private ////////////////////////////////////
@@ -1032,6 +1033,73 @@ var sidb = function () {
         };
     };
 
+    function updateByIndex(dbName, storeName, indexName, keyValue, property, value, errorCallback) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
+        var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+
+
+
+            var index = store.index(indexName);
+
+            index.openCursor().onsuccess = function (event) {
+                var cursor = event.target.result;
+                if (cursor) {
+                    if (cursor.value[index.keyPath] === keyValue) {
+                        var updateData = cursor.value;
+
+                        updateData[property] = value;
+                        var request = cursor.update(updateData);
+                        request.onsuccess = function () {
+                            console.log('Record updated');
+                        };
+                    };
+                    cursor.continue();
+
+                } else {
+
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Records with property ' + index.keyPath + ' = ' + keyValue + ' were updated from object store' + storeName);
+                    checkTasks();
+                }
+            }
+        }
+
+    }
+
     
 
     /**
@@ -1087,6 +1155,10 @@ var sidb = function () {
 
             case 'updateRecords':
                 updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value, task.errorCallback);
+                break;
+
+            case 'updateRecordsByIndex':
+                updateByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.property, task.value, task.errorCallback);
                 break;
 
             case 'newIndex':
@@ -1418,7 +1490,7 @@ var sidb = function () {
     this.update = {
 
         /**
-         * Adds an order to task queue which updates a property value in a record.
+         * Adds the task "update a record property value" to the task queue.The record is selected by its recordKey (all stored objects have a property with unique value named "nid" ).
          * @public
          * @instance
          * @param {string} dbName Database name
@@ -1442,6 +1514,32 @@ var sidb = function () {
 
             taskQueue.push(task);
 
+        },
+
+        /**
+         * Adds the task "update a record property value" to the task queue. The record is selected by its keypath index.
+         * @param  {string} dbName Database name.
+         * @param  {string} storeName Object store name.
+         * @param  {string} indexName Index name.
+         * @param  {any} keyValue Value of the index keypath whose record/s will be updated.  
+         * @param  {string} property Record property that will be updated.
+         * @param  {any} value New property value after update.
+         * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+         */
+        recordsByIndex: function(dbName, storeName, indexName, keyValue, property, value, errorCallback){
+
+            var task = {
+                type: 'updateRecordsByIndex',
+                dbName: dbName,
+                storeName: storeName,
+                indexName: indexName,
+                keyValue: keyValue,
+                property: property,
+                value: value,
+                errorCallback: errorCallback
+            };
+
+            taskQueue.push(task);
         }
     };
 
@@ -1655,7 +1753,7 @@ var sidb = function () {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 01 2018 21:48:51 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 13:36:06 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

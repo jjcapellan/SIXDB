@@ -32,6 +32,7 @@
  * Creates an sidb (simple indexedDB) object that manage the indexedDB databases. 
  * @class
  */
+
 var sidb = function () {
 
     //// Private ////////////////////////////////////
@@ -992,6 +993,73 @@ var sidb = function () {
         };
     };
 
+    function updateByIndex(dbName, storeName, indexName, keyValue, property, value, errorCallback) {
+
+        if (bloquedDbName == dbName) {
+            console.log('Database ' + dbName + ' doesn\'t exist');
+            taskQueue.shift();
+            checkTasks();
+            return;
+        };
+
+        var request = window.indexedDB.open(dbName);
+
+        var noDb = false; // Boolean: Database doesn't exist
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
+        request.onerror = function (event) {
+            alert("Error. You must allow web app to use indexedDB.");
+        };
+
+        request.onsuccess = function (event) {
+            var db = event.target.result;
+
+            // If database doesn't exist ...
+            if (noDb) {
+                db.close();
+                console.log('Database ' + dbName + ' doesn\'t exist');
+                removeDB('dbName');
+                return;
+            };
+
+            console.log('Database ' + dbName + ' opened');
+            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+
+
+
+            var index = store.index(indexName);
+
+            index.openCursor().onsuccess = function (event) {
+                var cursor = event.target.result;
+                if (cursor) {
+                    if (cursor.value[index.keyPath] === keyValue) {
+                        var updateData = cursor.value;
+
+                        updateData[property] = value;
+                        var request = cursor.update(updateData);
+                        request.onsuccess = function () {
+                            console.log('Record updated');
+                        };
+                    };
+                    cursor.continue();
+
+                } else {
+
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Records with property ' + index.keyPath + ' = ' + keyValue + ' were updated from object store' + storeName);
+                    checkTasks();
+                }
+            }
+        }
+
+    }
+
     
 
     /**
@@ -1047,6 +1115,10 @@ var sidb = function () {
 
             case 'updateRecords':
                 updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value, task.errorCallback);
+                break;
+
+            case 'updateRecordsByIndex':
+                updateByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.property, task.value, task.errorCallback);
                 break;
 
             case 'newIndex':
@@ -1378,7 +1450,7 @@ var sidb = function () {
     this.update = {
 
         /**
-         * Adds an order to task queue which updates a property value in a record.
+         * Adds the task "update a record property value" to the task queue.The record is selected by its recordKey (all stored objects have a property with unique value named "nid" ).
          * @public
          * @instance
          * @param {string} dbName Database name
@@ -1402,6 +1474,32 @@ var sidb = function () {
 
             taskQueue.push(task);
 
+        },
+
+        /**
+         * Adds the task "update a record property value" to the task queue. The record is selected by its keypath index.
+         * @param  {string} dbName Database name.
+         * @param  {string} storeName Object store name.
+         * @param  {string} indexName Index name.
+         * @param  {any} keyValue Value of the index keypath whose record/s will be updated.  
+         * @param  {string} property Record property that will be updated.
+         * @param  {any} value New property value after update.
+         * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+         */
+        recordsByIndex: function(dbName, storeName, indexName, keyValue, property, value, errorCallback){
+
+            var task = {
+                type: 'updateRecordsByIndex',
+                dbName: dbName,
+                storeName: storeName,
+                indexName: indexName,
+                keyValue: keyValue,
+                property: property,
+                value: value,
+                errorCallback: errorCallback
+            };
+
+            taskQueue.push(task);
         }
     };
 

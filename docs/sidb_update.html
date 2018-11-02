@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#recordByIndex">recordByIndex</a></li><li data-type='method'><a href="sidb_get.html#recordsByFilter">recordsByFilter</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1450">line 1450</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1435">line 1435</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id=".recordsByIndex"><span class="type-signature">(static) </span>recordsByIndex<span class="signature">(dbName, storeName, indexName, keyValue, property, value, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id=".recordsByIndex"><span class="type-signature">(static) </span>recordsByIndex<span class="signature">(dbName, storeName, indexName, keyValue, property, newValue, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1489">line 1489</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1501">line 1501</a>
     </li></ul></dd>
     
 
@@ -186,6 +186,11 @@
 
 
 
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var idb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32,    salary: 1500}// Callback function to process errorsvar myErrorCallback= function(event){    console.log(event.target.error);}// If we want to change more than one property and we have an index named "names" with keypath 'name'.idb.update.recordsByIndex(    'databaseName',     'objectStoreName',    'names',     'Peter',     ['age', 'salary'], // with one property the array is not necesary    [33, 1650]        // with one property the array is not necesary);idb.execTasks();</code></pre>
 
 
 
@@ -348,6 +353,9 @@
             
                 
 <span class="param-type">string</span>
+|
+
+<span class="param-type">Array.&lt;string></span>
 
 
             
@@ -365,20 +373,23 @@
 
             
 
-            <td class="description last">Record property that will be updated.</td>
+            <td class="description last">Record property that will be updated. Can be an array of properties.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>value</code></td>
+                <td class="name"><code>newValue</code></td>
             
 
             <td class="type">
             
                 
 <span class="param-type">any</span>
+|
+
+<span class="param-type">Array.&lt;any></span>
 
 
             
@@ -396,7 +407,7 @@
 
             
 
-            <td class="description last">New property value after update.</td>
+            <td class="description last">New property value after update. Can be an array of values.</td>
         </tr>
 
     
@@ -468,7 +479,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1463">line 1463</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1448">line 1448</a>
     </li></ul></dd>
     
 
@@ -769,7 +780,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 13:36:06 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 21:08:18 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

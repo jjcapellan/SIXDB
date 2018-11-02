@@ -124,18 +124,20 @@ var sidb = function () {
             };
 
         };
-    };
+    };    
+
 
     /**
-     * Gets a record from an object store, using a key value from an index.
+     * Gets a record/s from an object store using a key value from an index.
      * @private
      * @param {string} dbName Database name.
      * @param {string} storeName Store name.
      * @param {string} indexName Index name.
-     * @param {any} keyValue Contains key value.
-     * @param {function(object)} callback Receives as parameter the result (an object)
+     * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
+     * If it's null then returns all records from the index.
+     * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
      */
-    function recordByIndex(dbName, storeName, indexName, keyValue, callback) {
+    function getRecords(dbName, storeName, indexName, keyValue, callback) {
 
         if (bloquedDbName == dbName) {
             console.log('Database ' + dbName + ' doesn\'t exist');
@@ -174,24 +176,87 @@ var sidb = function () {
 
 
             var index = store.index(indexName);
-            
+            var resultFiltered = [];
 
-            var getRequest = index.get(keyValue);
+            //keyValue parameter can be null/undefined, an array of conditionObjects, or a simple value
 
-            getRequest.onsuccess = function (event) {
+            if (keyValue === null || keyValue === undefined) {
 
-                callback(event.target.result);
-                db.close();
-                console.log('Database closed');
-                taskQueue.shift();
-                console.log('Record with key value ' + keyValue + ' retrieved from index ' + indexName + ' in object store ' + storeName);
-                checkTasks();
+                var getRequest = index.getAll();
 
-            };
+                getRequest.onsuccess = function (event) {
 
-            getRequest.onerror = function (event) {
-                console.log('Error getting record: ' + getRequest.error);
-            };
+                    callback(event.target.result);
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('All records retrieved from index ' + indexName + ' in object store ' + storeName);
+                    checkTasks();
+
+                };
+
+                getRequest.onerror = function (event) {
+                    console.log('Error getting records: ' + getRequest.error);
+                };
+
+            } else if (Array.isArray(keyValue)) {
+                console.log(keyValue);
+
+                index.openCursor().onsuccess = function (event) {
+
+                    var cursor = event.target.result;
+                    
+
+                    var i = 0;
+                    var filterObjectSize = keyValue.length;
+                    var test;
+
+                    if (cursor) {
+                        test = true;
+                        for (i = 0; i < filterObjectSize; i++) {
+                            test = testCondition(cursor.value[keyValue[i].keyPath], keyValue[i].cond, keyValue[i].value);
+                            if (!test) {
+                                break;
+                            };
+                        };
+                        if (test) {
+                            resultFiltered.push(cursor.value);
+                        };
+                        cursor.continue();
+                    } else {
+
+                        callback(resultFiltered);
+                        db.close();
+                        console.log('Database closed');
+                        taskQueue.shift();
+                        console.log('Records filtered from index ' + indexName + ' retrieved from object store ' + storeName);
+                        checkTasks();
+                    }
+
+
+                };
+            } else {
+
+                var getRequest = index.get(keyValue);
+
+                getRequest.onsuccess = function (event) {
+
+                    callback(event.target.result);
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log('Record with key value ' + keyValue + ' retrieved from index ' + indexName + ' in object store ' + storeName);
+                    checkTasks();
+
+                };
+
+                getRequest.onerror = function (event) {
+                    console.log('Error getting record: ' + getRequest.error);
+                };
+
+            }
+
+
 
         };
     }
@@ -214,91 +279,7 @@ var sidb = function () {
      * var condition = {'age', '<', 45};
      */
 
-    /**
-     * Gets records filtered by an filterObject.
-     * @private
-     * @param {string} dbName Database name.
-     * @param {string} storeName Object store name.
-     * @param {string} indexName Index name.
-     * @param {conditionObject[]} filterObject An array with conditionObject objects
-     * @param {function(object[])} callback This callback receives the results
-     */
-    function recordsByFilter(dbName, storeName, indexName, filterObject, callback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
-
-        var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
-
-        request.onerror = function (event) {
-            alert("Error. You must allow web app to use indexedDB.");
-        };
-
-        request.onsuccess = function (event) {
-            var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
-
-            console.log('Database ' + dbName + ' opened');
-            var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-            var resultFiltered = [];
-
-            var index = store.index(indexName);
-
-            index.openCursor().onsuccess = function (event) {
-
-                var cursor = event.target.result;
-
-                var i = 0;
-                var filterObjectSize = filterObject.length;
-                var test;
-
-                if (cursor) {
-                    test = true;
-                    for (i = 0; i < filterObjectSize; i++) {
-                        test = testCondition(cursor.value[filterObject[i].keyPath], filterObject[i].cond, filterObject[i].value);
-                        if (!test) {
-                            break;
-                        };
-                    };
-                    if (test) {
-                        resultFiltered.push(cursor.value);
-                    };
-                    cursor.continue();
-                } else {
-
-                    callback(resultFiltered);
-                    db.close();
-                    console.log('Database closed');
-                    taskQueue.shift();
-                    console.log('Records filtered by index ' + indexName + ' retrieved from object store ' + storeName);
-                    checkTasks();
-
-                }
-
-
-
-            };
-
-        };
-    }
+    
 
     /**
      * Creates a new Database.
@@ -739,7 +720,7 @@ var sidb = function () {
      * @param {string} dbName Database name.
      * @param {string} storeName Object store name.
      * @param {string} indexName Index name.
-     * @param {any} keyValue Value of the index keyPath which object will be deleted.
+     * @param {any} keyValue Value of the index keyPath whose object will be deleted.
      */
     function removeRecord(dbName, storeName, indexName, keyValue) {
 
@@ -811,7 +792,7 @@ var sidb = function () {
     }
 
     /**
-     * Remove an index
+     * Removes an index
      * @private
      * @param {string} dbName Database name
      * @param {string} storeName Object store name
@@ -901,10 +882,10 @@ var sidb = function () {
      * @param {string} storeName Object store name
      * @param {number} recordKey Record key
      * @param {string} prop Property name
-     * @param {any} value Property value
+     * @param {any} newValue Property value
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function updateRecords(dbName, storeName, recordKey, prop, value, errorCallback) {
+    function updateRecords(dbName, storeName, recordKey, prop, newValue, errorCallback) {
 
         if (bloquedDbName == dbName) {
             console.log('Database ' + dbName + ' doesn\'t exist');
@@ -958,7 +939,7 @@ var sidb = function () {
                 };
 
                 // set prop=value in record
-                record[prop] = value;
+                record[prop] = newValue;
 
                 // Put modified record back in database
                 var updateRequest = store.put(record);
@@ -993,7 +974,7 @@ var sidb = function () {
         };
     };
 
-    function updateByIndex(dbName, storeName, indexName, keyValue, property, value, errorCallback) {
+    function updateByIndex(dbName, storeName, indexName, keyValue, property, newValue, errorCallback) {
 
         if (bloquedDbName == dbName) {
             console.log('Database ' + dbName + ' doesn\'t exist');
@@ -1037,9 +1018,17 @@ var sidb = function () {
                 var cursor = event.target.result;
                 if (cursor) {
                     if (cursor.value[index.keyPath] === keyValue) {
-                        var updateData = cursor.value;
+                        var updateData = cursor.value;                        
 
-                        updateData[property] = value;
+                        if(Array.isArray(property)){
+                            var i=0;
+                            for(i=0;i<property.length;i++){
+                                updateData[property[i]] = newValue[i];
+                            }
+                        } else {
+                            updateData[property] = newValue;
+                        };
+
                         var request = cursor.update(updateData);
                         request.onsuccess = function () {
                             console.log('Record updated');
@@ -1118,7 +1107,7 @@ var sidb = function () {
                 break;
 
             case 'updateRecordsByIndex':
-                updateByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.property, task.value, task.errorCallback);
+                updateByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.property, task.newValue, task.errorCallback);
                 break;
 
             case 'newIndex':
@@ -1129,12 +1118,8 @@ var sidb = function () {
                 lastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
                 break;
 
-            case 'recordByIndex':
-                recordByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.callback);
-                break;
-
-            case 'recordsByFilter':
-                recordsByFilter(task.dbName, task.storeName, task.indexName, task.filterObject, task.callback);
+            case 'getRecords':
+                getRecords(task.dbName, task.storeName, task.indexName, task.keyValue, task.callback);
                 break;
 
             default:
@@ -1482,11 +1467,38 @@ var sidb = function () {
          * @param  {string} storeName Object store name.
          * @param  {string} indexName Index name.
          * @param  {any} keyValue Value of the index keypath whose record/s will be updated.  
-         * @param  {string} property Record property that will be updated.
-         * @param  {any} value New property value after update.
+         * @param  {(string | string[])} property Record property that will be updated. Can be an array of properties.
+         * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
          * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+         * @example
+         * var idb = new sidb();
+         * 
+         * // An example of object stored in the object store
+         * var person = {
+         *     name: 'Peter',
+         *     age: 32,
+         *     salary: 1500
+         * }
+         * 
+         * // Callback function to process errors
+         * var myErrorCallback= function(event){
+         *     console.log(event.target.error);
+         * }
+         * 
+         * // If we want to change more than one property and we have an index named "names" with keypath 'name'.
+         * idb.update.recordsByIndex(
+         *     'databaseName', 
+         *     'objectStoreName',
+         *     'names', 
+         *     'Peter', 
+         *     ['age', 'salary'], // with one property the array is not necesary
+         *     [33, 1650]        // with one property the array is not necesary
+         * );
+         *
+         * 
+         * idb.execTasks();
          */
-        recordsByIndex: function(dbName, storeName, indexName, keyValue, property, value, errorCallback){
+        recordsByIndex: function(dbName, storeName, indexName, keyValue, property, newValue, errorCallback){
 
             var task = {
                 type: 'updateRecordsByIndex',
@@ -1495,7 +1507,7 @@ var sidb = function () {
                 indexName: indexName,
                 keyValue: keyValue,
                 property: property,
-                value: value,
+                newValue: newValue,
                 errorCallback: errorCallback
             };
 
@@ -1561,8 +1573,9 @@ var sidb = function () {
          * @param {string} dbName Database name.
          * @param {string} storeName Store name.
          * @param {string} indexName Index name.
-         * @param {any} keyValue Contains the key value (property value).
-         * @param {function(object[])} callback Receives as parameter the result (the object)
+         * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
+         * If it's null then returns all records from the index.
+         * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
          * @example
          * var idb = new sidb();
          * 
@@ -1574,19 +1587,37 @@ var sidb = function () {
          * 
          * // Callback function to process the result
          * var myCallback = function(result){
-         *     console.log('Name: ' + result.name + ' Age: ' + result.age + '\n');
+         *     
+         *     if(Array.isArray(result)){
+         *         var i=0;
+         *         for(i=0;i<result.length)
+         *         console.log('Name: ' + result[i].name + ' Age: ' + result[i].age + '\n');
+         *     } else {
+         *         console.log('Name: ' + result.name + ' Age: ' + result.age + '\n');
+         *     } 
+         *      
          * }
          * 
-         * // If there is an index named "ages" based on property "age", we can get a person by his age.
-         * idb.get.recordByIndex('databaseName', 'objectStoreName', 'ages', 32, myCallback);
+         * // If there is an index named "ages" based on property "age", we can get a person with age = 32.
+         * idb.get.records('databaseName', 'objectStoreName', 'ages', 32, myCallback);
+         * 
+         * // Or we can get persons with age > 30 and name! = Peter
+         * idb.get.records('databaseName', 
+         * 'objectStoreName', 
+         * 'ages', 
+         * [{keypath: 'age', cond: '>', 30}, {keypath: 'name', cond: '!=', 'Peter'}], //here key value is a conditionObject array
+         * myCallback);
+         * 
+         * // Or we can get all records from the index
+         * idb.get.records('databaseName', 'objectStoreName', 'ages', null, myCallback);
          * 
          * idb.execTasks();
          */
-        recordByIndex: function (dbName, storeName, indexName, keyValue, callback) {
+        records: function (dbName, storeName, indexName, keyValue, callback) {
 
             var task = {
 
-                type: 'recordByIndex',
+                type: 'getRecords',
                 dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
@@ -1596,60 +1627,7 @@ var sidb = function () {
 
             taskQueue.push(task);
 
-        },
-
-        /**
-         * Gets records filtered by an filterObject.
-         * @public
-         * @instance
-         * @param {string} dbName Database name.
-         * @param {string} storeName Object store name.
-         * @param {string} indexName Index name.
-         * @param {conditionObject[]} filterObject An array with conditionObject objects
-         * @param {function(object[])} callback This callback receives the results
-         * @example
-         * var idb = new sidb();
-         * 
-         * // An example of object stored in the object store
-         * var person = {
-         *     name: 'Peter',
-         *     age: 32
-         * }
-         * 
-         * // An example of filter object with 2 conditions: age > 30 and age < 45
-         * var myFilter = [
-         *     {keyPath: 'age', cond: '>',value: 30},
-         *     {keyPath: 'age', cond: '<',value: 45}
-         * ];
-         * 
-         * // Callback function to process the results
-         * var myCallback = function(resultsArray){
-         *     var size = resultsArray.length();
-         *     var i=0;
-         *     for(i=0;i<size;i++){
-         *         console.log('Name: ' + resultsArray[i].name + ' Age: ' + resultsArray[i].age + '\n');
-         *     }
-         * 
-         * // If there is an index named "ages" based on property "age", we can get a persons filtered by the age.
-         * idb.get.recordsByFilter('databaseName', 'objectStoreName', 'ages', myFilter, myCallback);
-         * 
-         * idb.execTasks();
-         */
-        recordsByFilter: function (dbName, storeName, indexName, filterObject, callback) {
-
-            var task = {
-
-                type: 'recordsByFilter',
-                dbName: dbName,
-                storeName: storeName,
-                indexName: indexName,
-                filterObject: filterObject,
-                callback: callback
-            };
-
-            taskQueue.push(task);
-
-        }
+        }        
 
     };
 

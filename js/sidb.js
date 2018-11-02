@@ -974,6 +974,17 @@ var sidb = function () {
         };
     };
 
+    /**
+     * Updates records from an index. Records are selected by the keyValue.
+     * @param  {string} dbName Database name.
+     * @param  {string} storeName Object store name.
+     * @param  {string} indexName Index name.
+     * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
+     * A simple value always refers to the index keypath. 
+     * @param  {(string | string[])} property Record property that will be updated. Can be an array of properties.
+     * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
+     * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+     */
     function updateByIndex(dbName, storeName, indexName, keyValue, property, newValue, errorCallback) {
 
         if (bloquedDbName == dbName) {
@@ -1013,40 +1024,64 @@ var sidb = function () {
 
 
             var index = store.index(indexName);
+            var test; // if true then the record is updated
+            var filterObjectSize;
+            var keyValueIsArray = Array.isArray(keyValue);
+            if (keyValueIsArray)
+            filterObjectSize = keyValue.length;
 
-            index.openCursor().onsuccess = function (event) {
-                var cursor = event.target.result;
-                if (cursor) {
-                    if (cursor.value[index.keyPath] === keyValue) {
-                        var updateData = cursor.value;                        
+            
 
-                        if(Array.isArray(property)){
-                            var i=0;
-                            for(i=0;i<property.length;i++){
-                                updateData[property[i]] = newValue[i];
-                            }
+                index.openCursor().onsuccess = function (event) {
+                    var cursor = event.target.result;
+
+                    if (cursor) {
+                        //// Gets test value
+                        if (keyValueIsArray) {
+                            test = true;
+                            for (i = 0; i < filterObjectSize; i++) {
+                                test = testCondition(cursor.value[keyValue[i].keyPath], keyValue[i].cond, keyValue[i].value);
+                                if (!test)
+                                    break;
+                            };
+
                         } else {
-                            updateData[property] = newValue;
+
+                            test = (cursor.value[index.keyPath] === keyValue);
+
                         };
 
-                        var request = cursor.update(updateData);
-                        request.onsuccess = function () {
-                            console.log('Record updated');
+                        //// If test is true then record is updated
+                        if (test) {
+                            var updateData = cursor.value;
+
+                            if (Array.isArray(property)) {
+                                var i = 0;
+                                for (i = 0; i < property.length; i++) {
+                                    updateData[property[i]] = newValue[i];
+                                }
+                            } else {
+                                updateData[property] = newValue;
+                            };
+
+                            var request = cursor.update(updateData);
+                            request.onsuccess = function () {
+                                console.log('Record updated');
+                            };
                         };
-                    };
-                    cursor.continue();
+                        cursor.continue();
 
-                } else {
+                    } else {
 
-                    db.close();
-                    console.log('Database closed');
-                    taskQueue.shift();
-                    console.log('Records with property ' + index.keyPath + ' = ' + keyValue + ' were updated from object store' + storeName);
-                    checkTasks();
-                }
-            }
+                        db.close();
+                        console.log('Database closed');
+                        taskQueue.shift();
+                        console.log('Records were updated from object store \"' + storeName + '\"');
+                        checkTasks();
+                    }
+                }           
+
         }
-
     }
 
     
@@ -1466,7 +1501,8 @@ var sidb = function () {
          * @param  {string} dbName Database name.
          * @param  {string} storeName Object store name.
          * @param  {string} indexName Index name.
-         * @param  {any} keyValue Value of the index keypath whose record/s will be updated.  
+         * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
+         * A simple value always refers to the index keypath. 
          * @param  {(string | string[])} property Record property that will be updated. Can be an array of properties.
          * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
          * @param  {any} [errorCallback] Function called on error. Receives event parameter.
@@ -1494,7 +1530,16 @@ var sidb = function () {
          *     ['age', 'salary'], // with one property the array is not necesary
          *     [33, 1650]        // with one property the array is not necesary
          * );
-         *
+         * 
+         * // Or we can raise the salary to 1200 to all persons with age > 40 and salary < 1000
+         * idb.update.recordsByIndex(
+         *     'databaseName', 
+         *     'objectStoreName',
+         *     'names',
+         *     [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '<', value: 1000}], // conditionObject[]
+         *     'salary',
+         *     1200
+         * );
          * 
          * idb.execTasks();
          */
@@ -1574,7 +1619,7 @@ var sidb = function () {
          * @param {string} storeName Store name.
          * @param {string} indexName Index name.
          * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
-         * If it's null then returns all records from the index.
+         * A simple value always refers to the index keypath. If it's null then returns all records from the index.
          * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
          * @example
          * var idb = new sidb();
@@ -1605,7 +1650,7 @@ var sidb = function () {
          * idb.get.records('databaseName', 
          * 'objectStoreName', 
          * 'ages', 
-         * [{keypath: 'age', cond: '>', 30}, {keypath: 'name', cond: '!=', 'Peter'}], //here key value is a conditionObject array
+         * [{keyPath: 'age', cond: '>', value: 30}, {keypath: 'name', cond: '!=', value: 'Peter'}], // here key value is a conditionObject array
          * myCallback);
          * 
          * // Or we can get all records from the index

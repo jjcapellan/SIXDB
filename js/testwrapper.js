@@ -82,7 +82,11 @@ var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 
 //wrapper.get.recordsFiltered('test','store1','cantidad',
 //[{keyPath: 'importe', cond: '>',value: 15}],callback1);
-//wrapper.update.recordsByIndex('test','store1','cantidad',500,['idcliente','importe'],[4,350]);
-wrapper.get.records('test','store1','cantidad',500,callback1);
+
+/*wrapper.update.recordsByIndex('test','store1','cantidad',
+[{keyPath: 'idcliente', cond: '<', value: 2},{keyPath: 'importe', cond: '<', value: 460}],
+['idcliente','importe'],[3,655]);*/
+
+//wrapper.get.records('test','store1','cantidad',500,callback1);
 
 wrapper.execTasks();

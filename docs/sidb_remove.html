@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li><li data-type='method'><a href="sidb.html#~updateByIndex">updateByIndex</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1368">line 1368</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1152">line 1152</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(dbName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1377">line 1377</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1160">line 1160</a>
     </li></ul></dd>
     
 
@@ -217,37 +217,6 @@
 
         <tr>
             
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name.</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>errorCallback</code></td>
             
 
@@ -301,7 +270,7 @@
 
     
 
-    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(dbName, storeName, indexName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(storeName, indexName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -313,7 +282,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1451">line 1451</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1228">line 1228</a>
     </li></ul></dd>
     
 
@@ -389,37 +358,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name</td>
-        </tr>
-
     
 
         <tr>
@@ -539,7 +477,7 @@
 
     
 
-    <h4 class="name" id="record"><span class="type-signature"></span>record<span class="signature">(dbName, storeName, indexName, keyValue)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="record"><span class="type-signature"></span>record<span class="signature">(storeName, indexName, keyValue)</span><span class="type-signature"></span></h4>
 
     
 
@@ -551,7 +489,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1430">line 1430</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1209">line 1209</a>
     </li></ul></dd>
     
 
@@ -604,7 +542,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var idb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32}// If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.idb.remove.record('databaseName', 'objectStoreName', 'ages', 40);idb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32}// If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.mydb.remove.record('objectStoreName', 'ages', 40);mydb.execTasks();</code></pre>
 
 
 
@@ -630,29 +568,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Database name.</td>
-        </tr>
-
     
 
         <tr>
@@ -746,7 +661,7 @@
 
     
 
-    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(dbName, storeName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(storeName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -758,7 +673,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1397">line 1397</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1178">line 1178</a>
     </li></ul></dd>
     
 
@@ -834,37 +749,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name</td>
-        </tr>
-
     
 
         <tr>
@@ -966,7 +850,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 22:26:39 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 22:38:31 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

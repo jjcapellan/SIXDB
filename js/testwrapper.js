@@ -42,7 +42,7 @@ var arrayFacturas = [{
 
 // Commands using the indexedDB wrapper
 
-var wrapper = new sidb();
+var sidb = new sidb('test');
 var contenedor=[];
 
 var callback1 = function (resultsArray) {
@@ -72,7 +72,6 @@ var callback2= function(event){
 //wrapper.add.index('test', 'store1', 'cantidad', 'importe');
 
 //wrapper.add.records('test','store1',arrayFacturas);
-//wrapper.get.recordsFiltered('test','store1','cantidad',
 var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 {keyPath: 'importe', cond: '>',value: 499}];
 //wrapper.add.records('test','store1',factura3);
@@ -87,6 +86,6 @@ var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 [{keyPath: 'idcliente', cond: '<', value: 2},{keyPath: 'importe', cond: '<', value: 460}],
 ['idcliente','importe'],[3,655]);*/
 
-//wrapper.get.records('test','store1','cantidad',500,callback1);
+sidb.get.lastRecords('store1', null, callback1);
 
-wrapper.execTasks();
+sidb.execTasks();

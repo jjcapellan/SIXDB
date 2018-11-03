@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li><li data-type='method'><a href="sidb.html#~updateByIndex">updateByIndex</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -46,6 +46,147 @@
     
 
 
+    <section class="readme">
+        <article><h1>SIDB (simple indexedDB)</h1><p>SIDB is a basic library wrapper for indexedDB.
+SIDB uses a task queue to eliminate potential problems derived from the asynchronous nature of indexedDB.</p>
+<h2>How to use</h2><h3>Database structure creation</h3><pre class="prettyprint source lang-javascript"><code>//
+// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+//   
+var mydb = new sidb('companyDB');
+
+
+//
+// We need to create at least one object store. An object store is used to store the records (objects).
+// An object store is similar to a relational database table.
+// We can add an alternative error callback as second parameter.
+// In this case one object store named &quot;southFactory&quot; is created.
+// 
+mydb.add.store('southFactory');
+
+
+//
+// Each store needs one or more index to order and filter the records (objects).
+// The index keypath is the object property used to select and order the objects.
+// Those objects that hasn't the index keypath as property will not be included in the index.
+// In this case we create a single index named &quot;names&quot; with the keypath &quot;name&quot;
+// You can include an alternative error callback as fourth parameter.
+//
+mydb.add.index('southFactory', 'names', 'name');
+
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();</code></pre><h3>Insert records</h3><p>With SIDB we can insert records individually or through an objects array. </p>
+<pre class="prettyprint source lang-javascript"><code>//
+// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+//   
+var mydb = new sidb('companyDB');
+
+
+//
+// Inserts one record in &quot;southFactory&quot; object store
+//
+mydb.add.records('southFactory',
+{name: 'Peter', department: 'manufacturing', age: 32, salary: 1200} // A single object that represents a record
+);
+
+
+//
+// Inserts 6 records in &quot;southFactory&quot; object store
+//
+mydb.add.records('southFactory',
+[
+    {name: 'Paul', department: 'manufacturing', age: 27, salary: 1150},
+    {name: 'Adam', department: 'manufacturing', age: 38, salary: 1260},
+    {name: 'Alice', department: 'accounting', age: 41, salary: 1400},
+    {name: 'Alex', department: 'manufacturing', age: 33, salary: 1250},
+    {name: 'Kathy', department: 'manufacturing', age: 28, salary: 1150},
+    {name: 'David', department: 'accounting', age: 32, salary: 1380}
+]
+);
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();</code></pre><h3>Read records</h3><p>SIDB can read the records using 5 types of query.</p>
+<pre class="prettyprint source lang-javascript"><code>//
+// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+//   
+var mydb = new sidb('companyDB');
+
+
+//
+// Reads the 5 last records from &quot;southFactory&quot; object store.
+// The third parameter is a function that will receive the result of the query.
+//
+mydb.get.lastRecords('southFactory', 5, readerCallback);
+
+
+//
+// With the second parameter null reads all records from &quot;southFactory&quot; object store. 
+//
+mydb.get.lastRecords('southFactory', null, readerCallback);
+
+
+//
+// Gets the record with name &quot;Adam&quot; from the index &quot;names&quot; in store &quot;southFactory&quot;.
+// If you replace 'Adam' with null then the query sends all index records to the function readerCallback
+//
+mydb.get.records('southFactory', 'names', 'Adam', readerCallback);
+
+
+//
+// Gets employes records from manufacturing department with a salary higher than 1200.
+// Here the second parameter is an &quot;conditionObject&quot; array that acts as a filter. 
+//
+mydb.get.records('southFactory', 'names',
+[
+    {keyPath: 'department', cond: '=', value: 'manufacturing'},
+    {keyPath: 'salary', cond: '>', value: '1200'}
+]
+);
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();
+
+
+//
+// Simple function that receives the query result from SIDB methods and show it on console.
+// The result can be a single object or an object array.
+// 
+//
+function readerCallback(queryResult) {
+    var i = 0;
+    if(Array.isArray(queryResult)){
+        for (i = 0; i &lt; queryResult.length; i++) {
+            console.log(
+             'Name: ' + queryResult[i].name +
+             'Department: ' + queryResult[i].department + 
+             'Age: '+ queryResult[i].age +
+             'Salary: '+ queryResult[i].salary
+             );
+        };
+    } else {
+        console.log(
+         'Name: ' + queryResult.name +
+         'Department: ' + queryResult.department + 
+         'Age: '+ queryResult.age +
+         'Salary: '+ queryResult.salary
+         );
+    };
+};</code></pre><h2>Used tools</h2><p>This app was developed using <strong>Visual Studio Code</strong>, <strong>Mongoose</strong> as server and <strong>Chrome</strong> for debugging the code.
+No framework was used, simply html5, css and pure javascript.</p></article>
+    </section>
+
 
 
 
@@ -56,7 +197,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 22:26:39 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 22:38:31 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

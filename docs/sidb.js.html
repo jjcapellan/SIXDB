@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li><li data-type='method'><a href="sidb.html#~updateByIndex">updateByIndex</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -68,61 +68,53 @@
  */
 
 
-/**
- * Creates an sidb (simple indexedDB) object that manage the indexedDB databases. 
- * @class
- */
 
-var sidb = function () {
+/**
+ * Creates an sidb (simple indexedDB) object that manage the new indexedDB database. 
+ * @class
+ * @param  {string} _dbName Name for the new database.
+ */
+var sidb = function (_dbName) {
+
+    
 
     //// Private ////////////////////////////////////
 
     /**
-     * Stores the pending tasks
+     * Stores the pending tasks. Internal use.
+     * @private
      * @type {object[]}
      */
     var taskQueue = [];
 
     /**
+     * Data base name.
+     * @private
+     * @type {string}
+     * @readonly
+     */
+    var dbName = _dbName;    
+
+    /**
      * Flag to check if all task were completed (tasqQueue is empty)
+     * @private
      * @type {boolean}
      */
     var idle = true;
 
-    var bloquedDbName = '';
 
-    var t = this;
-
-    // Object to save cursor position
-    var marker = function () {
-        this.position = 1;
-    };
+    //// PRIVATE FUNCTIONS //////////////////////////////////////////////////////////
 
     /**
      * Gets last records from an object store
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Store name
      * @param {number} maxResults Limits the records retrieved 
      * @param {function(object[])} callback Callback called when done. Receives the retrieved records in an array.
      */
-    function lastRecords(dbName, storeName, maxResults, callback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function lastRecords(storeName, maxResults, callback) {
 
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -131,21 +123,20 @@ var sidb = function () {
         request.onsuccess = function (event) {
             var db = event.target.result;
 
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
-
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
             var storeSize = store.count();
             var getRequest;
 
             storeSize.onsuccess = function () {
-                var keyRange = IDBKeyRange.lowerBound(storeSize.result - maxResults, true);
+                var keyRange;
+
+                if(maxResults != null){
+                    keyRange = IDBKeyRange.lowerBound(storeSize.result - maxResults, true);
+                } else {
+                    keyRange = null;
+                };
+
                 getRequest = store.getAll(keyRange);
 
                 getRequest.onsuccess = function (event) {
@@ -153,7 +144,11 @@ var sidb = function () {
                     db.close();
                     console.log('Database closed');
                     taskQueue.shift();
-                    console.log('Last ' + maxResults + 'records retrieved from object store ' + storeName);
+                    if(maxResults != null){
+                    console.log('Last ' + maxResults + ' records retrieved from object store \"' + storeName + '\"');
+                    } else {
+                        console.log('All records retrieved from object store \"' + storeName + '\"');
+                    }
                     checkTasks();
                 };
 
@@ -170,30 +165,15 @@ var sidb = function () {
     /**
      * Gets a record/s from an object store using a key value from an index.
      * @private
-     * @param {string} dbName Database name.
      * @param {string} storeName Store name.
      * @param {string} indexName Index name.
      * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
      * If it's null then returns all records from the index.
      * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
      */
-    function getRecords(dbName, storeName, indexName, keyValue, callback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function getRecords(storeName, indexName, keyValue, callback) {
 
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -202,24 +182,12 @@ var sidb = function () {
         request.onsuccess = function (event) {
             var db = event.target.result;
 
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
-
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-
-
-
             var index = store.index(indexName);
             var resultFiltered = [];
 
             //keyValue parameter can be null/undefined, an array of conditionObjects, or a simple value
-
             if (keyValue === null || keyValue === undefined) {
 
                 var getRequest = index.getAll();
@@ -305,7 +273,7 @@ var sidb = function () {
      * The conditionObject contains the three elements to test a condition.
      * @typedef {Object} conditionObject
      * @property {string} keyPath Indicates a key path to test.
-     * @property {string} condition A comparison operator ( "&lt;" , ">" , "=" , "!=" , "&lt;=" , ">=" ).
+     * @property {string} cond A comparison operator ( "&lt;" , ">" , "=" , "!=" , "&lt;=" , ">=" ).
      * @property {any} value Indicates the value to test.
      * @example
      * 
@@ -316,25 +284,37 @@ var sidb = function () {
      * }
      * 
      * // Example of conditionObject
-     * var condition = {'age', '&lt;', 45};
+     * var condition = { keyPath: 'age', cond: '&lt;', value: 45};
      */
 
     
 
     /**
-     * Creates a new Database.
+     * Creates the new Database.
      * @private
-     * @param {string} dbName Database name
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function newDB(dbName, errorCallback) {
+    function newDB(errorCallback) {
 
         var request = window.indexedDB.open(dbName);
+
+        // Boolean: Database doesn't exist (no database = noDb)
+        var noDb = false; 
+
+        // if onupgradeneeded means is a new database
+        request.onupgradeneeded = function (event) {
+            noDb = true;
+        };
+
 
         request.onsuccess = function (event) {
             var db = event.target.result;
             db.close();
-            console.log('Database ' + dbName + ' created');
+            if(noDb){
+            console.log('Database \"' + dbName + '\" created.');
+            } else {
+                console.log('Database \"' + dbName + '\" already exists.');
+            }
             taskQueue.shift();
             checkTasks();
         };
@@ -356,17 +336,10 @@ var sidb = function () {
      * @param {string} storeName Objects store name
      * @param {function} [errorCallback] Function called on error. Receives event parameter.     
      */
-    function newStore(dbName, storeName, errorCallback) {
+    function newStore(storeName, errorCallback) {
 
         var db;
-        var version;
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+        var version;        
 
         var request = window.indexedDB.open(dbName);
 
@@ -377,26 +350,11 @@ var sidb = function () {
             } else {
                 console.log('Error opening database ' + dbName + ' : ' + request.error);
             };
-        };
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
+        };        
 
         request.onsuccess = function (event) {
 
-            var db = event.target.result;
-
-            if (noDb) {
-                db.close();
-                bloquedDbName = dbName;
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            }
+            var db = event.target.result;            
 
             // If store already exist then returns
             if (db.objectStoreNames.contains(storeName)) {
@@ -450,29 +408,13 @@ var sidb = function () {
     /**
      * Insert a new record/s in a object store
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Object store name
      * @param {(object | object[])} obj An object or objects array to insert in object store
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function newRecord(dbName, storeName, obj, errorCallback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
-
-
-        var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
+    function newRecord(storeName, obj, errorCallback) {
+        
+        var request = window.indexedDB.open(dbName);       
 
 
         request.onerror = function (event) {
@@ -485,14 +427,7 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
 
-            var db = event.target.result;
-
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            }
+            var db = event.target.result;            
 
             console.log('Database ' + dbName + ' opened');
             var counter = 0;
@@ -550,23 +485,15 @@ var sidb = function () {
     /**
      * Creates a new index in an object store.
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Object store name
      * @param {string} indexName Index name
      * @param {string} keyPath Key that the index use
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function newIndex(dbName, storeName, indexName, keyPath, errorCallback) {
+    function newIndex(storeName, indexName, keyPath, errorCallback) {
 
         var db;
-        var version;
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+        var version;        
 
         var request = window.indexedDB.open(dbName);
 
@@ -576,27 +503,12 @@ var sidb = function () {
             } else {
                 console.log('Error opening database ' + dbName + ' : ' + request.error);
             };
-        };
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
+        };        
 
         request.onsuccess = function (event) {
 
             var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            }
-
+            
             version = db.version;
             db.close();
             console.log('Version tested');
@@ -645,29 +557,14 @@ var sidb = function () {
     /**
      * Removes an object store.
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Object store name
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function removeStore(dbName, storeName, errorCallback) {
+    function removeStore(storeName, errorCallback) {
         var db;
-        var version;
+        var version;        
 
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
-
-        var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
+        var request = window.indexedDB.open(dbName);        
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -680,14 +577,6 @@ var sidb = function () {
         request.onsuccess = function (event) {
 
             var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
 
             version = db.version;
             db.close();
@@ -724,17 +613,9 @@ var sidb = function () {
     /**
      * Removes a Database
      * @private
-     * @param {string} dbName Database name
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function removeDB(dbName, errorCallback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function removeDB(errorCallback) {        
 
         var request = window.indexedDB.deleteDatabase(dbName);
 
@@ -750,35 +631,19 @@ var sidb = function () {
             taskQueue.shift();
             console.log('Database ' + dbName + ' deleted');
             checkTasks();
-            bloquedDbName = '';
         };
     };
 
     /**
      * Removes a record/s from an index
      * @private
-     * @param {string} dbName Database name.
      * @param {string} storeName Object store name.
      * @param {string} indexName Index name.
      * @param {any} keyValue Value of the index keyPath whose object will be deleted.
      */
-    function removeRecord(dbName, storeName, indexName, keyValue) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function removeRecord(storeName, indexName, keyValue) {
 
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -786,14 +651,6 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
             var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -834,31 +691,16 @@ var sidb = function () {
     /**
      * Removes an index
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Object store name
      * @param {string} indexName Index name
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function removeIndex(dbName, storeName, indexName, errorCallback) {
+    function removeIndex(storeName, indexName, errorCallback) {
 
         var db;
         var version;
 
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
-
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -871,14 +713,6 @@ var sidb = function () {
         request.onsuccess = function (event) {
 
             var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
 
             version = db.version;
             db.close();
@@ -918,30 +752,15 @@ var sidb = function () {
     /**
      * Updates a property value in a record.
      * @private
-     * @param {string} dbName Database name
      * @param {string} storeName Object store name
      * @param {number} recordKey Record key
      * @param {string} prop Property name
      * @param {any} newValue Property value
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function updateRecords(dbName, storeName, recordKey, prop, newValue, errorCallback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function updateRecords(storeName, recordKey, prop, newValue, errorCallback) {
 
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             if (errorCallback) {
@@ -953,14 +772,6 @@ var sidb = function () {
 
         request.onsuccess = function (event) {
             var db = event.target.result;
-
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -1016,7 +827,7 @@ var sidb = function () {
 
     /**
      * Updates records from an index. Records are selected by the keyValue.
-     * @param  {string} dbName Database name.
+     * @private
      * @param  {string} storeName Object store name.
      * @param  {string} indexName Index name.
      * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
@@ -1025,23 +836,9 @@ var sidb = function () {
      * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
      * @param  {any} [errorCallback] Function called on error. Receives event parameter.
      */
-    function updateByIndex(dbName, storeName, indexName, keyValue, property, newValue, errorCallback) {
-
-        if (bloquedDbName == dbName) {
-            console.log('Database ' + dbName + ' doesn\'t exist');
-            taskQueue.shift();
-            checkTasks();
-            return;
-        };
+    function updateByIndex(storeName, indexName, keyValue, property, newValue, errorCallback) {
 
         var request = window.indexedDB.open(dbName);
-
-        var noDb = false; // Boolean: Database doesn't exist
-
-        // if onupgradeneeded means is a new database
-        request.onupgradeneeded = function (event) {
-            noDb = true;
-        };
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -1050,27 +847,15 @@ var sidb = function () {
         request.onsuccess = function (event) {
             var db = event.target.result;
 
-            // If database doesn't exist ...
-            if (noDb) {
-                db.close();
-                console.log('Database ' + dbName + ' doesn\'t exist');
-                removeDB('dbName');
-                return;
-            };
-
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-
-
-
             var index = store.index(indexName);
             var test; // if true then the record is updated
             var filterObjectSize;
             var keyValueIsArray = Array.isArray(keyValue);
-            if (keyValueIsArray)
-            filterObjectSize = keyValue.length;
 
-            
+            if (keyValueIsArray)
+            filterObjectSize = keyValue.length;            
 
                 index.openCursor().onsuccess = function (event) {
                     var cursor = event.target.result;
@@ -1124,8 +909,6 @@ var sidb = function () {
         }
     }
 
-    
-
     /**
      * Manage the task queue
      * @private
@@ -1149,52 +932,52 @@ var sidb = function () {
         switch (type) {
 
             case 'newStore':
-                newStore(task.dbName, task.storeName, task.errorCallback);
+                newStore(task.storeName, task.errorCallback);
                 break;
 
             case 'newRecords':
-                newRecord(task.dbName, task.storeName, task.obj, task.errorCallback);
+                newRecord(task.storeName, task.obj, task.errorCallback);
                 break;
 
             case 'newDB':
-                newDB(task.dbName, task.errorCallback);
+                newDB(task.errorCallback);
                 break;
 
             case 'removeStore':
-                removeStore(task.dbName, task.storeName, errorCallback);
+                removeStore(task.storeName, errorCallback);
                 break;
 
             case 'removeDB':
-                removeDB(task.dbName, task.errorCallback);
+                removeDB(task.errorCallback);
                 break;
 
             case 'removeRecord':
                 //removeRecord(task.dbName, task.storeName, task.recordKey, task.errorCallback);
-                removeRecord(task.dbName, task.storeName, task.indexName, task.keyValue);
+                removeRecord( task.storeName, task.indexName, task.keyValue);
                 break;
 
             case 'removeIndex':
-                removeIndex(task.dbName, task.storeName, task.indexName, task.errorCallback);
+                removeIndex(task.storeName, task.indexName, task.errorCallback);
                 break;
 
             case 'updateRecords':
-                updateRecords(task.dbName, task.storeName, task.recordKey, task.prop, task.value, task.errorCallback);
+                updateRecords(task.storeName, task.recordKey, task.prop, task.value, task.errorCallback);
                 break;
 
             case 'updateRecordsByIndex':
-                updateByIndex(task.dbName, task.storeName, task.indexName, task.keyValue, task.property, task.newValue, task.errorCallback);
+                updateByIndex(task.storeName, task.indexName, task.keyValue, task.property, task.newValue, task.errorCallback);
                 break;
 
             case 'newIndex':
-                newIndex(task.dbName, task.storeName, task.indexName, task.keyPath, task.errorCallback);
+                newIndex(task.storeName, task.indexName, task.keyPath, task.errorCallback);
                 break;
 
             case 'lastRecords':
-                lastRecords(task.dbName, task.storeName, task.maxResults, task.callback);
+                lastRecords(task.storeName, task.maxResults, task.callback);
                 break;
 
             case 'getRecords':
-                getRecords(task.dbName, task.storeName, task.indexName, task.keyValue, task.callback);
+                getRecords(task.storeName, task.indexName, task.keyValue, task.callback);
                 break;
 
             default:
@@ -1255,6 +1038,15 @@ var sidb = function () {
 
     //// Public //////////////////////////////////
 
+    /**
+     * Gets the database name
+     * @public
+     * @return {string} Database name
+     */
+    this.getName = function(){
+        return dbName;
+    };
+
     /** 
      * Contains add methods
      * @namespace
@@ -1262,17 +1054,15 @@ var sidb = function () {
     this.add = {
 
         /**
-         * Add the task "create new database" to the task queue.
-         * @public
+         * Add the task "create new database" to the task queue. Internal use only.
+         * @private
          * @instance
-         * @param {string} dbName Database name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
-        db: function (dbName, errorCallback) {
+        db: function (errorCallback) {
 
             var task = {
                 type: 'newDB',
-                dbName: dbName,
                 errorCallback: errorCallback
             };
 
@@ -1284,11 +1074,10 @@ var sidb = function () {
          * Adds the task "create a new object store" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name where the object store is created.
          * @param {string} storeName Object store name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // Callback function to process a possible error
          * var myErrorCallback = function(event){
@@ -1296,16 +1085,15 @@ var sidb = function () {
          * }
          * 
          * // This code adds the task "create a new object store" to the task queue
-         * idb.add.store('databaseName', 'objectStoreName', myErrorCallback);
+         * mydb.add.store('objectStoreName', myErrorCallback);
          * 
-         * execTasks();
+         * mydb.execTasks();
          */
-        store: function (dbName, storeName, errorCallback) {
+        store: function (storeName, errorCallback) {
 
             // Make the task object
             var task = {
                 type: 'newStore',
-                dbName: dbName,
                 storeName: storeName,
                 errorCallback: errorCallback
             };
@@ -1319,12 +1107,11 @@ var sidb = function () {
          * Add the task "insert new record in object store" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name.
          * @param {string} storeName Object store name where the record is added.
          * @param {(object | object[])} obj An object or objects array to insert in the object store.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // Object to insert in the object store
          * var person = {
@@ -1338,15 +1125,14 @@ var sidb = function () {
          * }
          * 
          * // This code adds the task "insert new record in object store" to the task queue
-         * idb.add.records('databaseName', 'objectStoreName', person, myErrorCallback);
+         * mydb.add.records('objectStoreName', person, myErrorCallback);
          * 
-         * execTasks();
+         * mydb.execTasks();
          */
-        records: function (dbName, storeName, obj, errorCallback) {
+        records: function (storeName, obj, errorCallback) {
 
             var task = {
                 type: 'newRecords',
-                dbName: dbName,
                 storeName: storeName,
                 obj: obj,
                 errorCallback: errorCallback
@@ -1360,13 +1146,12 @@ var sidb = function () {
          * Adds the task "create a new index" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name.
          * @param {string} storeName Object store name where the index is created.
          * @param {string} indexName Index name.
          * @param {string} keyPath Key (property of stored objects) that the index use to order and filter.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // Object to insert in the object store
          * var person = {
@@ -1382,15 +1167,14 @@ var sidb = function () {
          * // This code adds the task "create a new index" to the task queue.
          * // In this case the new index "ages" order the records by the record property "age".
          * // Only records with a property named "age" are in the index "ages".
-         * idb.add.index('databaseName', 'objectStoreName', 'ages', 'age', myErrorCallback);
+         * mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);
          * 
-         * execTasks();
+         * mydb.execTasks();
          */
-        index: function (dbName, storeName, indexName, keyPath, errorCallback) {
+        index: function (storeName, indexName, keyPath, errorCallback) {
 
             var task = {
                 type: 'newIndex',
-                dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
                 keyPath: keyPath,
@@ -1411,14 +1195,12 @@ var sidb = function () {
          * Adds the task "remove a database" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name.
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
-        db: function (dbName, errorCallback) {
+        db: function (errorCallback) {
 
             var task = {
                 type: 'removeDB',
-                dbName: dbName,
                 errorCallback
             };
 
@@ -1430,14 +1212,12 @@ var sidb = function () {
          * Adds the task "remove a store from database" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
          * @param {string} storeName Object store name
          * @param {function} [errorCallback] Function called on error. Receives event parameter.         
          */
-        store: function (dbName, storeName, errorCallback) {
+        store: function (storeName, errorCallback) {
             var task = {
                 type: 'removeStore',
-                dbName: dbName,
                 storeName: storeName,
                 errorCallback: errorCallback
             };
@@ -1449,12 +1229,11 @@ var sidb = function () {
          * Adds the task "remove a record/s from an index whose keypath value is equal to this value" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name.
          * @param {string} storeName Object store name.
          * @param {string} indexName Index name
          * @param {any} keyValue Value of the index keyPath which object will be deleted.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // An example of object stored in the object store
          * var person = {
@@ -1463,14 +1242,13 @@ var sidb = function () {
          * }
          * 
          * // If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.
-         * idb.remove.record('databaseName', 'objectStoreName', 'ages', 40);
+         * mydb.remove.record('objectStoreName', 'ages', 40);
          * 
-         * idb.execTasks();
+         * mydb.execTasks();
          */
-        record: function (dbName, storeName, indexName, keyValue) {
+        record: function (storeName, indexName, keyValue) {
             var task = {
                 type: 'removeRecord',
-                dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
                 keyValue: keyValue
@@ -1483,16 +1261,14 @@ var sidb = function () {
          * Adds the task "remove an index from an object store" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name
          * @param {string} storeName Object store name
          * @param {string} indexName Index name
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
-        index: function (dbName, storeName, indexName, errorCallback) {
+        index: function (storeName, indexName, errorCallback) {
 
             var task = {
                 type: 'removeIndex',
-                dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
                 errorCallback: errorCallback
@@ -1513,18 +1289,16 @@ var sidb = function () {
          * Adds the task "update a record property value" to the task queue.The record is selected by its recordKey (all stored objects have a property with unique value named "nid" ).
          * @public
          * @instance
-         * @param {string} dbName Database name
          * @param {string} storeName Object store name
          * @param {number} recordKey Record key
          * @param {string} prop Property name
          * @param {any} value Property value
          * @param {function} [errorCallback] Function called on error. Receives event parameter.
          */
-        records: function (dbName, storeName, recordKey, prop, value, errorCallback) {
+        records: function (storeName, recordKey, prop, value, errorCallback) {
 
             var task = {
                 type: 'updateRecords',
-                dbName: dbName,
                 storeName: storeName,
                 recordKey: recordKey,
                 prop: prop,
@@ -1537,8 +1311,7 @@ var sidb = function () {
         },
 
         /**
-         * Adds the task "update a record property value" to the task queue. The record is selected by its keypath index.
-         * @param  {string} dbName Database name.
+         * Adds the task "update record/s" to the task queue.
          * @param  {string} storeName Object store name.
          * @param  {string} indexName Index name.
          * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
@@ -1547,7 +1320,7 @@ var sidb = function () {
          * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
          * @param  {any} [errorCallback] Function called on error. Receives event parameter.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // An example of object stored in the object store
          * var person = {
@@ -1562,8 +1335,7 @@ var sidb = function () {
          * }
          * 
          * // If we want to change more than one property and we have an index named "names" with keypath 'name'.
-         * idb.update.recordsByIndex(
-         *     'databaseName', 
+         * mydb.update.recordsByIndex(
          *     'objectStoreName',
          *     'names', 
          *     'Peter', 
@@ -1572,8 +1344,7 @@ var sidb = function () {
          * );
          * 
          * // Or we can raise the salary to 1200 to all persons with age > 40 and salary &lt; 1000
-         * idb.update.recordsByIndex(
-         *     'databaseName', 
+         * mydb.update.recordsByIndex(
          *     'objectStoreName',
          *     'names',
          *     [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '&lt;', value: 1000}], // conditionObject[]
@@ -1581,13 +1352,12 @@ var sidb = function () {
          *     1200
          * );
          * 
-         * idb.execTasks();
+         * mydb.execTasks();
          */
-        recordsByIndex: function(dbName, storeName, indexName, keyValue, property, newValue, errorCallback){
+        recordsByIndex: function(storeName, indexName, keyValue, property, newValue, errorCallback){
 
             var task = {
                 type: 'updateRecordsByIndex',
-                dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
                 keyValue: keyValue,
@@ -1610,12 +1380,11 @@ var sidb = function () {
          * Adds the task "get the last records from the object store" to the task queue.
          * @public
          * @instance
-         * @param {strinf} dbName Database name.
          * @param {string} storeName Store name.
          * @param {number} maxResults Limits the records retrieved. 
          * @param {function} callback Callback called when done. Receives as parameter the retrieved records in an array.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // An example of object stored in the object store
          * var person = {
@@ -1633,15 +1402,14 @@ var sidb = function () {
          * }
          * 
          * // This code adds the task "get the last 200 records from the object store" to the task queue
-         * idb.get.lastRecords('databaseName', 'objectStoreName', 200, myCallback);
+         * mydb.get.lastRecords('objectStoreName', 200, myCallback);
          * 
-         * idb.execTasks();
+         * mydb.execTasks();
          */
-        lastRecords: function (dbName, storeName, maxResults, callback) {
+        lastRecords: function (storeName, maxResults, callback) {
 
             var task = {
                 type: 'lastRecords',
-                dbName: dbName,
                 storeName: storeName,
                 maxResults: maxResults,
                 callback: callback
@@ -1655,14 +1423,13 @@ var sidb = function () {
          * Adds the task "get a record from the object store using a key value from an index" to the task queue.
          * @public
          * @instance
-         * @param {string} dbName Database name.
          * @param {string} storeName Store name.
          * @param {string} indexName Index name.
          * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
          * A simple value always refers to the index keypath. If it's null then returns all records from the index.
          * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
          * @example
-         * var idb = new sidb();
+         * var mydb = new sidb();
          * 
          * // An example of object stored in the object store
          * var person = {
@@ -1684,26 +1451,25 @@ var sidb = function () {
          * }
          * 
          * // If there is an index named "ages" based on property "age", we can get a person with age = 32.
-         * idb.get.records('databaseName', 'objectStoreName', 'ages', 32, myCallback);
+         * mydb.get.records('objectStoreName', 'ages', 32, myCallback);
          * 
          * // Or we can get persons with age > 30 and name! = Peter
-         * idb.get.records('databaseName', 
+         * mydb.get.records( 
          * 'objectStoreName', 
          * 'ages', 
          * [{keyPath: 'age', cond: '>', value: 30}, {keypath: 'name', cond: '!=', value: 'Peter'}], // here key value is a conditionObject array
          * myCallback);
          * 
          * // Or we can get all records from the index
-         * idb.get.records('databaseName', 'objectStoreName', 'ages', null, myCallback);
+         * mydb.get.records('objectStoreName', 'ages', null, myCallback);
          * 
-         * idb.execTasks();
+         * mydb.execTasks();
          */
-        records: function (dbName, storeName, indexName, keyValue, callback) {
+        records: function (storeName, indexName, keyValue, callback) {
 
             var task = {
 
                 type: 'getRecords',
-                dbName: dbName,
                 storeName: storeName,
                 indexName: indexName,
                 keyValue: keyValue,
@@ -1762,6 +1528,11 @@ var sidb = function () {
         return available;
     };
 
+    //// Initialization /////////////////////////////
+    console.log(this.add);
+    this.add.db();
+    this.execTasks();
+
 
 
 };</code></pre>
@@ -1776,7 +1547,7 @@ var sidb = function () {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 22:26:39 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 22:38:31 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

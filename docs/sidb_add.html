@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li><li data-type='method'><a href="sidb.html#~updateByIndex">updateByIndex</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#db">db</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.recordsByIndex">recordsByIndex</a></li><li data-type='method'><a href="sidb_update.html#records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1222">line 1222</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1014">line 1014</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(dbName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(storeName, indexName, keyPath, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,183 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1231">line 1231</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-<div class="description">
-    Add the task "create new database" to the task queue.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>errorCallback</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">function</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Function called on error. Receives event parameter.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(dbName, storeName, indexName, keyPath, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-
-<dl class="details">
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1349">line 1349</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1134">line 1134</a>
     </li></ul></dd>
     
 
@@ -366,7 +190,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var idb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".idb.add.index('databaseName', 'objectStoreName', 'ages', 'age', myErrorCallback);execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);mydb.execTasks();</code></pre>
 
 
 
@@ -394,37 +218,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name.</td>
-        </tr>
-
     
 
         <tr>
@@ -575,7 +368,7 @@
 
     
 
-    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(dbName, storeName, obj, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(storeName, obj, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -587,7 +380,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1305">line 1305</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1092">line 1092</a>
     </li></ul></dd>
     
 
@@ -640,7 +433,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var idb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}// This code adds the task "insert new record in object store" to the task queueidb.add.records('databaseName', 'objectStoreName', person, myErrorCallback);execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// Object to insert in the object storevar person = {    name: 'Peter',    age: 32}// Callback function to process a possible errorvar myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}// This code adds the task "insert new record in object store" to the task queuemydb.add.records('objectStoreName', person, myErrorCallback);mydb.execTasks();</code></pre>
 
 
 
@@ -668,37 +461,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name.</td>
-        </tr>
-
     
 
         <tr>
@@ -821,7 +583,7 @@
 
     
 
-    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(dbName, storeName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(storeName, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -833,7 +595,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1263">line 1263</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1052">line 1052</a>
     </li></ul></dd>
     
 
@@ -886,7 +648,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var idb = new sidb();// Callback function to process a possible errorvar myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}// This code adds the task "create a new object store" to the task queueidb.add.store('databaseName', 'objectStoreName', myErrorCallback);execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// Callback function to process a possible errorvar myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}// This code adds the task "create a new object store" to the task queuemydb.add.store('objectStoreName', myErrorCallback);mydb.execTasks();</code></pre>
 
 
 
@@ -914,37 +676,6 @@
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>dbName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Database name where the object store is created.</td>
-        </tr>
-
     
 
         <tr>
@@ -1046,7 +777,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 02 2018 22:26:39 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 22:38:31 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

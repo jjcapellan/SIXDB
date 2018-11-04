@@ -47,7 +47,7 @@ var contenedor=[];
 
 var callback1 = function (resultsArray) {
     var i = 0;
-    console.log(resultsArray);
+    //console.log(resultsArray);
     for (i = 0; i < resultsArray.length; i++) {
         console.log('Idcliente: ' + resultsArray[i].idcliente + ' Importe: ' + resultsArray[i].importe + '\n');
     }
@@ -90,6 +90,8 @@ var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 
 //sidb.get.lastRecords('store1', null, callback1);
 
-si.get.records('store1','cantidad',460,callback1);
+//si.get.records('store1','cantidad',460,callback1);
+
+si.get.lastRecords('store1', null, callback1);
 
 si.execTasks();

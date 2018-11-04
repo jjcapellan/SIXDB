@@ -113,13 +113,13 @@ mydb.get.records('southFactory', 'names', 'Adam', readerCallback);
 
 //
 // Gets employes records from manufacturing department with a salary higher than 1200.
-// Here the second parameter is an "conditionObject" array that acts as a filter. 
+// Here the third parameter (query) is an "conditionObject" array that acts as a filter. 
 //
-mydb.get.records('southFactory', 'names',
-[
-    {keyPath: 'department', cond: '=', value: 'manufacturing'},
-    {keyPath: 'salary', cond: '>', value: '1200'}
-]
+mydb.get.records('southFactory', null,
+    [
+        {keyPath: 'department', cond: '=', value: 'manufacturing'},
+        {keyPath: 'salary', cond: '>', value: '1200'}
+    ]
 );
 
 
@@ -132,7 +132,7 @@ mydb.execTasks();
 
 //
 // Simple function that receives the query result from SIDB methods and show it on console.
-// The result can be a single object or an object array.
+// The result received can be a single object or an object array. 
 // 
 //
 function readerCallback(queryResult) {
@@ -158,6 +158,7 @@ function readerCallback(queryResult) {
 ```
 
 ### Update records
+
 
 
 

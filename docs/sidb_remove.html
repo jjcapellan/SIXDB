@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#record">record</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#records">records</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1090">line 1090</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1122">line 1122</a>
     </li></ul></dd>
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1098">line 1098</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1130">line 1130</a>
     </li></ul></dd>
     
 
@@ -282,7 +282,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1166">line 1166</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1214">line 1214</a>
     </li></ul></dd>
     
 
@@ -477,7 +477,7 @@
 
     
 
-    <h4 class="name" id="record"><span class="type-signature"></span>record<span class="signature">(storeName, indexName, keyValue)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(storeName, indexName, query)</span><span class="type-signature"></span></h4>
 
     
 
@@ -489,7 +489,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1147">line 1147</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1195">line 1195</a>
     </li></ul></dd>
     
 
@@ -529,7 +529,7 @@
 
 
 <div class="description">
-    Adds the task "remove a record/s from an index whose keypath value is equal to this value" to the task queue.
+    Adds the task "remove a record/s from the object store" to the task queue.
 </div>
 
 
@@ -542,7 +542,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32}// If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.mydb.remove.record('objectStoreName', 'ages', 40);mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32,    salary: 1200}//// Removes records where age is 40 using the index named 'ages' with the keypath 'age' as query.//mydb.remove.record('objectStoreName', 'ages', 40);//// Removes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.//mydb.remove.records(  'objectStoreName',   null,   [      {keyPath: 'age', cond: '&lt;', value: 20},       {keyPath: 'salary', cond: '>', value: 1500}  ]  );mydb.execTasks();</code></pre>
 
 
 
@@ -602,6 +602,9 @@
             
                 
 <span class="param-type">string</span>
+|
+
+<span class="param-type">null</span>
 
 
             
@@ -611,19 +614,22 @@
 
             
 
-            <td class="description last">Index name</td>
+            <td class="description last">Index name. If it is null then no index is used (It is usually slower).</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>keyValue</code></td>
+                <td class="name"><code>query</code></td>
             
 
             <td class="type">
             
                 
+<span class="param-type">Array.&lt;<a href="global.html#conditionObject">conditionObject</a>></span>
+|
+
 <span class="param-type">any</span>
 
 
@@ -634,7 +640,7 @@
 
             
 
-            <td class="description last">Value of the index keyPath which object will be deleted.</td>
+            <td class="description last">Can be a conditionObject array or a single value.A single value always refers to the index keypath so the index can not be null in this case.</td>
         </tr>
 
     
@@ -673,7 +679,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1116">line 1116</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1148">line 1148</a>
     </li></ul></dd>
     
 
@@ -850,7 +856,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 14:15:34 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 16:41:59 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

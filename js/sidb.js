@@ -172,8 +172,7 @@ var sidb = function (_dbName) {
 
                 index.openCursor().onsuccess = function (event) {
 
-                    var cursor = event.target.result;
-                    
+                    var cursor = event.target.result;                    
 
                     var i = 0;
                     var filterObjectSize = keyValue.length;
@@ -595,15 +594,17 @@ var sidb = function (_dbName) {
     };
 
     /**
-     * Removes a record/s from an index
+     * Removes one or more records from a store. Records are selected by the query.
      * @private
      * @param {string} storeName Object store name.
-     * @param {string} indexName Index name.
-     * @param {any} keyValue Value of the index keyPath whose object will be deleted.
+     * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+     * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
+     * A single value always refers to the index keypath so the index can not be null in this case.
      */
-    function removeRecord(storeName, indexName, keyValue) {
+    function removeRecord(storeName, indexName, query) {
 
         var request = window.indexedDB.open(dbName);
+        
 
         request.onerror = function (event) {
             alert("Error. You must allow web app to use indexedDB.");
@@ -614,36 +615,67 @@ var sidb = function (_dbName) {
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+            var index;
+            var counter = 0;
 
-            var index = store.index(indexName);
+            if(indexName!=null)
+            index = store.index(indexName);
 
-            index.openCursor().onsuccess = function (event) {
+            var filterObjectSize;
+            var queryIsArray = Array.isArray(query);
 
+            if (queryIsArray)
+            filterObjectSize = query.length;
+
+            var onsuccesFunction = function (event) {
                 var cursor = event.target.result;
+                
 
                 if (cursor) {
-                    if (cursor.value[index.keyPath] == keyValue) {
+                    //// Gets test value. Test is true if the record object is in the query.
+                    if (queryIsArray) {
+                        test = true;
+                        for (i = 0; i < filterObjectSize; i++) {
+                            test = testCondition(cursor.value[query[i].keyPath], query[i].cond, query[i].value);
+                            if (!test)
+                                break;
+                        };
+
+                    } else {
+
+                        test = (cursor.value[index.keyPath] === query);
+
+                    };
+
+                    //// If test is true then record is deleted
+                    if (test) {
                         var request = cursor.delete();
                         request.onsuccess = function () {
-                            console.log('Record deleted');
+                            counter++;
                         };
-                    }
-
+                        
+                    };
                     cursor.continue();
 
-                } else {                   
+                } else {
                     
-                    console.log('Database closed');
                     taskQueue.shift();
                     db.close();
-                    console.log('Records with property ' + index.keyPath + ' = ' + keyValue + ' were deleted from object store' + storeName);
+                    console.log('Database closed');
+                    console.log(counter + ' records were removed from object store' + storeName);
                     checkTasks();
-
                 }
+            }
 
+            if(indexName != null){
 
+                index.openCursor().onsuccess = onsuccesFunction;
 
-            };
+            } else {
+
+                store.openCursor().onsuccess = onsuccesFunction;
+
+            }; 
 
         };
     }
@@ -714,7 +746,7 @@ var sidb = function (_dbName) {
      * Updates one or more records. Records are selected by the query and updated with the objectValues.
      * @private
      * @param  {string} storeName Object store name.
-     * @param  {string} indexName Index name. If is null, then 
+     * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
      * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param  {object} objectValues New property value after update. Can be an array of values.
@@ -853,9 +885,9 @@ var sidb = function (_dbName) {
                 removeDB(task.errorCallback);
                 break;
 
-            case 'removeRecord':
+            case 'removeRecords':
                 //removeRecord(task.dbName, task.storeName, task.recordKey, task.errorCallback);
-                removeRecord( task.storeName, task.indexName, task.keyValue);
+                removeRecord( task.storeName, task.indexName, task.query);
                 break;
 
             case 'removeIndex':
@@ -1124,32 +1156,48 @@ var sidb = function (_dbName) {
         },
 
         /**
-         * Adds the task "remove a record/s from an index whose keypath value is equal to this value" to the task queue.
+         * Adds the task "remove a record/s from the object store" to the task queue.
          * @public
          * @instance
          * @param {string} storeName Object store name.
-         * @param {string} indexName Index name
-         * @param {any} keyValue Value of the index keyPath which object will be deleted.
+         * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+         * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
+         * A single value always refers to the index keypath so the index can not be null in this case.
          * @example
          * var mydb = new sidb();
          * 
          * // An example of object stored in the object store
          * var person = {
          *     name: 'Peter',
-         *     age: 32
+         *     age: 32,
+         *     salary: 1200
          * }
          * 
-         * // If there is an index named 'ages' with the keypath 'age' then we can delete all records with age = 40.
+         * //
+         * // Removes records where age is 40 using the index named 'ages' with the keypath 'age' as query.
+         * //
          * mydb.remove.record('objectStoreName', 'ages', 40);
+         * 
+         * //
+         * // Removes records with age < 20 and salary > 1500 using a conditionObject array as query.
+         * //
+         * mydb.remove.records(
+         *   'objectStoreName', 
+         *   null, 
+         *   [
+         *       {keyPath: 'age', cond: '<', value: 20}, 
+         *       {keyPath: 'salary', cond: '>', value: 1500}
+         *   ]
+         *   );
          * 
          * mydb.execTasks();
          */
-        record: function (storeName, indexName, keyValue) {
+        records: function (storeName, indexName, query) {
             var task = {
-                type: 'removeRecord',
+                type: 'removeRecords',
                 storeName: storeName,
                 indexName: indexName,
-                keyValue: keyValue
+                query: query
             };
 
             taskQueue.push(task);
@@ -1186,7 +1234,7 @@ var sidb = function (_dbName) {
         /**
          * Adds the task "update record/s" to the task queue.
          * @param  {string} storeName Object store name.
-         * @param  {string} indexName Index name. If is null then no index is used (It is usually slower). 
+         * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower). 
          * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
          * A single value always refers to the index keypath so the index can not be null in this case.
          * @param  {object} objectValues Object with the new values.

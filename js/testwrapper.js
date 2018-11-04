@@ -82,9 +82,11 @@ var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 //wrapper.get.recordsFiltered('test','store1','cantidad',
 //[{keyPath: 'importe', cond: '>',value: 15}],callback1);
 
-si.update.records('store1',null,
+/*si.update.records('store1',null,
 [{keyPath: 'importe', cond: '>', value: 900}],
-{importe: function(oldValue){return oldValue + 100;}});
+{importe: function(oldValue){return oldValue + 100;}});*/
+
+si.remove.records('store1',null, [{keyPath: 'importe', cond: '>', value: 900}]);
 
 //sidb.get.lastRecords('store1', null, callback1);
 

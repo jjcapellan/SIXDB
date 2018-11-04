@@ -751,17 +751,16 @@ var sidb = function (_dbName) {
 
     
     /**
-     * Updates records from an index. Records are selected by the keyValue.
+     * Updates one or more records. Records are selected by the query and updated with the objectValues.
      * @private
      * @param  {string} storeName Object store name.
-     * @param  {string} indexName Index name.
-     * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
-     * A simple value always refers to the index keypath. 
-     * @param  {(string | string[])} property Record property that will be updated. Can be an array of properties.
-     * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
-     * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+     * @param  {string} indexName Index name. If is null, then 
+     * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
+     * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param  {object} objectValues New property value after update. Can be an array of values.
+     * @param  {function} [errorCallback] Function called on error. Receives event parameter.
      */
-    function updateByIndex(storeName, indexName, keyValue, property, newValue, errorCallback) {
+    function updateByIndex(storeName, indexName, query, objectValues, errorCallback) {
 
         var request = window.indexedDB.open(dbName);
 
@@ -781,112 +780,70 @@ var sidb = function (_dbName) {
 
             var test; // if true then the record is updated
             var filterObjectSize;
-            var keyValueIsArray = Array.isArray(keyValue);
+            var queryIsArray = Array.isArray(query);
 
-            if (keyValueIsArray)
-            filterObjectSize = keyValue.length;
+            if (queryIsArray)
+            filterObjectSize = query.length;
+            var counter = 0;
+
+            var onsuccesFunction = function (event) {
+                var cursor = event.target.result;                
+                var keys = Object.keys(objectValues);
+                var newObjectValuesSize = keys.length;
+                
+
+                if (cursor) {
+                    //// Gets test value. Test is true if the record object is in the query.
+                    if (queryIsArray) {
+                        test = true;
+                        for (i = 0; i &lt; filterObjectSize; i++) {
+                            test = testCondition(cursor.value[query[i].keyPath], query[i].cond, query[i].value);
+                            if (!test)
+                                break;
+                        };
+
+                    } else {
+
+                        test = (cursor.value[index.keyPath] === query);
+
+                    };
+
+                    //// If test is true then record is updated
+                    if (test) {
+                        var updateData = cursor.value;
+                        var i = 0;
+                        for (i = 0; i &lt; newObjectValuesSize; i++) {
+                            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+                            updateData[keys[i]] = (typeof(objectValues[keys[i]])=='function')?objectValues[keys[i]](updateData[keys[i]]):objectValues[keys[i]];
+                        };
+
+                        var request = cursor.update(updateData);
+                        request.onsuccess = function () {
+                            counter++;
+                        };
+                        
+                    };
+                    cursor.continue();
+
+                } else {
+
+                    db.close();
+                    console.log('Database closed');
+                    taskQueue.shift();
+                    console.log( counter + ' records were updated from object store \"' + storeName + '\"');
+                    checkTasks();
+                }
+            }
+
+
             
             if(indexName != null){
 
-                index.openCursor().onsuccess = function (event) {
-                    var cursor = event.target.result;
-
-                    if (cursor) {
-                        //// Gets test value
-                        if (keyValueIsArray) {
-                            test = true;
-                            for (i = 0; i &lt; filterObjectSize; i++) {
-                                test = testCondition(cursor.value[keyValue[i].keyPath], keyValue[i].cond, keyValue[i].value);
-                                if (!test)
-                                    break;
-                            };
-
-                        } else {
-
-                            test = (cursor.value[index.keyPath] === keyValue);
-
-                        };
-
-                        //// If test is true then record is updated
-                        if (test) {
-                            var updateData = cursor.value;
-
-                            if (Array.isArray(property)) {
-                                var i = 0;
-                                for (i = 0; i &lt; property.length; i++) {
-                                    updateData[property[i]] = newValue[i];
-                                }
-                            } else {
-                                updateData[property] = newValue;
-                            };
-
-                            var request = cursor.update(updateData);
-                            request.onsuccess = function () {
-                                console.log('Record updated');
-                            };
-                        };
-                        cursor.continue();
-
-                    } else {
-
-                        db.close();
-                        console.log('Database closed');
-                        taskQueue.shift();
-                        console.log('Records were updated from object store \"' + storeName + '\"');
-                        checkTasks();
-                    }
-                }
+                index.openCursor().onsuccess = onsuccesFunction;
 
             } else {
 
-                store.openCursor().onsuccess = function (event) {
-                    var cursor = event.target.result;
-
-                    if (cursor) {
-                        //// Gets test value
-                        if (keyValueIsArray) {
-                            test = true;
-                            for (i = 0; i &lt; filterObjectSize; i++) {
-                                test = testCondition(cursor.value[keyValue[i].keyPath], keyValue[i].cond, keyValue[i].value);
-                                if (!test)
-                                    break;
-                            };
-
-                        } else {
-
-                            test = (cursor.value[index.keyPath] === keyValue);
-
-                        };
-
-                        //// If test is true then record is updated
-                        if (test) {
-                            var updateData = cursor.value;
-
-                            if (Array.isArray(property)) {
-                                var i = 0;
-                                for (i = 0; i &lt; property.length; i++) {
-                                    updateData[property[i]] = newValue[i];
-                                }
-                            } else {
-                                updateData[property] = newValue;
-                            };
-
-                            var request = cursor.update(updateData);
-                            request.onsuccess = function () {
-                                console.log('Record updated');
-                            };
-                        };
-                        cursor.continue();
-
-                    } else {
-
-                        db.close();
-                        console.log('Database closed');
-                        taskQueue.shift();
-                        console.log('Records were updated from object store \"' + storeName + '\"');
-                        checkTasks();
-                    }
-                }
+                store.openCursor().onsuccess = onsuccesFunction;
 
             }           
 
@@ -946,7 +903,7 @@ var sidb = function (_dbName) {
                 break;
 
             case 'updateRecordsByIndex':
-                updateByIndex(task.storeName, task.indexName, task.keyValue, task.property, task.newValue, task.errorCallback);
+                updateByIndex(task.storeName, task.indexName, task.query, task.objectValues, task.errorCallback);
                 break;
 
             case 'newIndex':
@@ -1270,11 +1227,12 @@ var sidb = function (_dbName) {
          * Adds the task "update record/s" to the task queue.
          * @param  {string} storeName Object store name.
          * @param  {string} indexName Index name. If is null then no index is used (It is usually slower). 
-         * @param {(conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array or an individual value.
-         * A simple value always refers to the index keypath. 
-         * @param  {(string | string[])} property Record property that will be updated. Can be an array of properties.
-         * @param  {(any | any[])} newValue New property value after update. Can be an array of values.
-         * @param  {any} [errorCallback] Function called on error. Receives event parameter.
+         * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
+         * A single value always refers to the index keypath so the index can not be null in this case.
+         * @param  {object} objectValues Object with the new values.
+         * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
+         * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
+         * @param  {function} [errorCallback] Function called on error. Receives event parameter.
          * @example
          * var mydb = new sidb();
          * 
@@ -1285,40 +1243,52 @@ var sidb = function (_dbName) {
          *     salary: 1500
          * }
          * 
-         * // Callback function to process errors
-         * var myErrorCallback= function(event){
-         *     console.log(event.target.error);
-         * }
-         * 
-         * // If we want to change more than one property and we have an index named "names" with keypath 'name'.
-         * mydb.update.recordsByIndex(
+         *          
+         * //
+         * // Changes the age and salary using an index named "names" with keypath 'name' as query.
+         * //
+         * mydb.update.records(
          *     'objectStoreName',
          *     'names', 
-         *     'Peter', 
-         *     ['age', 'salary'], // with one property the array is not necesary
-         *     [33, 1650]        // with one property the array is not necesary
+         *     'Peter',
+         *     {age: 33, salary: 1650},
+         *     myErrorCallback 
          * );
          * 
-         * // Or we can raise the salary to 1200 to all persons with age > 40 and salary &lt; 1000
-         * mydb.update.recordsByIndex(
+         * 
+         * //
+         * // Increases the salary in 200 to all persons with age > 40 and salary &lt; 1000 using a conditionObject array as query.
+         * // We can send a function to the property salary on selected records.
+         * //
+         * mydb.update.records(
          *     'objectStoreName',
-         *     'names',
+         *     null,
          *     [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '&lt;', value: 1000}], // conditionObject[]
-         *     'salary',
-         *     1200
+         *     {salary: function(oldSalary){
+         *         return oldSalary + 200;
+         *         };
+         *     },
+         *     myErrorCallback
          * );
+         * 
          * 
          * mydb.execTasks();
+         * 
+         * 
+         * // Optional callback function to process errors
+         * function myErrorCallback(event){
+         *     console.log(event.target.error);
+         * };
+         * 
          */
-        records: function(storeName, indexName, keyValue, property, newValue, errorCallback){
+        records: function(storeName, indexName, query, objectValues, errorCallback){
 
             var task = {
                 type: 'updateRecordsByIndex',
                 storeName: storeName,
                 indexName: indexName,
-                keyValue: keyValue,
-                property: property,
-                newValue: newValue,
+                query: query,
+                objectValues: objectValues,
                 errorCallback: errorCallback
             };
 
@@ -1503,7 +1473,7 @@ var sidb = function (_dbName) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 23:22:14 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 14:15:34 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

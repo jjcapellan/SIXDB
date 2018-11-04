@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1227">line 1227</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1184">line 1184</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id=".records"><span class="type-signature">(static) </span>records<span class="signature">(storeName, indexName, keyValue, property, newValue, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id=".records"><span class="type-signature">(static) </span>records<span class="signature">(storeName, indexName, query, objectValues, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1273">line 1273</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1244">line 1244</a>
     </li></ul></dd>
     
 
@@ -190,7 +190,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32,    salary: 1500}// Callback function to process errorsvar myErrorCallback= function(event){    console.log(event.target.error);}// If we want to change more than one property and we have an index named "names" with keypath 'name'.mydb.update.recordsByIndex(    'objectStoreName',    'names',     'Peter',     ['age', 'salary'], // with one property the array is not necesary    [33, 1650]        // with one property the array is not necesary);// Or we can raise the salary to 1200 to all persons with age > 40 and salary &lt; 1000mydb.update.recordsByIndex(    'objectStoreName',    'names',    [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '&lt;', value: 1000}], // conditionObject[]    'salary',    1200);mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb();// An example of object stored in the object storevar person = {    name: 'Peter',    age: 32,    salary: 1500}         //// Changes the age and salary using an index named "names" with keypath 'name' as query.//mydb.update.records(    'objectStoreName',    'names',     'Peter',    {age: 33, salary: 1650},    myErrorCallback );//// Increases the salary in 200 to all persons with age > 40 and salary &lt; 1000 using a conditionObject array as query.// We can send a function to the property salary on selected records.//mydb.update.records(    'objectStoreName',    null,    [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '&lt;', value: 1000}], // conditionObject[]    {salary: function(oldSalary){        return oldSalary + 200;        };    },    myErrorCallback);mydb.execTasks();// Optional callback function to process errorsfunction myErrorCallback(event){    console.log(event.target.error);};</code></pre>
 
 
 
@@ -284,7 +284,7 @@
 
         <tr>
             
-                <td class="name"><code>keyValue</code></td>
+                <td class="name"><code>query</code></td>
             
 
             <td class="type">
@@ -311,23 +311,20 @@
 
             
 
-            <td class="description last">Contains the key value. Can be a conditionObject array or an individual value.A simple value always refers to the index keypath.</td>
+            <td class="description last">Can be a conditionObject array or a single value.A single value always refers to the index keypath so the index can not be null in this case.</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>property</code></td>
+                <td class="name"><code>objectValues</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">string</span>
-|
-
-<span class="param-type">Array.&lt;string></span>
+<span class="param-type">object</span>
 
 
             
@@ -345,41 +342,7 @@
 
             
 
-            <td class="description last">Record property that will be updated. Can be an array of properties.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>newValue</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">any</span>
-|
-
-<span class="param-type">Array.&lt;any></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">New property value after update. Can be an array of values.</td>
+            <td class="description last">Object with the new values.The values not only can be a single value, it can be a function that receives the old value and returns a new value.(Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})</td>
         </tr>
 
     
@@ -392,7 +355,7 @@
             <td class="type">
             
                 
-<span class="param-type">any</span>
+<span class="param-type">function</span>
 
 
             
@@ -452,7 +415,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Nov 03 2018 23:22:14 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 04 2018 14:15:34 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

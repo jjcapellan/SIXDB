@@ -126,12 +126,12 @@ var sidb = function (_dbName) {
      * Gets a record/s from an object store using a key value from an index.
      * @private
      * @param {string} storeName Store name.
-     * @param {string} indexName Index name.
-     * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
-     * If it's null then returns all records from the index.
+     * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+     * @param {conditionObject[] | any} keyValue Can be a conditionObject array or a single value.
+     * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
      */
-    function getRecords(storeName, indexName, keyValue, callback) {
+    function getRecords(storeName, indexName, query, callback) {
 
         var request = window.indexedDB.open(dbName);
 
@@ -144,84 +144,68 @@ var sidb = function (_dbName) {
 
             console.log('Database ' + dbName + ' opened');
             var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-            var index = store.index(indexName);
+            var index;
+            var counter = 0;
+
+            if(indexName != null)
+            index = store.index(indexName);
+
+            var filterObjectSize;
+            var queryIsArray = Array.isArray(query);
+            console.log(queryIsArray);
+
+            if (queryIsArray)
+            filterObjectSize = query.length;
+
             var resultFiltered = [];
 
-            //keyValue parameter can be null/undefined, an array of conditionObjects, or a simple value
-            if (keyValue === null || keyValue === undefined) {
+            var onsuccesFunction = function (event) {
+                var cursor = event.target.result;                
 
-                var getRequest = index.getAll();
-
-                getRequest.onsuccess = function (event) {
-
-                    callback(event.target.result);
-                    db.close();
-                    console.log('Database closed');
-                    taskQueue.shift();
-                    console.log('All records retrieved from index ' + indexName + ' in object store ' + storeName);
-                    checkTasks();
-
-                };
-
-                getRequest.onerror = function (event) {
-                    console.log('Error getting records: ' + getRequest.error);
-                };
-
-            } else if (Array.isArray(keyValue)) {
-                console.log(keyValue);
-
-                index.openCursor().onsuccess = function (event) {
-
-                    var cursor = event.target.result;                    
-
-                    var i = 0;
-                    var filterObjectSize = keyValue.length;
-                    var test;
-
-                    if (cursor) {
+                if (cursor) {
+                    //// Gets test value. Test is true if the record object is in the query.
+                    if (queryIsArray) {
                         test = true;
                         for (i = 0; i < filterObjectSize; i++) {
-                            test = testCondition(cursor.value[keyValue[i].keyPath], keyValue[i].cond, keyValue[i].value);
-                            if (!test) {
+                            test = testCondition(cursor.value[query[i].keyPath], query[i].cond, query[i].value);
+                            if (!test)
                                 break;
-                            };
                         };
-                        if (test) {
-                            resultFiltered.push(cursor.value);
-                        };
-                        cursor.continue();
+
                     } else {
 
-                        callback(resultFiltered);
-                        db.close();
-                        console.log('Database closed');
-                        taskQueue.shift();
-                        console.log('Records filtered from index ' + indexName + ' retrieved from object store ' + storeName);
-                        checkTasks();
-                    }
+                        test = (cursor.value[index.keyPath] === query);
 
+                    };
 
-                };
-            } else {
+                    //// If test is true then record is added to resultFiltered
+                    if (test) {
+                        resultFiltered.push(cursor.value);
+                        console.log('pushed');
+                        counter++;                        
+                    };
+                    cursor.continue();
 
-                var getRequest = index.get(keyValue);
-
-                getRequest.onsuccess = function (event) {
-
-                    callback(event.target.result);
+                } else {
+                    
+                    callback(resultFiltered);                    
                     db.close();
                     console.log('Database closed');
+                    console.log(counter + ' records returned from object store \"' + storeName + '\"');
                     taskQueue.shift();
-                    console.log('Record with key value ' + keyValue + ' retrieved from index ' + indexName + ' in object store ' + storeName);
                     checkTasks();
-
-                };
-
-                getRequest.onerror = function (event) {
-                    console.log('Error getting record: ' + getRequest.error);
-                };
-
+                }
             }
+
+            if(indexName != null){
+
+                index.openCursor().onsuccess = onsuccesFunction;
+
+            } else {
+
+                store.openCursor().onsuccess = onsuccesFunction;
+
+            }; 
 
 
 
@@ -907,7 +891,7 @@ var sidb = function (_dbName) {
                 break;
 
             case 'getRecords':
-                getRecords(task.storeName, task.indexName, task.keyValue, task.callback);
+                getRecords(task.storeName, task.indexName, task.query, task.callback);
                 break;
 
             default:
@@ -1358,9 +1342,9 @@ var sidb = function (_dbName) {
          * @public
          * @instance
          * @param {string} storeName Store name.
-         * @param {string} indexName Index name.
-         * @param {(null | conditionObject[] | any)} keyValue Contains the key value. Can be a conditionObject array, a individual value or null.
-         * A simple value always refers to the index keypath. If it's null then returns all records from the index.
+         * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+         * @param {conditionObject[] | any} keyValue Can be a conditionObject array or a single value.
+         * A single value always refers to the index keypath so the index can not be null in this case.
          * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
          * @example
          * var mydb = new sidb();
@@ -1384,29 +1368,28 @@ var sidb = function (_dbName) {
          *      
          * }
          * 
+         * //
          * // If there is an index named "ages" based on property "age", we can get a person with age = 32.
+         * //
          * mydb.get.records('objectStoreName', 'ages', 32, myCallback);
          * 
          * // Or we can get persons with age > 30 and name! = Peter
          * mydb.get.records( 
          * 'objectStoreName', 
-         * 'ages', 
-         * [{keyPath: 'age', cond: '>', value: 30}, {keypath: 'name', cond: '!=', value: 'Peter'}], // here key value is a conditionObject array
+         * null, 
+         * [{keyPath: 'age', cond: '>', value: 30}, {keypath: 'name', cond: '!=', value: 'Peter'}], // here the query is a conditionObject array
          * myCallback);
-         * 
-         * // Or we can get all records from the index
-         * mydb.get.records('objectStoreName', 'ages', null, myCallback);
          * 
          * mydb.execTasks();
          */
-        records: function (storeName, indexName, keyValue, callback) {
+        records: function (storeName, indexName, query, callback) {
 
             var task = {
 
                 type: 'getRecords',
                 storeName: storeName,
                 indexName: indexName,
-                keyValue: keyValue,
+                query: query,
                 callback: callback
             };
 

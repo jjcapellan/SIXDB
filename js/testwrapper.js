@@ -86,8 +86,10 @@ var conditions = [{keyPath: 'idcliente', cond: '>',value: 1},
 [{keyPath: 'importe', cond: '>', value: 900}],
 {importe: function(oldValue){return oldValue + 100;}});*/
 
-si.remove.records('store1',null, [{keyPath: 'importe', cond: '>', value: 900}]);
+//si.remove.records('store1',null, [{keyPath: 'importe', cond: '>', value: 900}]);
 
 //sidb.get.lastRecords('store1', null, callback1);
+
+si.get.records('store1','cantidad',460,callback1);
 
 si.execTasks();

@@ -1,6 +1,7 @@
 # SIDB (simple indexedDB)
 SIDB is a basic and very easy to use library wrapper for indexedDB.
 SIDB uses a task queue to eliminate potential problems derived from the asynchronous nature of indexedDB.
+This library is focused on simplicity and ease of use.
 
 ## How to use
 
@@ -23,9 +24,10 @@ mydb.add.store('southFactory');
 
 
 //
-// Each store needs one or more index to order and filter the records (objects).
+// It's a good idea to create one or more indexes for each store to order and filter the records (objects).
 // The index keypath is the object property used to select and order the objects.
 // Those objects that hasn't the index keypath as property will not be included in the index.
+// Using an index we can avoid querying all the object store and losing performance.
 // In this case we create a single index named "names" with the keypath "name"
 // You can include an alternative error callback as fourth parameter.
 //
@@ -42,7 +44,7 @@ mydb.execTasks();
 
 
 ### Insert records
-With SIDB we can insert records individually or through an objects array. 
+With SIDB we can insert records individually or through an objects array.
 
 ```javascript
 //
@@ -52,25 +54,27 @@ var mydb = new sidb('companyDB');
 
 
 //
-// Inserts one record in "southFactory" object store
+// Inserts one record in "southFactory" object store.
 //
-mydb.add.records('southFactory',
-{name: 'Peter', department: 'manufacturing', age: 32, salary: 1200} // A single object that represents a record
+mydb.add.records(
+    'southFactory',                                                     // Object store name.
+    {name: 'Peter', department: 'manufacturing', age: 32, salary: 1200} // A single object that represents a record.
 );
 
 
 //
-// Inserts 6 records in "southFactory" object store
+// Inserts 6 records in "southFactory" object store using an objects array.
 //
-mydb.add.records('southFactory',
-[
-    {name: 'Paul', department: 'manufacturing', age: 27, salary: 1150},
-    {name: 'Adam', department: 'manufacturing', age: 38, salary: 1260},
-    {name: 'Alice', department: 'accounting', age: 41, salary: 1400},
-    {name: 'Alex', department: 'manufacturing', age: 33, salary: 1250},
-    {name: 'Kathy', department: 'manufacturing', age: 28, salary: 1150},
-    {name: 'David', department: 'accounting', age: 32, salary: 1380}
-]
+mydb.add.records(
+    'southFactory',
+    [
+        {name: 'Paul', department: 'manufacturing', age: 27, salary: 1150},
+        {name: 'Adam', department: 'manufacturing', age: 38, salary: 1260},
+        {name: 'Alice', department: 'accounting', age: 41, salary: 1400},
+        {name: 'Alex', department: 'manufacturing', age: 33, salary: 1250},
+        {name: 'Kathy', department: 'manufacturing', age: 28, salary: 1150},
+        {name: 'David', department: 'accounting', age: 32, salary: 1380}
+    ]
 );
 
 
@@ -82,7 +86,7 @@ mydb.execTasks();
 ```
 
 ### Read records
-SIDB can read the records using 5 types of query.
+SIDB can read the records using two methods and 5 types of query.
 
 ```javascript
 //
@@ -95,27 +99,43 @@ var mydb = new sidb('companyDB');
 // Reads the 5 last records from "southFactory" object store.
 // The third parameter is a function that will receive the result of the query.
 //
-mydb.get.lastRecords('southFactory', 5, readerCallback);
+mydb.get.lastRecords(
+    'southFactory',         // Object store name
+    5,                      // Max number of records retrieved
+    readerCallback          // Function to handle the results
+);
 
 
 //
-// With the second parameter null reads all records from "southFactory" object store. 
+// With the second parameter null, reads all records from "southFactory" object store. 
 //
-mydb.get.lastRecords('southFactory', null, readerCallback);
+mydb.get.lastRecords(
+    'southFactory', 
+    null, 
+    readerCallback
+);
 
 
 //
 // Gets the record with name "Adam" from the index "names" in store "southFactory".
 // If you replace 'Adam' with null then the query sends all index records to the function readerCallback
 //
-mydb.get.records('southFactory', 'names', 'Adam', readerCallback);
+mydb.get.records(
+    'southFactory',         // Object store name
+    'names',                // Index name
+    'Adam',                 // Query. A single value refers to the index keyPath.
+    readerCallback
+);
 
 
 //
 // Gets employes records from manufacturing department with a salary higher than 1200.
-// Here the third parameter (query) is an "conditionObject" array that acts as a filter. 
+// Here the third parameter (query) is an "conditionObject" array that acts as a filter.
+// The query can't be a single value if the index is null.
 //
-mydb.get.records('southFactory', null,
+mydb.get.records(
+    'southFactory', 
+    null,
     [
         {keyPath: 'department', cond: '=', value: 'manufacturing'},
         {keyPath: 'salary', cond: '>', value: '1200'}
@@ -158,6 +178,120 @@ function readerCallback(queryResult) {
 ```
 
 ### Update records
+The method update.records() allows us to update the records in many ways.
+```javascript
+//
+// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+//   
+var mydb = new sidb('companyDB');
+
+
+//
+// We only need one method to update one or more records:
+// update.records(storeName, indexName, query, objectValues, errorCallback)
+// This simple example changes the salary and age of an employe named Adam using the index 'names'.
+//
+mydb.update.records(
+    'southFactory',             // Object store name
+    'names',                    // Index name
+    'Adam',                     // The query can be a single value (refers to index) or an conditionObject array
+    {salary: 1290, age: 39},    // Object with the new values
+    myErrorCallback             // Optional function to handle errors
+);
+
+
+//
+// Updates the salary of all records where department is manufacturing and age > 30.
+// Here a conditionObject array is used as query. The index is null so all the store object is queried.
+//
+mydb.update.records(
+    'southFactory',                                                     // Object store name
+    null,                                                               // Index name is null so query can't be a single value
+    [                                                                   // Query. In this case a conditionObject[]
+        {keyPath: 'department', cond: '=', value: 'manufacturing'},     //
+        {keyPath: 'age', cond: '>', value: 30}                          //
+    ],
+    {salary: 1300},                                                     // Object with the new values
+    myErrorCallback                                                     // Optional function to handle errors
+);
+
+
+//
+// The object values parameter accepts functions as value whose receives the old value an returns the new value.
+// Here all salaries from manufacturing department are increased by 300.
+//
+mydb.update.records(
+    'southFactory',
+    null,
+    [
+        {keyPath: 'department', cond: '=', value: 'manufacturing'}
+    ],
+    {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
+    myErrorCallback
+);
+
+
+//
+// Example of a simple error callback
+//
+function myErrorCallback(event){
+    console.log('Error updating records: ' + event.target.error);
+};
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();
+```
+
+### Remove records
+SIDB has the method remove.records() for this case.
+```javascript
+//
+// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+//   
+var mydb = new sidb('companyDB');
+
+
+//
+// To remove one or more records there is the method remove.records:
+// remove.records(storeName, indexName, query, errorCallback)
+// For eample, this removes the record with name "Alex" from the object store "southFactory"
+//
+mydb.remove.records(
+    'southFactory',     // Object store name
+    'names',            // Index name
+    'Alex',             // Query. A single value refers to the index keypath.
+    myErrorCallback     // Optional parameter. Function to handle errors.                     
+);
+
+
+//
+// Removes all records from manufacturing department with salaries highter than 1200 
+//
+mydb.remove.records(
+    'southFactory',
+    null,
+    [
+        {keyPath: 'department', cond: '=', value: 'manufacturing'},
+        {keyPath: 'salary', cond: '>', value: 1200}
+    ]
+);
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();
+```
+
+
+
+
+
 
 
 

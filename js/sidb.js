@@ -588,8 +588,9 @@ var sidb = function(_dbName) {
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
    * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
    * A single value always refers to the index keypath so the index can not be null in this case.
+   * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
-  function removeRecord(storeName, indexName, query) {
+  function removeRecord(storeName, indexName, query, errorCallback) {
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function(event) {
@@ -642,17 +643,31 @@ var sidb = function(_dbName) {
           taskQueue.shift();
           db.close();
           console.log("Database closed");
-          console.log(
-            counter + " records were removed from object store" + storeName
-          );
+          console.log( counter + " records were removed from object store" + storeName);
           checkTasks();
         }
       };
 
+      var onerrorFunction = function(event) {
+          if(errorCallback){
+              errorCallback(event);
+          };
+
+          taskQueue.shift();
+          db.close();
+          console.log("Database closed");
+          console.log('Error removing records' + event.target.error);
+          checkTasks();
+      }
+
       if (indexName != null) {
-        index.openCursor().onsuccess = onsuccesFunction;
+        var request = index.openCursor();
+        request.onsuccess=onsuccesFunction;
+        request.onerror=onerrorFunction;
       } else {
-        store.openCursor().onsuccess = onsuccesFunction;
+        var request = store.openCursor();
+        request.onsuccess=onsuccesFunction;
+        request.onerror=onerrorFunction;
       }
     };
   }
@@ -740,79 +755,89 @@ var sidb = function(_dbName) {
     };
 
     request.onsuccess = function(event) {
-      var db = event.target.result;
+        var db = event.target.result;
 
-      console.log("Database " + dbName + " opened");
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      var index;
+        console.log("Database " + dbName + " opened");
+        var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+        var index;
 
-      if (indexName != null) index = store.index(indexName);
+        if (indexName != null) index = store.index(indexName);
 
-      var test; // if true then the record is updated
-      var filterObjectSize;
-      var queryIsArray = Array.isArray(query);
+        var test; // if true then the record is updated
+        var filterObjectSize;
+        var queryIsArray = Array.isArray(query);
 
-      if (queryIsArray) filterObjectSize = query.length;
-      var counter = 0;
+        if (queryIsArray) filterObjectSize = query.length;
+        var counter = 0;
 
-      var onsuccesFunction = function(event) {
-        var cursor = event.target.result;
-        var keys = Object.keys(objectValues);
-        var newObjectValuesSize = keys.length;
+        var onsuccesFunction = function (event) {
+            var cursor = event.target.result;
+            var keys = Object.keys(objectValues);
+            var newObjectValuesSize = keys.length;
 
-          if (cursor) {
-              //// Gets test value. Test is true if the record object is in the query.
-              if (queryIsArray) {
-                  test = true;
-                  for (i = 0; i < filterObjectSize; i++) {
-                      test = testCondition(
-                          cursor.value[query[i].keyPath],
-                          query[i].cond,
-                          query[i].value
-                      );
-                      if (!test) break;
-                  }
-              } else {
-                  test = cursor.value[index.keyPath] === query;
-              }
+            if (cursor) {
+                //// Gets test value. Test is true if the record object is in the query.
+                if (queryIsArray) {
+                    test = true;
+                    for (i = 0; i < filterObjectSize; i++) {
+                        test = testCondition(
+                            cursor.value[query[i].keyPath],
+                            query[i].cond,
+                            query[i].value
+                        );
+                        if (!test) break;
+                    }
+                } else {
+                    test = cursor.value[index.keyPath] === query;
+                }
 
-              //// If test is true then record is updated
-              if (test) {
-                  var updateData = cursor.value;
-                  var i = 0;
-                  for (i = 0; i < newObjectValuesSize; i++) {
-                      // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-                      updateData[keys[i]] =
-                          typeof objectValues[keys[i]] == "function"
-                              ? objectValues[keys[i]](updateData[keys[i]])
-                              : objectValues[keys[i]];
-                  }
+                //// If test is true then record is updated
+                if (test) {
+                    var updateData = cursor.value;
+                    var i = 0;
+                    for (i = 0; i < newObjectValuesSize; i++) {
+                        // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+                        updateData[keys[i]] =
+                            typeof objectValues[keys[i]] == "function"
+                                ? objectValues[keys[i]](updateData[keys[i]])
+                                : objectValues[keys[i]];
+                    }
 
-                  var request = cursor.update(updateData);
-                  request.onsuccess = function () {
-                      counter++;
-                  };
-              }
-              cursor.continue();
-          } else {
-              db.close();
-              console.log("Database closed");
-              taskQueue.shift();
-              console.log(
-                  counter +
-                  ' records were updated from object store "' +
-                  storeName +
-                  '"'
-              );
-              checkTasks();
-          }
-      };      
+                    var request = cursor.update(updateData);
+                    request.onsuccess = function () {
+                        counter++;
+                    };
+                }
+                cursor.continue();
+            } else {
+                db.close();
+                console.log("Database closed");
+                taskQueue.shift();
+                console.log(counter + ' records were updated from object store "' + storeName + '"');
+                checkTasks();
+            }
+        };
 
-      if (indexName != null) {
-        index.openCursor().onsuccess = onsuccesFunction;
-      } else {
-        store.openCursor().onsuccess = onsuccesFunction;
-      }
+        var onerrorFunction = function (event) {
+            if (errorCallback)
+                errorCallback(event);
+
+            db.close();
+            console.log("Database closed");
+            taskQueue.shift();
+            console.log('Error retrieving records: ' + event.target.error);
+            checkTasks();
+        }
+
+        if (indexName != null) {
+            var request = index.openCursor();
+            request.onsuccess = onsuccesFunction;
+            request.onerror = onerrorFunction;
+        } else {
+            var request = store.openCursor();
+            request.onsuccess = onsuccesFunction;
+            request.onerror = onerrorFunction;
+        };
     };
   }
 
@@ -831,9 +856,6 @@ var sidb = function(_dbName) {
 
     var type = taskQueue[0].type;
     var task = taskQueue[0];
-
-    //console.log(type);
-    //console.log(taskQueue[0]);
 
     switch (type) {
       case "newStore":
@@ -857,8 +879,7 @@ var sidb = function(_dbName) {
         break;
 
       case "removeRecords":
-        //removeRecord(task.dbName, task.storeName, task.recordKey, task.errorCallback);
-        removeRecord(task.storeName, task.indexName, task.query);
+        removeRecord(task.storeName, task.indexName, task.query, task.errorCallback);
         break;
 
       case "removeIndex":
@@ -1133,6 +1154,7 @@ var sidb = function(_dbName) {
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
      * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
      * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
      * @example
      * var mydb = new sidb();
      *
@@ -1162,12 +1184,13 @@ var sidb = function(_dbName) {
      *
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query) {
+    records: function(storeName, indexName, query, errorCallback) {
       var task = {
         type: "removeRecords",
         storeName: storeName,
         indexName: indexName,
-        query: query
+        query: query,
+        errorCallback: errorCallback
       };
 
       taskQueue.push(task);
@@ -1256,13 +1279,7 @@ var sidb = function(_dbName) {
      * };
      *
      */
-    records: function(
-      storeName,
-      indexName,
-      query,
-      objectValues,
-      errorCallback
-    ) {
+    records: function(storeName, indexName, query, objectValues, errorCallback) {
       var task = {
         type: "updateRecordsByIndex",
         storeName: storeName,

@@ -1,3 +1,5 @@
 doctemplate
 *.cmd
+*.html
 notas.txt
+testwrapper.js

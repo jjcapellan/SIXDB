@@ -1,11 +1,13 @@
 /**
  *  Simple IndexedDB
- *  @desc Simple IndexedDB (sidb) is a wrapper for indexedDB API.
+ *  @desc Simple IndexedDB (SIDB) is a wrapper for indexedDB API.
  *  @author Juan Jose Capellan <soycape@hotmail.com>
  */
 
-/**
+/** 
  * @license
+ * MIT LICENSE
+ * 
  * Copyright (c) 2018 Juan Jose Capellan
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -64,72 +66,75 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {number} maxResults Limits the records retrieved.
-   * @param {function} callback Callback called when done. Receives as parameter the retrieved records in an array.
+   * @param {function(object)} callback Function called when done. Receives as parameter the retrieved records.
+   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
-  function lastRecords(storeName, maxResults, callback) {
+  function lastRecords(storeName, maxResults, callback,errorCallback) {
     var request = window.indexedDB.open(dbName);
 
-    request.onerror = function(event) {
+    request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
     };
 
-    request.onsuccess = function(event) {
+    request.onsuccess = function (event) {
       var db = event.target.result;
-      var resultFiltered=[];
+      var resultFiltered = [];
 
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var counter = 0;
 
-        var onsuccesCursorFunction = function (event) {
+      var onsuccesCursorFunction = function (event) {
 
-            var cursor = event.target.result;
+        var cursor = event.target.result;
 
-            if (cursor && counter < maxResults) {
-                resultFiltered.push(cursor.value);
-                console.log("pushed");
-                counter++;
-                cursor.continue();
-            } else {
-                callback(resultFiltered);
-                db.close();
-                console.log("Database closed");
-                console.log(counter + ' last records returned from object store "' + storeName + '"');
-                taskQueue.shift();
-                checkTasks();
-            };
-        };
-
-        var onsuccesGetAllFunction = function (event) {
-            callback(event.target.result);
-            db.close();
-            console.log("Database closed");
-            console.log('All records returned from object store "' + storeName + '"');
-            taskQueue.shift();
-            checkTasks();
-        };
-
-        var onerrorFunction = function (event) {
-            db.close();
-            console.log("Database closed");
-            console.log('Error retrieving records: ' + event.target.error);
-            taskQueue.shift();
-            checkTasks();
-        };
-
-        if (maxResults != null) {
-            // Opens a cursor from last record in reverse direction
-            var request = store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
-            request.onsuccess = onsuccesCursorFunction;
-            request.onerror = onerrorFunction;
+        if (cursor && counter < maxResults) {
+          resultFiltered.push(cursor.value);
+          console.log("pushed");
+          counter++;
+          cursor.continue();
         } else {
-            // Gets all records. It is faster than openCursor.
-            var request = store.getAll();
-            request.onsuccess = onsuccesGetAllFunction;
-            request.onerror = onerrorFunction;
+          callback(resultFiltered);
+          db.close();
+          console.log("Database closed");
+          console.log(counter + ' last records returned from object store "' + storeName + '"');
+          taskQueue.shift();
+          checkTasks();
         };
-
       };
+
+      var onsuccesGetAllFunction = function (event) {
+        callback(event.target.result);
+        db.close();
+        console.log("Database closed");
+        console.log('All records returned from object store "' + storeName + '"');
+        taskQueue.shift();
+        checkTasks();
+      };
+
+      var onerrorFunction = function (event) {
+        db.close();
+        console.log("Database closed");
+        console.log('Error retrieving records: ' + event.target.error);
+        if (errorCallback)
+          errorCallback(event);
+        taskQueue.shift();
+        checkTasks();
+      };
+
+      if (maxResults != null) {
+        // Opens a cursor from last record in reverse direction
+        var request = store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
+        request.onsuccess = onsuccesCursorFunction;
+        request.onerror = onerrorFunction;
+      } else {
+        // Gets all records. It is faster than openCursor.
+        var request = store.getAll();
+        request.onsuccess = onsuccesGetAllFunction;
+        request.onerror = onerrorFunction;
+      };
+
+    };
     }
 
   /**
@@ -140,15 +145,16 @@ var sidb = function(_dbName) {
    * @param {conditionObject[] | any} keyValue Can be a conditionObject array or a single value.
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
+   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
-  function getRecords(storeName, indexName, query, callback) {
+  function getRecords(storeName, indexName, query, callback,errorCallback) {
     var request = window.indexedDB.open(dbName);
 
-    request.onerror = function(event) {
+    request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
     };
 
-    request.onsuccess = function(event) {
+    request.onsuccess = function (event) {
       var db = event.target.result;
 
       console.log("Database " + dbName + " opened");
@@ -166,7 +172,7 @@ var sidb = function(_dbName) {
 
       var resultFiltered = [];
 
-      var onsuccesFunction = function(event) {
+      var onsuccesFunction = function (event) {
         var cursor = event.target.result;
 
         if (cursor) {
@@ -204,10 +210,24 @@ var sidb = function(_dbName) {
         }
       };
 
+      var onerrorFunction = function (event) {
+        db.close();
+        console.log("Database closed");
+        console.log('Error retrieving records: ' + event.target.error);
+        if (errorCallback)
+          errorCallback(event);
+        taskQueue.shift();
+        checkTasks();
+      };
+
       if (indexName != null) {
-        index.openCursor().onsuccess = onsuccesFunction;
+        var request = index.openCursor();
+        request.onsuccess = onsuccesFunction;
+        request.onerror = onerrorFunction;
       } else {
-        store.openCursor().onsuccess = onsuccesFunction;
+        var request = store.openCursor();
+        request.onsuccess = onsuccesFunction;
+        request.onerror = onerrorFunction;
       }
     };
   }
@@ -841,6 +861,31 @@ var sidb = function(_dbName) {
     };
   }
 
+  function testConditionBlock( cursor, conditionsArray, operator) {
+    
+    var test = (operator=='&')?true:false;
+    if(operator=='&'){
+    for (i = 0; i < conditionsArray.length; i++) {
+      test = testCondition(
+        cursor.value[conditionsArray[i].keyPath],
+        conditionsArray[i].cond,
+        conditionsArray[i].value
+      );
+      if (!test) return false;
+    }
+  } else {
+    for (i = 0; i < conditionsArray.length; i++) {
+      test = testCondition(
+        cursor.value[conditionsArray[i].keyPath],
+        conditionsArray[i].cond,
+        conditionsArray[i].value
+      );
+      if (test) return true;
+    }
+  }
+  return test;
+  }
+
   /**
    * Manage the task queue
    * @private
@@ -887,34 +932,19 @@ var sidb = function(_dbName) {
         break;
 
       case "updateRecordsByIndex":
-        updateByIndex(
-          task.storeName,
-          task.indexName,
-          task.query,
-          task.objectValues,
-          task.errorCallback
-        );
+        updateByIndex( task.storeName, task.indexName, task.query, task.objectValues, task.errorCallback);
         break;
 
       case "newIndex":
-        newIndex(
-          task.storeName,
-          task.indexName,
-          task.keyPath,
-          task.errorCallback
-        );
+        newIndex( task.storeName, task.indexName, task.keyPath, task.errorCallback);
         break;
 
       case "lastRecords":
-        lastRecords(
-          task.storeName,
-          task.maxResults,
-          task.callback
-        );
+        lastRecords( task.storeName, task.maxResults, task.callback, task.errorCallback);
         break;
 
       case "getRecords":
-        getRecords(task.storeName, task.indexName, task.query, task.callback);
+        getRecords(task.storeName, task.indexName, task.query, task.callback, task.errorCallback);
         break;
 
       default:
@@ -1334,12 +1364,13 @@ var sidb = function(_dbName) {
      * };     
      *
      */
-    lastRecords: function(storeName, maxResults, callback) {
+    lastRecords: function(storeName, maxResults, callback, errorCallback) {
       var task = {
         type: "lastRecords",
         storeName: storeName,
         maxResults: maxResults,
-        callback: callback
+        callback: callback,
+        errorCallback: errorCallback
       };
 
       taskQueue.push(task);
@@ -1390,13 +1421,14 @@ var sidb = function(_dbName) {
      *
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query, callback) {
+    records: function(storeName, indexName, query, callback, errorCallback) {
       var task = {
         type: "getRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
-        callback: callback
+        callback: callback,
+        errorCallback: errorCallback
       };
 
       taskQueue.push(task);

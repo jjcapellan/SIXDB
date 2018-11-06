@@ -59,6 +59,13 @@ var sidb = function(_dbName) {
    */
   var idle = true;
 
+  var blockRgx = /(?<=\()([^)]+)(?=\))/g;
+  var blockOperatorRgx = /(?<=(\)\s*))([\&\|]+)(?=(\s*\())/g;
+  var operandRgx = /[\w'"]+/g;
+  var operatorRgx = /(=|>|<|>=|<=|!=)+/g;
+  var leftOperandRgx =/([\w]+)(?=\s*(=|>|<|>=|<=|!=)+)/g;
+  var rightOperandRgx =/(?<=(=|>|<|>=|<=|!=)+\s*)([\w]+)/g;
+
   //// PRIVATE FUNCTIONS //////////////////////////////////////////////////////////
 
   /**
@@ -862,7 +869,7 @@ var sidb = function(_dbName) {
   }
 
   function testConditionBlock( cursor, conditionsArray, operator) {
-    
+
     var test = (operator=='&')?true:false;
     if(operator=='&'){
     for (i = 0; i < conditionsArray.length; i++) {
@@ -885,6 +892,107 @@ var sidb = function(_dbName) {
   }
   return test;
   }
+
+  this.mk = function makeConditionsBlocksArray(query) {
+
+    var blocks = query.match(blockRgx);
+
+    console.log('Number of blocks: '+blocks.length);
+
+    var conditionsBlocksArray = [];
+
+    var pushConditionBlockToArray = function (qry, extLogOperator) {
+
+      var logicalOperators = (qry.match(/[\&\|]+/g)) ? qry.match(/[\&\|]+/g).length : 0;
+      var conditionsArray = [];
+
+      // If query is like: " c = 15 "
+      if (logicalOperators == 0) {
+
+        var operands = qry.match(operandRgx); // array with 2 elements: keyPath and value
+        var operator = qry.match(operatorRgx); // the only comparisson operator
+
+        conditionsArray.push(
+          {
+            keyPath: operands[0],
+            cond: operator,
+            value: operands[1]
+          }
+        );
+
+        conditionsBlocksArray.push(
+          {
+            conditionsArray: conditionsArray,
+            internalLogOperator: null,
+            externalLogOperator: extLogOperator
+          }
+        );
+
+        conditionsArray = null;
+
+      } else {
+
+        // if query is like: " c = 15 & a > 30 "
+        var leftOperands = qry.match(leftOperandRgx);
+        var rightOperands = qry.match(rightOperandRgx);
+        var operators = qry.match(operatorRgx);
+        var logOperatorsType = qry.match(/[\&\|]+/g)[0];
+
+        if (logOperatorsType == '&' || logOperatorsType == '&&') {
+          logOperatorsType = 'and';
+        } else {
+          logOperatorsType = 'or';
+        };
+
+        var i = 0;
+        for (i = 0; i < operators.length; i++) {
+          conditionsArray.push(
+            {
+              keyPath: leftOperands[i],
+              cond: operators[i],
+              value: rightOperands[i]
+            }
+          );
+        };
+
+        conditionsBlocksArray.push(
+          {
+            conditionsArray: conditionsArray,
+            internalLogOperator: logOperatorsType,
+            externalLogOperator: extLogOperator
+          }
+        );
+        conditionsArray = null;
+      }; // end if else
+    };
+
+
+    // If condition is a single sentence like: " a = 10 & b > 5 "
+    if (!blocks) {
+      pushConditionBlockToArray(query, null);
+      return conditionsBlocksArray;
+    } else {
+    // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "
+      var extLogOperator = (query.match(blockOperatorRgx)) ? query.match(blockOperatorRgx) : null;
+      console.log('External operator: '+query.match(blockOperatorRgx));
+      if (extLogOperator) {
+        if (extLogOperator == '&' || extLogOperator == '&&') {
+          extLogOperator = 'and';
+        } else {
+          extLogOperator = 'or';
+        };
+      };
+
+      var i = 0;
+      for (i = 0; i < blocks.length; i++) {
+
+        pushConditionBlockToArray(blocks[i], extLogOperator);
+
+      }
+      return conditionsBlocksArray;
+    };
+  }
+
 
   /**
    * Manage the task queue

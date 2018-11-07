@@ -77,12 +77,7 @@
 var sidb = function(_dbName) {
   //// Private ////////////////////////////////////
 
-  /**
-   * Stores the pending tasks. Internal use.
-   * @private
-   * @type {object[]}
-   */
-  var taskQueue = [];
+  
 
   /**
    * Data base name.
@@ -90,16 +85,13 @@ var sidb = function(_dbName) {
    * @type {string}
    * @readonly
    */
-  var dbName = _dbName;
+  var dbName = _dbName;  
 
-  /**
-   * Flag to check if all task were completed (tasqQueue is empty)
-   * @private
-   * @type {boolean}
-   */
-  var idle = true;
+  
 
-  //// PRIVATE FUNCTIONS //////////////////////////////////////////////////////////
+  
+  //#region Private functions
+  //////////////////////////////////////////////////////////////////////////////////////
 
   /**
    * Gets last records from an object store
@@ -123,6 +115,8 @@ var sidb = function(_dbName) {
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var counter = 0;
+
+      
 
       var onsuccesCursorFunction = function (event) {
 
@@ -182,20 +176,28 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {conditionObject[] | any} keyValue Can be a conditionObject array or a single value.
+   * @param {string} query String that contains a query. Example of valid querys:
+   * c > 20                                     // Simple query
+   * c > 10 &amp; name='peter'                      // Query with 2 conditions
+   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+   * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
   function getRecords(storeName, indexName, query, callback,errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var isIndexKeyValue = (query.match(operatorRgx))?false:true;
+    
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
     };
 
     request.onsuccess = function (event) {
-      var db = event.target.result;
+      var db = event.target.result;   
+      var conditionsBlocksArray = (!isIndexKeyValue)?qrySys.makeConditionsBlocksArray(query):null;
 
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -204,51 +206,56 @@ var sidb = function(_dbName) {
 
       if (indexName != null) index = store.index(indexName);
 
-      var filterObjectSize;
-      var queryIsArray = Array.isArray(query);
-      console.log(queryIsArray);
-
-      if (queryIsArray) filterObjectSize = query.length;
-
       var resultFiltered = [];
 
-      var onsuccesFunction = function (event) {
+      var onsuccesIndexGetKey = function(event){
+        callback(event.target.result);
+        db.close();
+        console.log("Database closed");
+        console.log('Records with key value "' + query + '" returned from index "' + indexName + '" on object store "'+ storeName+'"');
+        taskQueue.shift();
+        checkTasks();
+      };
+
+      var onsuccesCursor = function (event) {
+        
         var cursor = event.target.result;
+        var extMode = conditionsBlocksArray[0].externalLogOperator;
+        
+        var test = false;
 
+        // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+        //
+        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
         if (cursor) {
-          //// Gets test value. Test is true if the record object is in the query.
-          if (queryIsArray) {
-            test = true;
-            for (i = 0; i &lt; filterObjectSize; i++) {
-              test = testCondition(
-                cursor.value[query[i].keyPath],
-                query[i].cond,
-                query[i].value
-              );
-              if (!test) break;
+          var i = 0;
+          var test = false;
+          for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+            var conditions = conditionsBlocksArray[i].conditionsArray;
+            var intMode = conditionsBlocksArray[i].internalLogOperator;
+            test = qrySys.testConditionBlock(cursor, conditions, intMode);
+            if (test == exitsInFirstTrue){
+              break;
             }
-          } else {
-            test = cursor.value[index.keyPath] === query;
-          }
+          };
 
-          //// If test is true then record is added to resultFiltered
           if (test) {
             resultFiltered.push(cursor.value);
-            console.log("pushed");
             counter++;
-          }
+          };
           cursor.continue();
+
         } else {
           callback(resultFiltered);
           db.close();
           console.log("Database closed");
-          console.log(
-            counter + ' records returned from object store "' + storeName + '"'
-          );
+          console.log('Processed query: "'+query+'" finished\n'+ counter + ' records returned from object store "' + storeName + '"');
           taskQueue.shift();
           checkTasks();
-        }
-      };
+        };
+
+      } // end onsuccesCursor
 
       var onerrorFunction = function (event) {
         db.close();
@@ -261,14 +268,20 @@ var sidb = function(_dbName) {
       };
 
       if (indexName != null) {
+        if(!isIndexKeyValue){
         var request = index.openCursor();
-        request.onsuccess = onsuccesFunction;
+        request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
+        }else{
+          var request = index.get(query);
+        request.onsuccess = onsuccesIndexGetKey;
+        request.onerror = onerrorFunction;
+        }
       } else {
         var request = store.openCursor();
-        request.onsuccess = onsuccesFunction;
+        request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
-      }
+      };
     };
   }
 
@@ -646,19 +659,26 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
+   * @param {string} query String that contains a query. Example of valid querys:
+   * c > 20                                     // Simple query
+   * c > 10 &amp; name='peter'                      // Query with 2 conditions
+   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+   * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
   function removeRecord(storeName, indexName, query, errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
 
-    request.onerror = function(event) {
+    request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
     };
 
-    request.onsuccess = function(event) {
+    request.onsuccess = function (event) {
       var db = event.target.result;
+      var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
 
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -667,67 +687,70 @@ var sidb = function(_dbName) {
 
       if (indexName != null) index = store.index(indexName);
 
-      var filterObjectSize;
-      var queryIsArray = Array.isArray(query);
+      var onsuccesCursor = function (event) {
 
-      if (queryIsArray) filterObjectSize = query.length;
-
-      var onsuccesFunction = function(event) {
         var cursor = event.target.result;
+        var extMode = conditionsBlocksArray[0].externalLogOperator;
 
+        var test = false;
+
+        // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+        //
+        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
         if (cursor) {
-          //// Gets test value. Test is true if the record object is in the query.
-          if (queryIsArray) {
-            test = true;
-            for (i = 0; i &lt; filterObjectSize; i++) {
-              test = testCondition(
-                cursor.value[query[i].keyPath],
-                query[i].cond,
-                query[i].value
-              );
-              if (!test) break;
+          var i = 0;
+          var test = false;
+          for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+            var conditions = conditionsBlocksArray[i].conditionsArray;
+            var intMode = conditionsBlocksArray[i].internalLogOperator;
+            test = qrySys.testConditionBlock(cursor, conditions, intMode);
+            if (test == exitsInFirstTrue) {
+              break;
             }
-          } else {
-            test = cursor.value[index.keyPath] === query;
-          }
-
-          //// If test is true then record is deleted
-          if (test) {
-            var request = cursor.delete();
-            request.onsuccess = function() {
-              counter++;
-            };
-          }
-          cursor.continue();
-        } else {
-          taskQueue.shift();
-          db.close();
-          console.log("Database closed");
-          console.log( counter + " records were removed from object store" + storeName);
-          checkTasks();
-        }
-      };
-
-      var onerrorFunction = function(event) {
-          if(errorCallback){
-              errorCallback(event);
           };
 
-          taskQueue.shift();
+          if (test) {
+            var request = cursor.delete();
+            request.onsuccess = function () {
+              counter++;
+            };
+          };
+          cursor.continue();
+
+        } else {
           db.close();
           console.log("Database closed");
-          console.log('Error removing records' + event.target.error);
+          console.log('Processed query: "' + query + '" finished\n' + counter + ' records deleted from object store "' + storeName + '"');
+          taskQueue.shift();
           checkTasks();
+        };
+
+      } // end onsuccesCursor
+
+      var onerrorFunction = function (event) {
+        if (errorCallback) {
+          errorCallback(event);
+        };
+
+        taskQueue.shift();
+        db.close();
+        console.log("Database closed");
+        console.log('Error deleting records' + event.target.error);
+        checkTasks();
       }
 
       if (indexName != null) {
+        if (isIndexKeyValue) {
+          query = index.keyPath + '=' + query;
+        };
         var request = index.openCursor();
-        request.onsuccess=onsuccesFunction;
-        request.onerror=onerrorFunction;
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
       } else {
         var request = store.openCursor();
-        request.onsuccess=onsuccesFunction;
-        request.onerror=onerrorFunction;
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
       }
     };
   }
@@ -802,104 +825,358 @@ var sidb = function(_dbName) {
    * @private
    * @param  {string} storeName Object store name.
    * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-   * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
+   * @param {string} query String that contains a query. Example of valid querys:
+   * c > 20                                     // Simple query
+   * c > 10 &amp; name='peter'                      // Query with 2 conditions
+   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+   * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param  {object} objectValues New property value after update. Can be an array of values.
    * @param  {function} [errorCallback] Function called on error. Receives event parameter.
    */
   function updateByIndex(storeName, indexName, query, objectValues, errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
 
-    request.onerror = function(event) {
+    request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
     };
 
-    request.onsuccess = function(event) {
-        var db = event.target.result;
+    request.onsuccess = function (event) {
+      var db = event.target.result;
+      var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+      console.log("Database " + dbName + " opened");
+      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+      var index;
 
-        console.log("Database " + dbName + " opened");
-        var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-        var index;
+      if (indexName != null) {
+        index = store.index(indexName);
+      };
 
-        if (indexName != null) index = store.index(indexName);
+      var counter = 0;
 
-        var test; // if true then the record is updated
-        var filterObjectSize;
-        var queryIsArray = Array.isArray(query);
+      var onsuccesCursor = function (event) {
 
-        if (queryIsArray) filterObjectSize = query.length;
-        var counter = 0;
+        var cursor = event.target.result;
+        var keys = Object.keys(objectValues); //Array with the property names that will be updated
+        var newObjectValuesSize = keys.length;
+        var extMode = conditionsBlocksArray[0].externalLogOperator;
 
-        var onsuccesFunction = function (event) {
-            var cursor = event.target.result;
-            var keys = Object.keys(objectValues);
-            var newObjectValuesSize = keys.length;
-
-            if (cursor) {
-                //// Gets test value. Test is true if the record object is in the query.
-                if (queryIsArray) {
-                    test = true;
-                    for (i = 0; i &lt; filterObjectSize; i++) {
-                        test = testCondition(
-                            cursor.value[query[i].keyPath],
-                            query[i].cond,
-                            query[i].value
-                        );
-                        if (!test) break;
-                    }
-                } else {
-                    test = cursor.value[index.keyPath] === query;
-                }
-
-                //// If test is true then record is updated
-                if (test) {
-                    var updateData = cursor.value;
-                    var i = 0;
-                    for (i = 0; i &lt; newObjectValuesSize; i++) {
-                        // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-                        updateData[keys[i]] =
-                            typeof objectValues[keys[i]] == "function"
-                                ? objectValues[keys[i]](updateData[keys[i]])
-                                : objectValues[keys[i]];
-                    }
-
-                    var request = cursor.update(updateData);
-                    request.onsuccess = function () {
-                        counter++;
-                    };
-                }
-                cursor.continue();
-            } else {
-                db.close();
-                console.log("Database closed");
-                taskQueue.shift();
-                console.log(counter + ' records were updated from object store "' + storeName + '"');
-                checkTasks();
+        // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+        //
+        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+        if (cursor) {
+          var i = 0;
+          var test = false;
+          for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+            var conditions = conditionsBlocksArray[i].conditionsArray;
+            var intMode = conditionsBlocksArray[i].internalLogOperator;
+            test = qrySys.testConditionBlock(cursor, conditions, intMode);
+            if (test == exitsInFirstTrue) {
+              break;
             }
-        };
+          };
 
-        var onerrorFunction = function (event) {
-            if (errorCallback)
-                errorCallback(event);
+          if (test) {
+            var updateData = cursor.value;
+            var i = 0;
+            for (i = 0; i &lt; newObjectValuesSize; i++) {
+              // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+              updateData[keys[i]] =
+                typeof objectValues[keys[i]] == "function"
+                  ? objectValues[keys[i]](updateData[keys[i]])
+                  : objectValues[keys[i]];
+            }
 
-            db.close();
-            console.log("Database closed");
-            taskQueue.shift();
-            console.log('Error retrieving records: ' + event.target.error);
-            checkTasks();
-        }
+            var request = cursor.update(updateData);
+            request.onsuccess = function () {
+              counter++;
+            };
+          };
+          cursor.continue();
 
-        if (indexName != null) {
-            var request = index.openCursor();
-            request.onsuccess = onsuccesFunction;
-            request.onerror = onerrorFunction;
         } else {
-            var request = store.openCursor();
-            request.onsuccess = onsuccesFunction;
-            request.onerror = onerrorFunction;
+          db.close();
+          console.log("Database closed");
+          taskQueue.shift();
+          console.log('Processed query: "' + query + '" finished\n' + counter + ' records updated from object store "' + storeName + '"');
+          checkTasks();
         };
+
+      }
+
+      var onerrorFunction = function (event) {
+        if (errorCallback)
+          errorCallback(event);
+
+        db.close();
+        console.log("Database closed");
+        taskQueue.shift();
+        console.log('Error retrieving records: ' + event.target.error);
+        checkTasks();
+      }
+
+      if (indexName != null) {
+        if (!isIndexKeyValue) {
+          query = index.keyPath + '=' + query;
+        };
+        var request = index.openCursor();
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
+      } else {
+        var request = store.openCursor();
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
+      };
     };
   }
+
+  //#endregion Private functions
+
+  
+  //#region Query system
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * qrySys contains all methods to manage the string queries
+   * @typedef {Object} qrySys
+   * @property {function} init Inits the regex variables used to parse the query strings.
+   * @property {function} testConditionBlock Test a conditions block.
+   * @property {function} makeConditionsBlocksArray Makes an array of conditions blocks.
+   * @property {function} testCondition Test a conditional expression as false or true.
+   */
+  var qrySys = {
+
+    // Initialization of regex vars used by makeConditionsBlockArray() to parse the query string
+
+
+    /**
+     * Initializes the regex variables used to parse the query string
+     * @return {void}
+     */
+    init: function () {
+      this.blockRgx = /(?&lt;=\()([^)]+)(?=\))/g;
+      this.blockOperatorRgx = /(?&lt;=(\)\s*))([\&amp;\|]+)(?=(\s*\())/g;
+      this.operandRgx = /[\w'"]+/g;
+      this.operatorRgx = /(=|>|&lt;|>=|&lt;=|!=)+/g;
+      this.leftOperandRgx = /([\w]+)(?=\s*(=|>|&lt;|>=|&lt;=|!=)+)/g;
+      this.rightOperandRgx = /(?&lt;=(=|>|&lt;|>=|&lt;=|!=)+\s*)([\w]+)/g;
+    },
+
+    /**
+     * Test a block of conditions. For example:
+     * (a&lt;100 &amp;&amp; a>20) || (b = 30 &amp; c != 50 &amp;&amp; a >= 200)   &lt;==== Here are 2 conditions blocks. The first block has 2 conditions.
+     * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson. 
+     * @param  {conditionObject[]} conditionsArray Contains the conditions.
+     * @param  {string | null} operator Is a logical operator that can be "and", "or" or null.
+     * @return {boolean} Result after evaluating the conditions block (true/false)
+     */
+    testConditionBlock: function (cursor, conditionsArray, operator) {
+
+      var t = this;
+
+      var test = (operator == 'and' || operator == null) ? true : false;
+      if (operator == 'and' || operator == null) {
+        for (i = 0; i &lt; conditionsArray.length; i++) {
+          test = t.testCondition(
+            cursor.value[conditionsArray[i].keyPath],
+            conditionsArray[i].cond,
+            conditionsArray[i].value
+          );
+          if (!test) return false;
+        }
+      } else {
+        for (i = 0; i &lt; conditionsArray.length; i++) {
+          test = t.testCondition(
+            cursor.value[conditionsArray[i].keyPath],
+            conditionsArray[i].cond,
+            conditionsArray[i].value
+          );
+          if (test) return true;
+        }
+      }
+      return test;
+    },
+
+    /**
+     * Transforms a query string into an array of objects that is used by SIDB to process the query.
+     * @param  {string} query String that contains a query. Example of valid querys:
+     * c > 20                                     // Simple query
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks 
+     * @return {object[]} Returns and array of coditions blocks.
+     */
+    makeConditionsBlocksArray: function (query) {
+
+      var t = this;
+
+      var blocks = query.match(t.blockRgx);
+
+      var conditionsBlocksArray = [];
+
+      var pushConditionBlockToArray = function (qry, extLogOperator) {
+
+        var logicalOperators = (qry.match(/[\&amp;\|]+/g)) ? qry.match(/[\&amp;\|]+/g).length : 0;
+        var conditionsArray = [];
+
+        // If query is like: " c = 15 "
+        if (logicalOperators == 0) {
+
+          var operands = qry.match(t.operandRgx); // array with 2 elements: keyPath and value
+          var operator = qry.match(t.operatorRgx); // the only comparisson operator
+
+          conditionsArray.push(
+            {
+              keyPath: operands[0],
+              cond: operator[0],
+              value: operands[1]
+            }
+          );
+
+          conditionsBlocksArray.push(
+            {
+              conditionsArray: conditionsArray,
+              internalLogOperator: null,
+              externalLogOperator: extLogOperator
+            }
+          );
+
+          conditionsArray = null;
+
+        } else {
+
+          // if query is like: " c = 15 &amp; a > 30 "
+          var leftOperands = qry.match(t.leftOperandRgx);
+          var rightOperands = qry.match(t.rightOperandRgx);
+          var operators = qry.match(t.operatorRgx);
+          var logOperatorsType = qry.match(/[\&amp;\|]+/g)[0];
+
+          if (logOperatorsType == '&amp;' || logOperatorsType == '&amp;&amp;') {
+            logOperatorsType = 'and';
+          } else {
+            logOperatorsType = 'or';
+          };
+
+          var i = 0;
+          for (i = 0; i &lt; operators.length; i++) {
+            conditionsArray.push(
+              {
+                keyPath: leftOperands[i],
+                cond: operators[i],
+                value: rightOperands[i]
+              }
+            );
+          };
+
+          conditionsBlocksArray.push(
+            {
+              conditionsArray: conditionsArray,
+              internalLogOperator: logOperatorsType,
+              externalLogOperator: extLogOperator
+            }
+          );
+          conditionsArray = null;
+        }; // end if else
+      };
+
+
+      // If condition is a single sentence like: " a = 10 &amp; b > 5 "
+      if (!blocks) {
+        pushConditionBlockToArray(query, null);
+        return conditionsBlocksArray;
+      } else {
+        // If condition is a multiple sentence like: " (a = 5 &amp; b = 10) || (c &lt; 4 &amp; f > 10) "
+        var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
+        console.log('External operator: ' + query.match(t.blockOperatorRgx));
+        if (extLogOperator) {
+          if (extLogOperator == '&amp;' || extLogOperator == '&amp;&amp;') {
+            extLogOperator = 'and';
+          } else {
+            extLogOperator = 'or';
+          };
+        };
+
+        var i = 0;
+        for (i = 0; i &lt; blocks.length; i++) {
+
+          pushConditionBlockToArray(blocks[i], extLogOperator);
+
+        }
+        return conditionsBlocksArray;
+      };
+    },
+
+    /**
+     * Test a conditional expression as false or true
+     * @private
+     * @param {string | number} value1 First value to compare
+     * @param {string} condition Comparison operator ( = , > , &lt; , >= , &lt;= , != )
+     * @param {string | number} value2 Second value to compare
+     * @returns {boolean} Result after evaluating the condition
+     */
+    testCondition: function (value1, condition, value2) {
+      var result;
+      switch (condition) {
+        case "=":
+          result = value1 == value2 ? true : false;
+          return result;
+          break;
+
+        case ">":
+          result = value1 > value2 ? true : false;
+          return result;
+          break;
+
+        case "&lt;":
+          result = value1 &lt; value2 ? true : false;
+          return result;
+          break;
+
+        case ">=":
+          result = value1 >= value2 ? true : false;
+          return result;
+          break;
+
+        case "&lt;=":
+          result = value1 &lt;= value2 ? true : false;
+          return result;
+          break;
+
+        case "!=":
+          result = value1 != value2 ? true : false;
+          return result;
+          break;
+
+        default:
+          break;
+      }
+    }
+  } // end qrySys
+
+
+
+  //#endregion Query system
+
+
+  //#region Task queue system
+  //////////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Flag to check if all task were completed (tasqQueue is empty)
+   * @private
+   * @type {boolean}
+   */
+  var idle = true;
+
+  /**
+   * Stores the pending tasks. Internal use.
+   * @private
+   * @type {object[]}
+   */
+  var taskQueue = [];
 
   /**
    * Manage the task queue
@@ -968,60 +1245,13 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Test a conditional expression as false or true
-   * @private
-   * @param {string | number} value1 First value to compare
-   * @param {string} condition Comparison operator ( = , > , &lt; , >= , &lt;= , != )
-   * @param {string | number} value2 Second value to compare
-   * @returns {boolean}
-   */
-  function testCondition(value1, condition, value2) {
-    var result;
-    switch (condition) {
-      case "=":
-        result = value1 == value2 ? true : false;
-        return result;
-        break;
-
-      case ">":
-        result = value1 > value2 ? true : false;
-        return result;
-        break;
-
-      case "&lt;":
-        result = value1 &lt; value2 ? true : false;
-        return result;
-        break;
-
-      case ">=":
-        result = value1 >= value2 ? true : false;
-        return result;
-        break;
-
-      case "&lt;=":
-        result = value1 &lt;= value2 ? true : false;
-        return result;
-        break;
-
-      case "!=":
-        result = value1 != value2 ? true : false;
-        return result;
-        break;
-
-      default:
-        break;
-    }
-  }
-
-  //// Public //////////////////////////////////
-
-  /**
-   * Gets the database name
+   * Execs pending tasks. The tasks are executed sequentially. A task does not run until the previous one ends. This avoids problems arising from the asynchronous nature of the indexedDB api.
    * @public
-   * @return {string} Database name
    */
-  this.getName = function() {
-    return dbName;
+  this.execTasks = function() {
+    if (idle) {
+      checkTasks();
+    }
   };
 
   /**
@@ -1054,13 +1284,21 @@ var sidb = function(_dbName) {
      * var mydb = new sidb();
      *
      * // Callback function to process a possible error
+     * //
      * var myErrorCallback = function(event){
      *   console.log('Error creating new object store:' + event.target.error);
      * }
      *
+     * 
+     * //
      * // This code adds the task "create a new object store" to the task queue
+     * //
      * mydb.add.store('objectStoreName', myErrorCallback);
      *
+     * 
+     * //
+     * // Execs all pending tasks
+     * //
      * mydb.execTasks();
      */
     store: function(storeName, errorCallback) {
@@ -1086,19 +1324,27 @@ var sidb = function(_dbName) {
      * var mydb = new sidb();
      *
      * // Object to insert in the object store
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32
      * }
      *
      * // Callback function to process a possible error
+     * //
      * var myErrorCallback = function(event){
      *     console.log('Error inserting the new record: ' + event.target.error);
      * }
      *
-     * // This code adds the task "insert new record in object store" to the task queue
+     * 
+     * //
+     * // Inserts new record in object store. (needs execTasks() to execute)
+     * //
      * mydb.add.records('objectStoreName', person, myErrorCallback);
      *
+     * 
+     * // Execs all pending tasks.
+     * //
      * mydb.execTasks();
      */
     records: function(storeName, obj, errorCallback) {
@@ -1124,21 +1370,31 @@ var sidb = function(_dbName) {
      * var mydb = new sidb();
      *
      * // Object to insert in the object store
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32
      * }
      *
+     * 
+     * //
      * // Callback function to process a possible error
+     * //
      * var myErrorCallback = function(event){
      *     console.log('Error creating the new index: ' + event.target.error);
      * }
-     *
+     * 
+     * 
+     * //
      * // This code adds the task "create a new index" to the task queue.
      * // In this case the new index "ages" order the records by the record property "age".
      * // Only records with a property named "age" are in the index "ages".
+     * //
      * mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);
      *
+     * 
+     * // Execs all pending tasks
+     * //
      * mydb.execTasks();
      */
     index: function(storeName, indexName, keyPath, errorCallback) {
@@ -1197,13 +1453,18 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {conditionObject[] | any} query Can be a conditionObject array or a single value.
-     * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param {string} query String that contains a query. Example of valid querys:
+     * c > 20                                     // Simple query
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+     * 'peter'                                    // Single value always refers to the index keypath.
      * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
      * @example
      * var mydb = new sidb();
      *
      * // An example of object stored in the object store
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32,
@@ -1219,13 +1480,10 @@ var sidb = function(_dbName) {
      * // Removes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.
      * //
      * mydb.remove.records(
-     *   'objectStoreName',
-     *   null,
-     *   [
-     *       {keyPath: 'age', cond: '&lt;', value: 20},
-     *       {keyPath: 'salary', cond: '>', value: 1500}
-     *   ]
-     *   );
+     *    'objectStoreName',          
+     *    null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.
+     *    'age &lt; 20 &amp; salary > 1500'      
+     * );
      *
      * mydb.execTasks();
      */
@@ -1270,8 +1528,12 @@ var sidb = function(_dbName) {
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
      * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-     * @param {(conditionObject[] | any)} query Can be a conditionObject array or a single value.
-     * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param {string} query String that contains a query. Example of valid querys:
+     * c > 20                                     // Simple query
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+     * 'peter'                                    // Single value always refers to the index keypath.
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
@@ -1280,6 +1542,7 @@ var sidb = function(_dbName) {
      * var mydb = new sidb();
      *
      * // An example of object stored in the object store
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32,
@@ -1306,19 +1569,22 @@ var sidb = function(_dbName) {
      * mydb.update.records(
      *     'objectStoreName',
      *     null,
-     *     [{keyPath: 'age', cond: '>', value: 1200}, {keyPath: 'salary', cond: '&lt;', value: 1000}], // conditionObject[]
+     *     'age > 40 &amp; salary &lt; 1000',
      *     {salary: function(oldSalary){
      *         return oldSalary + 200;
      *         };
      *     },
      *     myErrorCallback
      * );
+     * 
      *
-     *
+     * // Execs all pending tasks.
+     * //
      * mydb.execTasks();
      *
      *
      * // Optional callback function to process errors
+     * //
      * function myErrorCallback(event){
      *     console.log(event.target.error);
      * };
@@ -1354,6 +1620,7 @@ var sidb = function(_dbName) {
      * var mydb = new sidb();
      *
      * // An example of object stored in the object store "storeName"
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32
@@ -1364,12 +1631,15 @@ var sidb = function(_dbName) {
      * //
      * mydb.get.lastRecords('storeName', 200, myCallback);
      * 
+     * 
      * //
      * //Execs all pending tasks
      * //
      * mydb.execTasks();
      * 
+     * 
      * // Callback function to process the results
+     * //
      * function myCallback(resultsArray){
      *     var size = resultsArray.length();
      *     var i=0;
@@ -1397,19 +1667,28 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {conditionObject[] | any} keyValue Can be a conditionObject array or a single value.
+     * @param {string} query String that contains a query. Example of valid querys:
+     * c > 20                                     // Simple query
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
+     * 'peter'                                    // Single value always refers to the index keypath.
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
      * @example
      * var mydb = new sidb();
      *
      * // An example of object stored in the object store
+     * //
      * var person = {
      *     name: 'Peter',
      *     age: 32
      * }
      *
+     * 
+     * //
      * // Callback function to process the result
+     * //
      * var myCallback = function(result){
      *
      *     if(Array.isArray(result)){
@@ -1422,18 +1701,30 @@ var sidb = function(_dbName) {
      *
      * }
      *
+     * 
      * //
      * // If there is an index named "ages" based on property "age", we can get a person with age = 32.
      * //
-     * mydb.get.records('objectStoreName', 'ages', 32, myCallback);
-     *
-     * // Or we can get persons with age > 30 and name! = Peter
      * mydb.get.records(
-     * 'objectStoreName',
-     * null,
-     * [{keyPath: 'age', cond: '>', value: 30}, {keypath: 'name', cond: '!=', value: 'Peter'}], // here the query is a conditionObject array
-     * myCallback);
+     *    'objectStoreName', 
+     *    'ages', 
+     *    32, 
+     *    myCallback
+     * );
+     * 
+     * 
+     * //
+     * // Or we can get persons with age > 30 and name! = Peter
+     * //
+     * mydb.get.records(
+     *    'objectStoreName',
+     *    null,
+     *    'age>30 &amp; name != "Peter"', 
+     *    myCallback
+     * );
      *
+     * 
+     * // Execs all pending tasks
      * mydb.execTasks();
      */
     records: function(storeName, indexName, query, callback, errorCallback) {
@@ -1448,7 +1739,12 @@ var sidb = function(_dbName) {
 
       taskQueue.push(task);
     }
-  };
+  };  
+
+  //#endregion Task queue system
+
+  
+
 
   /**
    * Contains some util methods
@@ -1473,15 +1769,15 @@ var sidb = function(_dbName) {
       return pageArray;
     }
   };
+  
 
   /**
-   * Executes pending tasks. The tasks are executed sequentially. A task does not run until the previous one ends. This avoids problems arising from the asynchronous nature of the indexedDB api.
+   * Gets the database name
    * @public
+   * @return {string} Database name
    */
-  this.execTasks = function() {
-    if (idle) {
-      checkTasks();
-    }
+  this.getName = function() {
+    return dbName;
   };
 
   /**
@@ -1499,6 +1795,7 @@ var sidb = function(_dbName) {
   };
 
   //// Initialization /////////////////////////////
+  qrySys.init();
   this.add.db();
   this.execTasks();
 };
@@ -1514,7 +1811,7 @@ var sidb = function(_dbName) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Nov 05 2018 23:05:56 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 07 2018 20:55:13 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

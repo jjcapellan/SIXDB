@@ -6,7 +6,7 @@ IndexedDB is the recommended solution for the persistent storage of large volume
 But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.  
 SIDB adds an abstraction layer over indexedDB that hides that complexity.  
 
-You can learn how to use SIDB in less than 5 minuts (or maybe 10 :)).
+You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
 
 
 ## In this document ...
@@ -19,13 +19,13 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 10 :)).
     * [Read records](#Read-records)
     * [Update records](#Update-records)
     * [Remove records](#Remove-records)
-* [Query system](#Query-system)
+* [Query language](#Query-system)
 * [Using functions as values](#Using-functions)
 
 ## <a name="Features"></a>Features
 ***
 * Task queue system that manages all asynchronous operations.
-* [Query system](#Query-system) based on groups of conditions (conditionObject[])
+* Natural and intuitive [Query language](#Query-system).
 * Simple and flexible methods to perform CRUD operations.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
@@ -209,16 +209,13 @@ mydb.get.records(
 
 //
 // Gets employees records from manufacturing department with a salary higher than 1200.
-// Here the third parameter (query) is an "conditionObject" array that acts as a filter.
+// Here the third parameter (query) is an conditional expression that filters the records.
 // The query can't be a single value if the index is null.
 //
 mydb.get.records(
     'southFactory', 
     null,
-    [
-        {keyPath: 'department', cond: '=', value: 'manufacturing'},
-        {keyPath: 'salary', cond: '>', value: '1200'}
-    ]
+    'department = "manufacturing" & salary > 1200'
 );
 
 
@@ -277,7 +274,7 @@ var mydb = new sidb('companyDB');
 mydb.update.records(
     'southFactory',             // Object store name
     'IDs',                      // Index name
-    2,                          // The query can be a single value (refers to index) or an conditionObject array
+    2,                          // Here the query is a single value that refers to the index keyPath
     {salary: 1290, age: 39},    // Object with the new values
     myErrorCallback             // Optional function to handle errors
 );
@@ -285,15 +282,12 @@ mydb.update.records(
 
 //
 // Updates the salary of all records where department is manufacturing and age > 30.
-// Here a conditionObject array is used as query. The index is null so all the store object is queried.
+// Here a conditional expression is used as query. The index is null so all the store object is queried.
 //
 mydb.update.records(
     'southFactory',                                                     // Object store name
     null,                                                               // Index name is null so query can't be a single value
-    [                                                                   // Query. In this case a conditionObject[]
-        {keyPath: 'department', cond: '=', value: 'manufacturing'},     //
-        {keyPath: 'age', cond: '>', value: 30}                          //
-    ],
+    'department = "manufacturing" & age > 30',                          // query
     {salary: 1300},                                                     // Object with the new values
     myErrorCallback                                                     // Optional function to handle errors
 );
@@ -301,14 +295,12 @@ mydb.update.records(
 
 //
 // The object values parameter accepts functions as value whose receives the old value an returns the new value.
-// Here all salaries from manufacturing department are increased by 300.
+// Here all salaries from employees with age highter than 40 or with salary less than 600, are increased by 300.
 //
 mydb.update.records(
     'southFactory',
     null,
-    [
-        {keyPath: 'department', cond: '=', value: 'manufacturing'}
-    ],
+    'age > 40 | salary < 600',                                          // Query
     {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
     myErrorCallback
 );
@@ -354,15 +346,12 @@ mydb.remove.records(
 
 
 //
-// Removes all records from manufacturing department with salaries highter than 1200 
+// Removes all records from manufacturing department with salaries highter than 1200 or age highter than 60
 //
 mydb.remove.records(
     'southFactory',
     null,
-    [
-        {keyPath: 'department', cond: '=', value: 'manufacturing'},
-        {keyPath: 'salary', cond: '>', value: 1200}
-    ]
+    '(department="manufacturing") & (salary > 1200 | age > 60)'             // Query with 2 groups of conditions
 );
 
 
@@ -375,23 +364,43 @@ mydb.execTasks();
 
 
 
-## <a name="Query-system"></a>Query system (conditionObject)
+## <a name="Query-system"></a>Query language
 ***
-Some SIDB methods receive as parameter conditionsObject arrays to make complex queries.  
-The conditionObject has three properties:
-* **keyPath** (The property to be checked) 
-* **cond** (The condition operator (>,<,=,>=,<=,!=))
-* **value** (The value to test the keyPath)  
-Example:
+Some SIDB methods receive as parameter to select records a string with an expression that represents the query.
+Write a query is very intuitive. Is similar to write the condition in an "if" sentence.  
+A simple query would be: `recordProperty = value` 
+There are some rules:
+* You can use these comparisson operators:  **=** , **>**, **\<**, **>=**, **<=**, **!=**
+* The valid logical operators are: **&**, **&&**, **|**, **||**
+* **&** ("and") has same effect than **&&**, and the same to **|** ("or") and **||**.
+* Only one type of logical operator can be used in a group of conditions. 
 ```javascript
-//
-// Array with 2 conditionObjects.
-// The method that receives this query will select the records with department='manufacturing' and salary>1200.
-//
-var query = [
-    {keyPath: 'department', cond: '=', value: 'manufacturing'},
-    {keyPath: 'salary', cond: '>', value: '1200'}
-];
+salary > 1000 & name != 'Peter' & age > 34      // This is correct
+salary > 1000 & name != 'Peter' | age > 34      // This is wrong
+```
+* Groups of conditions within other groups are not allowed.
+```javascript
+(salary > 1000 & name != 'Peter') | (name = 'Adam' & salary < 900)            // This is correct
+((salary > 1000 & name != 'Peter') | ID = 5) | (name = 'Adam' & salary < 900) // This is wrong
+```
+* Outside of a conditions Outside group there can't be another without parentheses.
+```javascript
+(salary > 1000 & name != 'Peter') | (name = 'Adam')   // This is correct
+(salary > 1000 & name != 'Peter') | name = 'Adam'     // This is wrong
+```
+* Only one type of logical operator can be used between groups of conditions
+```javascript
+(a = 2 & c < 10) | (d != 1) | (d = 10 & e >= 12)  // This is correct
+(a = 2 & c < 10) | (d != 1) & (d = 10 & e >= 12)  // This is wrong
+```
+* We can use a single value as a query when the value refers to the keypath of an existing index
+```javascript
+mydb.remove.records(
+    'southFactory',     // Object store name
+    'IDs',              // Index name. Contains all objects with ID property in the object store "southFactory"
+    5,                  // Query. A single value refers to the index keypath.
+    myErrorCallback     // Optional parameter. Function to handle errors.                     
+);
 ```
 
 
@@ -410,9 +419,7 @@ This function will receive the current record value as a parameter and return th
 mydb.update.records(
     'southFactory',
     null,
-    [
-        {keyPath: 'department', cond: '=', value: 'manufacturing'}
-    ],
+    'department = "manufacturing"',
     {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
     myErrorCallback
 );

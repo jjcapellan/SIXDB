@@ -16,6 +16,7 @@
 | 9 | Julia | manufacturing | 44 | 1100
  */
 
+ // An object to save in the database
 var employee = {
     id:1,
     name: 'Peter',
@@ -24,6 +25,7 @@ var employee = {
     salary: 1200
 }
 
+// An array of objects to save in the database
 var employeesArray = [
     {
         id:2,
@@ -83,69 +85,77 @@ var employeesArray = [
     }
 ];
 
-
 var tableResults = document.getElementById('tbl_results');
-
-
+var store='southFactory';
+var index='IDs';
 
 //
 // First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
 var mydb = new sidb('companyDB');
 
-var store='southFactory';
-var index='IDs';
-
-showInfo("var mydb = new sidb('companyDB')");
-
-//
-// Creates object store named "southFactory" is created.
-// 
+// Creates a store
 mydb.add.store(store, successCallback, errorCallback);
 
-// To create a new index we use add.index():
-//
-//     add.index( storeName, indexName, keyPath, errorCallback)
-//
-// Creates a single index named "IDs" with the keypath "ID"
-//
+// Creates an index
 mydb.add.index(store, index, 'id',successCallback,errorCallback);
-mydb.execTasks();
 
-// Insert one record (object employee) in the store "southFactory"
+// Insert one object
 mydb.add.records(store,employee,successCallback,errorCallback);
 
+// Gets the record with id = 1
 mydb.get.records(store,index,1,successCallback,errorCallback);
 
+// Insert an array of objects
 mydb.add.records(store,employeesArray,successCallback,errorCallback);
 
+// Gets all records
 mydb.get.lastRecords(store,null,successCallback,errorCallback);
 
-mydb.get.records(store,index,1,successCallback,errorCallback);
+// Gets records using a query of 2 conditions and logical operator &
+mydb.get.records(store,null,'department = manufacturing & age > 30',successCallback,errorCallback);
 
-mydb.get.records(store,null,'department=manufacturing & age > 30',successCallback,errorCallback);
-
+// Gets records using a query with quotes and the logical operator ||
 mydb.get.records(store,null,'department="manufacturing" || salary > 1390',successCallback,errorCallback);
 
+// Query with 2 sets of conditions
 mydb.get.records(store,null,'(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',successCallback,errorCallback);
 
+// Updates salary an age of the record with id = 4
 mydb.update.records(store,index,4,{salary: 1450, age: 42},successCallback, errorCallback);
 
+// Gets all records
 mydb.get.lastRecords(store,null,successCallback,errorCallback);
 
+// Updates the salary of records with accounting department using a function
 mydb.update.records(store,null,'department="accounting"',{salary: function(oldSalary){return oldSalary+200}},successCallback,errorCallback);
 
+// Gets the records from the accounting department
 mydb.get.records(store,null,'department="accounting"',successCallback,errorCallback);
 
-mydb.remove.index(store,index,successCallback,errorCallback);
+// Delete the record wich id = 4
+mydb.del.records(store,index,4,successCallback,errorCallback);
 
-mydb.remove.store(store,successCallback,errorCallback);
+// Gets all records
+mydb.get.lastRecords(store,null,successCallback,errorCallback);
 
-mydb.remove.db(successCallback,errorCallback);
+// Delete records with a query
+mydb.del.records(store,null,'salary>1300',successCallback,errorCallback);
 
+// Gets all records
+mydb.get.lastRecords(store,null,successCallback,errorCallback);
+
+// Deletes a index
+mydb.del.index(store,index,successCallback,errorCallback);
+
+// Deletes a store
+mydb.del.store(store,successCallback,errorCallback);
+
+// Deletes the database
+mydb.del.db(successCallback,errorCallback);
+
+// Execs all pending task
 mydb.execTasks();
-
-showInfo('Test finished');
 
 
 
@@ -155,6 +165,9 @@ function successCallback(event, origin, query) {
     if (query != null && query != undefined)
         message += ' with query: ' + query;
     showInfo(message);
+    if(origin == 'deleteDB'){
+        showInfo('Test finished');
+    };
     if (origin == 'lastRecords' || origin == 'getRecords') {
         showResults(event);
     };
@@ -165,15 +178,14 @@ function errorCallback(event,origin){
     showInfo(message);
 }
 
-
-function showResults(results){
-    if(!results){
+function showResults(results) {
+    if (!results) {
         showInfo('No results');
         return;
     };
 
-    if(Array.isArray(results)){
-        if(!results[0]){
+    if (Array.isArray(results)) {
+        if (!results[0]) {
             console.log('results[0] es null.\n');
             console.log(results);
             return;
@@ -181,53 +193,53 @@ function showResults(results){
         var keys = Object.keys(results[0]);
         //Headers
         var headerRow = document.createElement('tr');
-        var i=0;
-            for(i=0;i<keys.length;i++){
+        var i = 0;
+        for (i = 0; i < keys.length; i++) {
             var cell = document.createElement('th');
-            cell.textContent=keys[i];
+            cell.textContent = keys[i];
             headerRow.appendChild(cell);
-            };
-            tableResults.appendChild(headerRow);
+        };
+        tableResults.appendChild(headerRow);
 
         //Data rows
-        for(i=0;i<results.length;i++){
+        for (i = 0; i < results.length; i++) {
             var row = document.createElement('tr');
-            var j=0;
-            for(j=0;j<keys.length;j++){
+            var j = 0;
+            for (j = 0; j < keys.length; j++) {
                 var cell = document.createElement('td');
-            cell.textContent=results[i][keys[j]];
-            row.appendChild(cell);
+                cell.textContent = results[i][keys[j]];
+                row.appendChild(cell);
             };
-            tableResults.appendChild(row);            
+            tableResults.appendChild(row);
         }
-            
+
     } else {
         var keys = Object.keys(results);
         // Headers
         var headerRow = document.createElement('tr');
-        var i=0;
-            for(i=0;i<keys.length;i++){
+        var i = 0;
+        for (i = 0; i < keys.length; i++) {
             var cell = document.createElement('th');
-            cell.textContent=keys[i];
+            cell.textContent = keys[i];
             headerRow.appendChild(cell);
-            };
-            tableResults.appendChild(headerRow);
-            //Data row
+        };
+        tableResults.appendChild(headerRow);
+        //Data row
         var row = document.createElement('tr');
-            for(i=0;i<keys.length;i++){
-                var cell = document.createElement('td');
-            cell.textContent=results[keys[i]];
+        for (i = 0; i < keys.length; i++) {
+            var cell = document.createElement('td');
+            cell.textContent = results[keys[i]];
             row.appendChild(cell);
-            };
-            tableResults.appendChild(row);
+        };
+        tableResults.appendChild(row);
     }
 }
 
-function showInfo(message){
+function showInfo(message) {
     var headerRow = document.createElement('tr');
-    var cell=document.createElement('th');
+    var cell = document.createElement('th');
     cell.setAttribute("colspan", 6);
-    cell.textContent=message;
+    cell.textContent = message;
     headerRow.appendChild(cell);
     tableResults.appendChild(headerRow);
 }

@@ -553,15 +553,15 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes an object store.
+   * Deletes an object store.
    * @private
    * @param {string} storeName Object store name
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeStore(storeName, successCallback, errorCallback) {
+  function deleteStore(storeName, successCallback, errorCallback) {
     var version;
-    var origin='removeStore';
+    var origin='deleteStore';
 
     var request = window.indexedDB.open(dbName);
 
@@ -617,14 +617,14 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes a Database
+   * Deletes a Database
    * @private
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeDB( successCallback, errorCallback) {
+  function deleteDB( successCallback, errorCallback) {
     var request = window.indexedDB.deleteDatabase(dbName);
-    var origin='removeDB';
+    var origin='deleteDB';
 
     request.onerror = function(event) {
       if (errorCallback) {
@@ -647,7 +647,7 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes one or more records from a store. Records are selected by the query.
+   * Deletes one or more records from a store. Records are selected by the query.
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
@@ -661,9 +661,9 @@ var sidb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
-  function removeRecord(storeName, indexName, query, successCallback, errorCallback) {
+  function delRecords(storeName, indexName, query, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var origin='removeRecord';
+    var origin='deleteRecord';
     var isIndexKeyValue;
     if(typeof(query)=='number'){
       isIndexKeyValue=true;
@@ -677,7 +677,8 @@ var sidb = function(_dbName) {
 
     request.onsuccess = function (event) {
       var db = event.target.result;
-      var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+      var conditionsBlocksArray;
+      conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
 
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -746,6 +747,7 @@ var sidb = function(_dbName) {
         if (isIndexKeyValue) {
           // if is a number here is converted to string
           query = index.keyPath + '=' + query;
+          conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
         };
         var request = index.openCursor();
         request.onsuccess = onsuccesCursor;
@@ -759,16 +761,16 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes an index
+   * Deletes an index
    * @private
    * @param {string} storeName Object store name
    * @param {string} indexName Index name
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeIndex(storeName, indexName, successCallback, errorCallback) {
+  function deleteIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
-    var origin='removeIndex';
+    var origin='deleteIndex';
 
     var request = window.indexedDB.open(dbName);
 
@@ -1226,20 +1228,20 @@ var sidb = function(_dbName) {
         newDB(task.errorCallback);
         break;
 
-      case "removeStore":
-        removeStore(task.storeName, task.successCallback, errorCallback);
+      case "deleteStore":
+        deleteStore(task.storeName, task.successCallback, errorCallback);
         break;
 
-      case "removeDB":
-        removeDB(task.successCallback, task.errorCallback);
+      case "deleteDB":
+        deleteDB(task.successCallback, task.errorCallback);
         break;
 
-      case "removeRecords":
-        removeRecord(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
+      case "deleteRecords":
+        delRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
-      case "removeIndex":
-        removeIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
+      case "deleteIndex":
+        deleteIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
         break;
 
       case "updateRecordsByIndex":
@@ -1436,12 +1438,12 @@ var sidb = function(_dbName) {
   };
 
   /**
-   * Contains remove methods
+   * Contains delete methods
    * @namespace
    */
-  this.remove = {
+  this.del = {
     /**
-     * Adds the task "remove a database" to the task queue.
+     * Adds the task "delete a database" to the task queue.
      * @public
      * @instance
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
@@ -1449,7 +1451,7 @@ var sidb = function(_dbName) {
      */
     db: function( successCallback, errorCallback) {
       var task = {
-        type: "removeDB",
+        type: "deleteDB",
         successCallback: successCallback,
         errorCallback: errorCallback
       };
@@ -1458,7 +1460,7 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Adds the task "remove a store from database" to the task queue.
+     * Adds the task "delete a store from database" to the task queue.
      * @public
      * @instance
      * @param {string} storeName Object store name
@@ -1467,7 +1469,7 @@ var sidb = function(_dbName) {
      */
     store: function(storeName, successCallback, errorCallback) {
       var task = {
-        type: "removeStore",
+        type: "deleteStore",
         storeName: storeName,
         successCallback: successCallback,
         errorCallback: errorCallback
@@ -1477,7 +1479,7 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Adds the task "remove a record/s from the object store" to the task queue.
+     * Adds the task "delete a record/s from the object store" to the task queue.
      * @public
      * @instance
      * @param {string} storeName Object store name.
@@ -1502,14 +1504,14 @@ var sidb = function(_dbName) {
      * }
      *
      * //
-     * // Removes records where age is 40 using the index named 'ages' with the keypath 'age' as query.
+     * // Deletes records where age is 40 using the index named 'ages' with the keypath 'age' as query.
      * //
-     * mydb.remove.record('objectStoreName', 'ages', 40);
+     * mydb.del.record('objectStoreName', 'ages', 40);
      *
      * //
-     * // Removes records with age < 20 and salary > 1500 using a conditionObject array as query.
+     * // Deletes records with age < 20 and salary > 1500 using a conditionObject array as query.
      * //
-     * mydb.remove.records(
+     * mydb.del.records(
      *    'objectStoreName',          
      *    null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.
      *    'age < 20 & salary > 1500'      
@@ -1519,7 +1521,7 @@ var sidb = function(_dbName) {
      */
     records: function(storeName, indexName, query, successCallback, errorCallback) {
       var task = {
-        type: "removeRecords",
+        type: "deleteRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -1531,7 +1533,7 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Adds the task "remove an index from an object store" to the task queue.
+     * Adds the task "delete an index from an object store" to the task queue.
      * @public
      * @instance
      * @param {string} storeName Object store name
@@ -1541,7 +1543,7 @@ var sidb = function(_dbName) {
      */
     index: function(storeName, indexName, successCallback, errorCallback) {
       var task = {
-        type: "removeIndex",
+        type: "deleteIndex",
         storeName: storeName,
         indexName: indexName,
         successCallback: successCallback,
@@ -1781,9 +1783,6 @@ var sidb = function(_dbName) {
   };  
 
   //#endregion Task queue system
-
-  
-
 
   /**
    * Contains some util methods

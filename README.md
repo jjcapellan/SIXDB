@@ -18,7 +18,7 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
     * [Insert records](#Insert-records)
     * [Read records](#Read-records)
     * [Update records](#Update-records)
-    * [Remove records](#Remove-records)
+    * [Delete records](#Delete-records)
 * [Query language](#Query-system)
 * [Using functions as values](#Using-functions)
 
@@ -321,8 +321,8 @@ function myErrorCallback(event){
 mydb.execTasks();
 ```
 
-### <a name="Remove-records"></a>**Remove records**
-SIDB has the method remove.records() for this case.
+### <a name="Delete-records"></a>**Delete records**
+SIDB has the method del.records() for this case.
 ```javascript
 //
 // First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
@@ -331,13 +331,13 @@ var mydb = new sidb('companyDB');
 
 
 //
-// To remove one or more records there is the method remove.records():
+// To delete one or more records there is the method del.records():
 //
-//     remove.records( storeName, indexName, query, errorCallback)
+//     del.records( storeName, indexName, query, errorCallback)
 //
-// For eample, this removes the record with ID 5 from the object store "southFactory"
+// For eample, this deletes the record with ID 5 from the object store "southFactory"
 //
-mydb.remove.records(
+mydb.del.records(
     'southFactory',     // Object store name
     'IDs',              // Index name
     5,                  // Query. A single value refers to the index keypath.
@@ -346,9 +346,9 @@ mydb.remove.records(
 
 
 //
-// Removes all records from manufacturing department with salaries highter than 1200 or age highter than 60
+// deletes all records from manufacturing department with salaries highter than 1200 or age highter than 60
 //
-mydb.remove.records(
+mydb.del.records(
     'southFactory',
     null,
     '(department="manufacturing") & (salary > 1200 | age > 60)'             // Query with 2 groups of conditions
@@ -395,7 +395,7 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong
 ```
 * We can use a single value as a query when the value refers to the keypath of an existing index
 ```javascript
-mydb.remove.records(
+mydb.del.records(
     'southFactory',     // Object store name
     'IDs',              // Index name. Contains all objects with ID property in the object store "southFactory"
     5,                  // Query. A single value refers to the index keypath.

@@ -61,7 +61,7 @@ var sidb = function(_dbName) {
    * @param {function(object)} callback Function called when done. Receives as parameter the retrieved records.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
-  function lastRecords(storeName, maxResults, callback,errorCallback) {
+  function lastRecords(storeName, maxResults, callback, errorCallback) {
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function (event) {
@@ -148,7 +148,12 @@ var sidb = function(_dbName) {
    */
   function getRecords(storeName, indexName, query, callback,errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx))?false:true;
+    var isIndexKeyValue;
+    if(typeof(query)=='number'){
+      isIndexKeyValue=true;
+    } else {
+      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+    };
     
 
     request.onerror = function (event) {
@@ -630,7 +635,12 @@ var sidb = function(_dbName) {
    */
   function removeRecord(storeName, indexName, query, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
+    var isIndexKeyValue;
+    if(typeof(query)=='number'){
+      isIndexKeyValue=true;
+    } else {
+      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+    };
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
@@ -702,6 +712,7 @@ var sidb = function(_dbName) {
 
       if (indexName != null) {
         if (isIndexKeyValue) {
+          // if is a number here is converted to string
           query = index.keyPath + '=' + query;
         };
         var request = index.openCursor();
@@ -797,7 +808,7 @@ var sidb = function(_dbName) {
    */
   function updateByIndex(storeName, indexName, query, objectValues, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
+    var isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
@@ -895,7 +906,7 @@ var sidb = function(_dbName) {
 
   //#endregion Private functions
 
-  
+
   //#region Query system
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
 

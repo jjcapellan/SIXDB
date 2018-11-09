@@ -93,8 +93,7 @@ var sidb = function(_dbName) {
           db.close();
           console.log("Database closed");
           console.log(counter + ' last records returned from object store "' + storeName + '"');
-          taskQueue.shift();
-          checkTasks();
+          done();
         };
       };
 
@@ -103,8 +102,7 @@ var sidb = function(_dbName) {
         db.close();
         console.log("Database closed");
         console.log('All records returned from object store "' + storeName + '"');
-        taskQueue.shift();
-        checkTasks();
+        done();
       };
 
       var onerrorFunction = function (event) {
@@ -113,8 +111,7 @@ var sidb = function(_dbName) {
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
           errorCallback(event, origin);
-        taskQueue.shift();
-        checkTasks();
+        done();
       };
 
       if (maxResults != null) {
@@ -180,8 +177,7 @@ var sidb = function(_dbName) {
         db.close();
         console.log("Database closed");
         console.log('Records with key value "' + query + '" returned from index "' + indexName + '" on object store "'+ storeName+'"');
-        taskQueue.shift();
-        checkTasks();
+        done();
       };
 
       var onsuccesCursor = function (event) {
@@ -218,8 +214,7 @@ var sidb = function(_dbName) {
           db.close();
           console.log("Database closed");
           console.log('Processed query: "'+query+'" finished\n'+ counter + ' records returned from object store "' + storeName + '"');
-          taskQueue.shift();
-          checkTasks();
+          done();
         };
 
       } // end onsuccesCursor
@@ -230,8 +225,7 @@ var sidb = function(_dbName) {
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
           errorCallback(event, origin);
-        taskQueue.shift();
-        checkTasks();
+        done();
       };
 
       if (indexName != null) {
@@ -294,8 +288,7 @@ var sidb = function(_dbName) {
       } else {
         console.log('Database "' + dbName + '" already exists.');
       }
-      taskQueue.shift();
-      checkTasks();
+      done();
     };
 
     request.onerror = function(event) {
@@ -337,9 +330,8 @@ var sidb = function(_dbName) {
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
         db.close();
-        taskQueue.shift();
         console.log('Object store "' + storeName + '" already exists');
-        checkTasks();
+        done();
         return;
       }
 
@@ -374,9 +366,8 @@ var sidb = function(_dbName) {
           successCallback(event,origin);
         };
         db.close();
-        taskQueue.shift();
         console.log("New objectStore " + storeName + " created");
-        checkTasks();
+        done();
       };
     };
   }
@@ -421,9 +412,8 @@ var sidb = function(_dbName) {
                 successCallback(event, origin);
               };
               db.close();
-              taskQueue.shift();
               console.log("Database " + dbName + " closed");
-              checkTasks();
+              done();
             }
           };
 
@@ -448,9 +438,8 @@ var sidb = function(_dbName) {
             successCallback(event, origin);
           };
           db.close();
-          taskQueue.shift();
           console.log("Database " + dbName + " closed");
-          checkTasks();
+          done();
         };
 
         request.onerror = function(event) {
@@ -511,14 +500,13 @@ var sidb = function(_dbName) {
           store.createIndex(indexName, keyPath);
         } else {
           db.close();
-          taskQueue.shift();
           console.log(
             'Index "' +
               indexName +
               '" already exists in object store ' +
               storeName
           );
-          checkTasks();
+          done();
           return;
         }
       };
@@ -528,11 +516,10 @@ var sidb = function(_dbName) {
           successCallback(event,origin);
         };
         db.close();
-        taskQueue.shift();
         console.log(
           "New index " + indexName + " created in objectStore " + storeName
         );
-        checkTasks();
+        done();
       };
 
       request.onerror = function(event) {
@@ -595,8 +582,7 @@ var sidb = function(_dbName) {
         };
         db.close();
         console.log("ObjectStore " + storeName + " deleted");
-        taskQueue.shift();
-        checkTasks();
+        done();
       };
 
       request.onerror = function(event) {
@@ -641,8 +627,7 @@ var sidb = function(_dbName) {
         successCallback(event, origin);
       };
       console.log("Database " + dbName + " deleted");
-      taskQueue.shift();      
-      checkTasks();
+      done();
     };
   }
 
@@ -725,8 +710,7 @@ var sidb = function(_dbName) {
           db.close();
           console.log("Database closed");
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records deleted from object store "' + storeName + '"');
-          taskQueue.shift();
-          checkTasks();
+          done();
         };
 
       } // end onsuccesCursor
@@ -735,12 +719,10 @@ var sidb = function(_dbName) {
         if (errorCallback) {
           errorCallback(event, origin);
         };
-
-        taskQueue.shift();
         db.close();
         console.log("Database closed");
         console.log('Error deleting records' + event.target.error);
-        checkTasks();
+        done();
       }
 
       if (indexName != null) {
@@ -806,8 +788,7 @@ var sidb = function(_dbName) {
         };
         db.close();
         console.log( "Index " + indexName + " in objectStore " + storeName + " deleted");
-        taskQueue.shift();        
-        checkTasks();
+        done();
       };
 
       request.onerror = function(event) {
@@ -919,8 +900,7 @@ var sidb = function(_dbName) {
           db.close();
           console.log("Database closed");
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records updated from object store "' + storeName + '"');
-          taskQueue.shift();          
-          checkTasks();
+          done();
         };
 
       }
@@ -932,8 +912,7 @@ var sidb = function(_dbName) {
         db.close();
         console.log("Database closed");
         console.log('Error retrieving records: ' + event.target.error);
-        taskQueue.shift();        
-        checkTasks();
+        done();
       }
 
       if (indexName != null) {
@@ -1213,6 +1192,15 @@ var sidb = function(_dbName) {
   var taskQueue = [];
 
   /**
+   * Delete a task from the queue when a is finished and checks for pending tasks.
+   * @return {void}
+   */
+  function done() {
+    taskQueue.shift();
+    checkTasks();
+  }
+
+  /**
    * Manage the task queue
    * @private
    */
@@ -1239,6 +1227,12 @@ var sidb = function(_dbName) {
 
       case "newDB":
         newDB(task.errorCallback);
+        break;
+
+      case "custom":
+        customTaskActive = true;
+        task.fn.apply(task.context, task.args);
+        done();
         break;
 
       case "deleteStore":
@@ -1292,22 +1286,17 @@ var sidb = function(_dbName) {
    * Contains add methods
    * @namespace
    */
-  this.add = {
-    /**
+  this.add = { /**
      * Add the task "create new database" to the task queue. Internal use only.
      * @private
      * @instance
      * @param {function} [errorCallback] Function called on error. Receives event parameter.
      */
     db: function(errorCallback) {
-      var task = {
-        type: "newDB",
-        errorCallback: errorCallback
-      };
+      var task = { type: "newDB", errorCallback: errorCallback };
 
       taskQueue.push(task);
     },
-
     /**
      * Adds the task "create a new object store" to the task queue.
      * @public
@@ -1316,7 +1305,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // Callback function to process a possible error
      * //
@@ -1324,13 +1313,13 @@ var sidb = function(_dbName) {
      *   console.log('Error creating new object store:' + event.target.error);
      * }
      *
-     * 
+     *
      * //
      * // This code adds the task "create a new object store" to the task queue
      * //
      * mydb.add.store('objectStoreName', myErrorCallback);
      *
-     * 
+     *
      * //
      * // Execs all pending tasks
      * //
@@ -1338,17 +1327,11 @@ var sidb = function(_dbName) {
      */
     store: function(storeName, successCallback, errorCallback) {
       // Make the task object
-      var task = {
-        type: "newStore",
-        storeName: storeName,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+      var task = { type: "newStore", storeName: storeName, successCallback: successCallback, errorCallback: errorCallback };
 
       // Adds this task to taskQueue
       taskQueue.push(task);
     },
-
     /**
      * Add the task "insert new record in object store" to the task queue.
      * @public
@@ -1358,7 +1341,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // Object to insert in the object store
      * //
@@ -1373,29 +1356,22 @@ var sidb = function(_dbName) {
      *     console.log('Error inserting the new record: ' + event.target.error);
      * }
      *
-     * 
+     *
      * //
      * // Inserts new record in object store. (needs execTasks() to execute)
      * //
      * mydb.add.records('objectStoreName', person, myErrorCallback);
      *
-     * 
+     *
      * // Execs all pending tasks.
      * //
      * mydb.execTasks();
      */
     records: function(storeName, obj, successCallback, errorCallback) {
-      var task = {
-        type: "newRecords",
-        storeName: storeName,
-        obj: obj,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+      var task = { type: "newRecords", storeName: storeName, obj: obj, successCallback: successCallback, errorCallback: errorCallback };
 
       taskQueue.push(task);
     },
-
     /**
      * Adds the task "create a new index" to the task queue.
      * @public
@@ -1406,7 +1382,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // Object to insert in the object store
      * //
@@ -1415,15 +1391,15 @@ var sidb = function(_dbName) {
      *     age: 32
      * }
      *
-     * 
+     *
      * //
      * // Callback function to process a possible error
      * //
      * var myErrorCallback = function(event){
      *     console.log('Error creating the new index: ' + event.target.error);
      * }
-     * 
-     * 
+     *
+     *
      * //
      * // This code adds the task "create a new index" to the task queue.
      * // In this case the new index "ages" order the records by the record property "age".
@@ -1431,24 +1407,80 @@ var sidb = function(_dbName) {
      * //
      * mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);
      *
-     * 
+     *
      * // Execs all pending tasks
      * //
      * mydb.execTasks();
      */
     index: function(storeName, indexName, keyPath, successCallback, errorCallback) {
-      var task = {
-        type: "newIndex",
-        storeName: storeName,
-        indexName: indexName,
-        keyPath: keyPath,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+      var task = { type: "newIndex", storeName: storeName, indexName: indexName, keyPath: keyPath, successCallback: successCallback, errorCallback: errorCallback };
 
       taskQueue.push(task);
-    }
-  };
+    },
+
+    /**
+     * Add a specific function to the SIDB task queue.
+     * @param  {any} fn Our custom function that we want to add to the task queue.
+     * @param  {any} context It is usually "this".
+     * @param  {...any} args Arguments for the function.
+     * @return {void}
+     * @example
+     * var mydb = new sidb('companyDB');
+     *
+     * var store= 'southFactory';
+     *
+     * // Inserts one record in "southFactory" object store.
+     * //
+     * mydb.add.records(
+     *    store,                                                                      // Object store name.
+     *    {ID: 1, name: 'Peter', department: 'manufacturing', age: 32, salary: 1200}  // A single object that represents a record.
+     * );
+     *
+     *
+     * //
+     * // To add an own function to the task queue add.customTask is used
+     * //
+     * //     add.customTask( fn, context, args)
+     * //
+     * // This task is executed after the previous insertion task and before the next reading task.
+     * //
+     * add.customTask(
+     *    function(m){                                // Custom function
+     *        alert(m);
+     *    },
+     *    this,                                       // Context. Usually "this".
+     *    'Inserting operation finished !!'           // Arguments of the function. Can be a variable number of arguments.
+     * )
+     *
+     *
+     *
+     * // Reads all records from "southFactory" object store.
+     * //
+     * mydb.get.lastRecords(
+     *    store,
+     *    null,
+     *    readerCallback
+     * );
+     *
+     *
+     * // ***** VERY IMPORTANT ****
+     * // Once we have introduced the operations that we want to perform on the database,
+     * // we must use the function execTasks() to execute them.
+     * //
+     * mydb.execTasks();
+     */
+    customTask: function(fn, context, args) {
+      var argsArray = [];
+      if (args) {
+        var i = 0;
+        for (i = 2; i < arguments.length; i++) {
+          argsArray[2 - i] = arguments[i];
+        }
+      }
+      var task = { type: "custom", fn: fn, context: context, args: argsArray };
+
+      taskQueue.push(task);
+    } };
 
   /**
    * Contains delete methods
@@ -1506,7 +1538,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1588,7 +1620,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1670,7 +1702,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // An example of object stored in the object store "storeName"
      * //
@@ -1730,7 +1762,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb();
+     * var mydb = new sidb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1831,19 +1863,7 @@ var sidb = function(_dbName) {
     return dbName;
   };
 
-  /**
-   * Checks if indexedDB is available
-   *
-   * @returns {boolean}
-   */
-  this.isIndexedDBavailable = function() {
-    var available = true;
-    if (!("indexedDB" in window)) {
-      console.log("This browser doesn't support IndexedDB");
-      available = false;
-    }
-    return available;
-  };
+  
 
   //// Initialization /////////////////////////////
   qrySys.init();

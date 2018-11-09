@@ -109,6 +109,9 @@ mydb.get.records(store,index,1,successCallback,errorCallback);
 // Insert an array of objects
 mydb.add.records(store,employeesArray,successCallback,errorCallback);
 
+// Execs a custom task
+mydb.add.customTask(showInfo,this,'This is my custom task');
+
 // Gets all records
 mydb.get.lastRecords(store,null,successCallback,errorCallback);
 
@@ -154,23 +157,22 @@ mydb.del.store(store,successCallback,errorCallback);
 // Deletes the database
 mydb.del.db(successCallback,errorCallback);
 
+// Sends a custom task
+mydb.add.customTask(showInfo,this,'Test finished');
+
 // Execs all pending task
 mydb.execTasks();
 
 
 
 function successCallback(event, origin, query) {
-    console.log(event);
-    var message = origin + ' executed';
-    if (query != null && query != undefined)
-        message += ' with query: ' + query;
-    showInfo(message);
-    if(origin == 'deleteDB'){
-        showInfo('Test finished');
-    };
-    if (origin == 'lastRecords' || origin == 'getRecords') {
-        showResults(event);
-    };
+  var message = origin + " executed";
+  if (query != null && query != undefined) message += " with query: " + query;
+  showInfo(message);
+
+  if (origin == "lastRecords" || origin == "getRecords") {
+    showResults(event);
+  }
 }
 
 function errorCallback(event,origin){

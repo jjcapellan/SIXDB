@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#~done">done</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -63,15 +63,16 @@
 </li>
 <li><a href="#Query-system">Query language</a></li>
 <li><a href="#Using-functions">Using functions as values</a></li>
+<li><a href="#Task-queue">The task queue</a></li>
 </ul>
 <h2><a name="Features"></a>Features</h2><hr>
 <ul>
-<li>Task queue system that manages all asynchronous operations.</li>
+<li><a href="#Task-queue">Task queue</a> system that manages all asynchronous operations.</li>
 <li>Natural and intuitive <a href="#Query-system">Query language</a>.</li>
 <li>Simple and flexible methods to perform CRUD operations.</li>
 <li>Insertion operations allow several entries to be entered at the same time.</li>
 <li>Update operations accept <a href="#Using-functions">functions as value</a> to modify the current value of the record.</li>
-<li>Lightweight. SIDB takes less than 20Kb minified and less than 3Kb compressed with gzip.</li>
+<li>Lightweight. SIDB takes less than 30Kb minified and less than 5Kb compressed with gzip.</li>
 <li>Default errorCallback in all methods. ErrorCallback parameter is optional.</li>
 <li>Complete documentation with examples.</li>
 </ul>
@@ -411,7 +412,7 @@ mydb.del.records(
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h2><a name="Query-system"></a>Query language</h2><hr>
+mydb.execTasks();</code></pre><h2><a name="Query-system"></a><strong>Query language</strong></h2><hr>
 <p>Some SIDB methods receive as parameter to select records a string with an expression that represents the query.
 Write a query is very intuitive. Is similar to write the condition in an &quot;if&quot; sentence.<br>A simple query would be: <code>recordProperty = value</code> 
 There are some rules:</p>
@@ -433,8 +434,12 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong</code></pre></l
   5,                  // Query. A single value refers to the index keypath.
   myErrorCallback     // Optional parameter. Function to handle errors.                     
 );</code></pre></li>
+<li>Spaces or symbols in the value of a condition must be enclosed in quotation marks.<pre class="prettyprint source lang-javascript"><code>name = 'John Smith'     // This is correct
+equation = 'e = v / t'  // This is correct
+equation = e = v / t    // This is very wrong. The query system can't parse that &quot;=&quot; without quotes.</code></pre></li>
+<li>The nested quotes are not supported<pre class="prettyprint source lang-javascript"><code>message = 'This is my &quot;message&quot;'    // This is wrong.</code></pre></li>
 </ul>
-<h2><a name="Using-functions"></a>Using functions as values</h2><hr>
+<h2><a name="Using-functions"></a><strong>Using functions as values</strong></h2><hr>
 <p>SIDB allows send a function in a query to modify records value.<br>To do this, we will consider the function as if it were the new value in the update.records() method.<br>This function will receive the current record value as a parameter and return the new value.</p>
 <pre class="prettyprint source lang-javascript"><code>//
 // The object values parameter accepts functions as value whose receives the old value an returns the new value.
@@ -446,7 +451,52 @@ mydb.update.records(
     'department = &quot;manufacturing&quot;',
     {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
     myErrorCallback
-);</code></pre></article>
+);</code></pre><h2><a name="Task-queue"></a><strong>The SIDB task queue</strong></h2><hr>
+<p>SIDB is based on a <strong>task queue</strong> to manage the the creation, insertion, reading, and deletion orders.<br>The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.<br>When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.<br>The result is that the orders are executed sequentially.<br>The method <em>add.customTask</em> allows us to add our own task to the queue. 
+Here a quick example:</p>
+<pre class="prettyprint source lang-Javascript"><code>var mydb = new sidb('companyDB');
+
+var store= 'southFactory';
+
+// Inserts one record in &quot;southFactory&quot; object store.
+//
+mydb.add.records(
+    store,                                                                      // Object store name.
+    {ID: 1, name: 'Peter', department: 'manufacturing', age: 32, salary: 1200}  // A single object that represents a record.
+);
+
+
+//
+// To add an own function to the task queue add.customTask is used
+//
+//     add.customTask( fn, context, args)
+// 
+// This task is executed after the previous insertion task and before the next reading task.
+//
+add.customTask(
+    function(m){                                // Custom function
+        alert(m);
+    },
+    this,                                       // Context. Usually &quot;this&quot;.
+    'Inserting operation finished !!'           // Arguments of the function. Can be a variable number of arguments.
+)
+
+
+
+// Reads all records from &quot;southFactory&quot; object store. 
+//
+mydb.get.lastRecords(
+    store, 
+    null, 
+    readerCallback
+);
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();</code></pre></article>
     </section>
 
 
@@ -459,7 +509,7 @@ mydb.update.records(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 08 2018 23:34:40 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 09 2018 23:08:04 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

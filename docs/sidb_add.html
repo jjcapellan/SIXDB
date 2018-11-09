@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#~done">done</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1282">line 1282</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1289">line 1289</a>
     </li></ul></dd>
     
 
@@ -125,6 +125,236 @@
 
     
 
+    <h4 class="name" id=".customTask"><span class="type-signature">(static) </span>customTask<span class="signature">(fn, context, &hellip;args)</span><span class="type-signature"> &rarr; {void}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1472">line 1472</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Add a specific function to the SIDB task queue.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Example</h5>
+    
+    <pre class="prettyprint"><code>var mydb = new sidb('companyDB');var store= 'southFactory';// Inserts one record in "southFactory" object store.//mydb.add.records(   store,                                                                      // Object store name.   {ID: 1, name: 'Peter', department: 'manufacturing', age: 32, salary: 1200}  // A single object that represents a record.);//// To add an own function to the task queue add.customTask is used////     add.customTask( fn, context, args)//// This task is executed after the previous insertion task and before the next reading task.//add.customTask(   function(m){                                // Custom function       alert(m);   },   this,                                       // Context. Usually "this".   'Inserting operation finished !!'           // Arguments of the function. Can be a variable number of arguments.)// Reads all records from "southFactory" object store.//mydb.get.lastRecords(   store,   null,   readerCallback);// ***** VERY IMPORTANT ****// Once we have introduced the operations that we want to perform on the database,// we must use the function execTasks() to execute them.//mydb.execTasks();</code></pre>
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>fn</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Our custom function that we want to add to the task queue.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>context</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">It is usually "this".</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">any</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Arguments for the function.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">void</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+        
+            
+
+    
+
     <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(storeName, indexName, keyPath, successCallback<span class="signature-attributes">opt</span>, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
@@ -137,7 +367,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1426">line 1426</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1415">line 1415</a>
     </li></ul></dd>
     
 
@@ -190,7 +420,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sidb();// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}//// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}//// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".//mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);// Execs all pending tasks//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}//// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}//// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".//mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);// Execs all pending tasks//mydb.execTasks();</code></pre>
 
 
 
@@ -413,7 +643,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1374">line 1374</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1370">line 1370</a>
     </li></ul></dd>
     
 
@@ -466,7 +696,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sidb();// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}//// Inserts new record in object store. (needs execTasks() to execute)//mydb.add.records('objectStoreName', person, myErrorCallback);// Execs all pending tasks.//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}//// Inserts new record in object store. (needs execTasks() to execute)//mydb.add.records('objectStoreName', person, myErrorCallback);// Execs all pending tasks.//mydb.execTasks();</code></pre>
 
 
 
@@ -661,7 +891,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1326">line 1326</a>
+        <a href="sidb.js.html">sidb.js</a>, <a href="sidb.js.html#line1328">line 1328</a>
     </li></ul></dd>
     
 
@@ -714,7 +944,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sidb();// Callback function to process a possible error//var myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}//// This code adds the task "create a new object store" to the task queue//mydb.add.store('objectStoreName', myErrorCallback);//// Execs all pending tasks//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sidb('myDatabase');// Callback function to process a possible error//var myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}//// This code adds the task "create a new object store" to the task queue//mydb.add.store('objectStoreName', myErrorCallback);//// Execs all pending tasks//mydb.execTasks();</code></pre>
 
 
 
@@ -876,7 +1106,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 08 2018 23:34:40 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 09 2018 23:08:04 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

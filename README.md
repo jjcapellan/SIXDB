@@ -21,15 +21,16 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
     * [Delete records](#Delete-records)
 * [Query language](#Query-system)
 * [Using functions as values](#Using-functions)
+* [The task queue](#Task-queue)
 
 ## <a name="Features"></a>Features
 ***
-* Task queue system that manages all asynchronous operations.
+* [Task queue](#Task-queue) system that manages all asynchronous operations.
 * Natural and intuitive [Query language](#Query-system).
 * Simple and flexible methods to perform CRUD operations.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
-* Lightweight. SIDB takes less than 20Kb minified and less than 3Kb compressed with gzip.
+* Lightweight. SIDB takes less than 30Kb minified and less than 5Kb compressed with gzip.
 * Default errorCallback in all methods. ErrorCallback parameter is optional.
 * Complete documentation with examples.
 
@@ -364,7 +365,7 @@ mydb.execTasks();
 
 
 
-## <a name="Query-system"></a>Query language
+## <a name="Query-system"></a>**Query language**
 ***
 Some SIDB methods receive as parameter to select records a string with an expression that represents the query.
 Write a query is very intuitive. Is similar to write the condition in an "if" sentence.  
@@ -402,10 +403,20 @@ mydb.del.records(
     myErrorCallback     // Optional parameter. Function to handle errors.                     
 );
 ```
+* Spaces or symbols in the value of a condition must be enclosed in quotation marks.
+```javascript
+name = 'John Smith'     // This is correct
+equation = 'e = v / t'  // This is correct
+equation = e = v / t    // This is very wrong. The query system can't parse that "=" without quotes.
+```
+* The nested quotes are not supported
+```javascript
+message = 'This is my "message"'    // This is wrong.
+```
 
 
 
-## <a name="Using-functions"></a>Using functions as values
+## <a name="Using-functions"></a>**Using functions as values**
 ***
 SIDB allows send a function in a query to modify records value.  
 To do this, we will consider the function as if it were the new value in the update.records() method.  
@@ -423,6 +434,60 @@ mydb.update.records(
     {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
     myErrorCallback
 );
+```
+
+## <a name="Task-queue"></a>**The SIDB task queue**  
+***
+SIDB is based on a **task queue** to manage the the creation, insertion, reading, and deletion orders.  
+The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.  
+When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.  
+The result is that the orders are executed sequentially.  
+The method *add.customTask* allows us to add our own task to the queue. 
+Here a quick example:
+```Javascript
+var mydb = new sidb('companyDB');
+
+var store= 'southFactory';
+
+// Inserts one record in "southFactory" object store.
+//
+mydb.add.records(
+    store,                                                                      // Object store name.
+    {ID: 1, name: 'Peter', department: 'manufacturing', age: 32, salary: 1200}  // A single object that represents a record.
+);
+
+
+//
+// To add an own function to the task queue add.customTask is used
+//
+//     add.customTask( fn, context, args)
+// 
+// This task is executed after the previous insertion task and before the next reading task.
+//
+add.customTask(
+    function(m){                                // Custom function
+        alert(m);
+    },
+    this,                                       // Context. Usually "this".
+    'Inserting operation finished !!'           // Arguments of the function. Can be a variable number of arguments.
+)
+
+
+
+// Reads all records from "southFactory" object store. 
+//
+mydb.get.lastRecords(
+    store, 
+    null, 
+    readerCallback
+);
+
+
+// ***** VERY IMPORTANT ****
+// Once we have introduced the operations that we want to perform on the database, 
+// we must use the function execTasks() to execute them.
+//
+mydb.execTasks();
 ```
 
 

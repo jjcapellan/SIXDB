@@ -658,7 +658,7 @@ var sidb = function(_dbName) {
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
    * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function(event,origin)} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
   function delRecords(storeName, indexName, query, successCallback, errorCallback) {
@@ -981,43 +981,13 @@ var sidb = function(_dbName) {
       this.blockOperatorRgx = /(?<=(\)\s*))([\&\|]+)(?=(\s*\())/g;
       this.operandRgx = /[\w'"]+/g;
       this.operatorRgx = /(=|>|<|>=|<=|!=)+/g;
+      /*
       this.leftOperandRgx = /([\w]+)(?=\s*(=|>|<|>=|<=|!=)+)/g;
       this.rightOperandRgx = /(?<=(=|>|<|>=|<=|!=)+\s*)([\w]+)/g;
-    },
+      */
 
-    /**
-     * Test a block of conditions. For example:
-     * (a<100 && a>20) || (b = 30 & c != 50 && a >= 200)   <==== Here are 2 conditions blocks. The first block has 2 conditions.
-     * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson. 
-     * @param  {conditionObject[]} conditionsArray Contains the conditions.
-     * @param  {string | null} operator Is a logical operator that can be "and", "or" or null.
-     * @return {boolean} Result after evaluating the conditions block (true/false)
-     */
-    testConditionBlock: function (cursor, conditionsArray, operator) {
-
-      var t = this;
-
-      var test = (operator == 'and' || operator == null) ? true : false;
-      if (operator == 'and' || operator == null) {
-        for (i = 0; i < conditionsArray.length; i++) {
-          test = t.testCondition(
-            cursor.value[conditionsArray[i].keyPath],
-            conditionsArray[i].cond,
-            conditionsArray[i].value
-          );
-          if (!test) return false;
-        }
-      } else {
-        for (i = 0; i < conditionsArray.length; i++) {
-          test = t.testCondition(
-            cursor.value[conditionsArray[i].keyPath],
-            conditionsArray[i].cond,
-            conditionsArray[i].value
-          );
-          if (test) return true;
-        }
-      }
-      return test;
+     this.rightOperandRgx = /(?<=([=|>|<]\s*["']?))([^"^']+)(?=["']?\s*[\&\|]*)/g;
+     this.leftOperandRgx = /(?<!([="']+)[\s\w]*)(\w+)(?=\s*[=|>|<|!]{1})/g;
     },
 
     /**
@@ -1033,28 +1003,39 @@ var sidb = function(_dbName) {
 
       var t = this;
 
-      query = query.replace(/[\"\']/g,'');
+      //query = query.replace(/[\"\']/g,'');
 
       var blocks = query.match(t.blockRgx);
+
+      // Logical operators between blocks, all must be the same type
+      var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
 
       var conditionsBlocksArray = [];
 
       var pushConditionBlockToArray = function (qry, extLogOperator) {
 
-        var logicalOperators = (qry.match(/[\&\|]+/g)) ? qry.match(/[\&\|]+/g).length : 0;
+        var leftOperands = qry.match(t.leftOperandRgx);
+        var rightOperands = qry.match(t.rightOperandRgx);
+        //
+        // Removing righ operands (values) before extract comparison operators avoids 
+        // problems with literal values that include comparisson symbols(= , >,...) quoted.
+        //
+        var operators = qry.replace(t.rightOperandRgx,'').match(t.operatorRgx);
+
+        
         var conditionsArray = [];
 
         // If query is like: " c = 15 "
-        if (logicalOperators == 0) {
+        if (leftOperands.length == 1) {
 
-          var operands = qry.match(t.operandRgx); // array with 2 elements: keyPath and value
-          var operator = qry.match(t.operatorRgx); // the only comparisson operator
+          /*var operands = qry.match(t.operandRgx); // array with 2 elements: keyPath and value
+          var operator = qry.match(t.operatorRgx); // the only comparisson operator*/
 
           conditionsArray.push(
             {
-              keyPath: operands[0],
-              cond: operator[0],
-              value: operands[1]
+              keyPath: leftOperands[0],   // property
+              cond: operators[0],         // =, >, <, ...
+              value: rightOperands[0]     // value
             }
           );
 
@@ -1071,9 +1052,6 @@ var sidb = function(_dbName) {
         } else {
 
           // if query is like: " c = 15 & a > 30 "
-          var leftOperands = qry.match(t.leftOperandRgx);
-          var rightOperands = qry.match(t.rightOperandRgx);
-          var operators = qry.match(t.operatorRgx);
           var logOperatorsType = qry.match(/[\&\|]+/g)[0];
 
           if (logOperatorsType == '&' || logOperatorsType == '&&') {
@@ -1110,8 +1088,7 @@ var sidb = function(_dbName) {
         pushConditionBlockToArray(query, null);
         return conditionsBlocksArray;
       } else {
-        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "
-        var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
+        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "        
         if (extLogOperator) {
           if (extLogOperator == '&' || extLogOperator == '&&') {
             extLogOperator = 'and';
@@ -1129,6 +1106,42 @@ var sidb = function(_dbName) {
         return conditionsBlocksArray;
       };
     },
+
+    /**
+     * Test a block of conditions. For example:
+     * (a<100 && a>20) || (b = 30 & c != 50 && a >= 200)   <==== Here are 2 conditions blocks. The first block has 2 conditions.
+     * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson. 
+     * @param  {conditionObject[]} conditionsArray Contains the conditions.
+     * @param  {string | null} operator Is a logical operator that can be "and", "or" or null.
+     * @return {boolean} Result after evaluating the conditions block (true/false)
+     */
+    testConditionBlock: function (cursor, conditionsArray, operator) {
+
+      var t = this;
+
+      var test = (operator == 'and' || operator == null) ? true : false;
+      if (operator == 'and' || operator == null) {
+        for (i = 0; i < conditionsArray.length; i++) {
+          test = t.testCondition(
+            cursor.value[conditionsArray[i].keyPath],
+            conditionsArray[i].cond,
+            conditionsArray[i].value
+          );
+          if (!test) return false;
+        }
+      } else {
+        for (i = 0; i < conditionsArray.length; i++) {
+          test = t.testCondition(
+            cursor.value[conditionsArray[i].keyPath],
+            conditionsArray[i].cond,
+            conditionsArray[i].value
+          );
+          if (test) return true;
+        }
+      }
+      return test;
+    },
+    
 
     /**
      * Test a conditional expression as false or true

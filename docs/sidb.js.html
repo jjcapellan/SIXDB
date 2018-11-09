@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#records">records</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -98,11 +98,12 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {number} maxResults Limits the records retrieved.
-   * @param {function(object)} callback Function called when done. Receives as parameter the retrieved records.
-   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
+   * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
+   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter and origin.
    */
-  function lastRecords(storeName, maxResults, callback,errorCallback) {
+  function lastRecords(storeName, maxResults, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var origin='lastRecords';
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
@@ -128,7 +129,7 @@ var sidb = function(_dbName) {
           counter++;
           cursor.continue();
         } else {
-          callback(resultFiltered);
+          successCallback(resultFiltered, origin);
           db.close();
           console.log("Database closed");
           console.log(counter + ' last records returned from object store "' + storeName + '"');
@@ -138,7 +139,7 @@ var sidb = function(_dbName) {
       };
 
       var onsuccesGetAllFunction = function (event) {
-        callback(event.target.result);
+        successCallback(event.target.result, origin);
         db.close();
         console.log("Database closed");
         console.log('All records returned from object store "' + storeName + '"');
@@ -151,7 +152,7 @@ var sidb = function(_dbName) {
         console.log("Database closed");
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
-          errorCallback(event);
+          errorCallback(event, origin);
         taskQueue.shift();
         checkTasks();
       };
@@ -183,12 +184,18 @@ var sidb = function(_dbName) {
    * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
    * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
+   * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array or an object.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
-  function getRecords(storeName, indexName, query, callback,errorCallback) {
+  function getRecords(storeName, indexName, query, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx))?false:true;
+    var origin='getRecords';
+    var isIndexKeyValue;
+    if(typeof(query)=='number'){
+      isIndexKeyValue=true;
+    } else {
+      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+    };
     
 
     request.onerror = function (event) {
@@ -209,7 +216,7 @@ var sidb = function(_dbName) {
       var resultFiltered = [];
 
       var onsuccesIndexGetKey = function(event){
-        callback(event.target.result);
+        successCallback(event.target.result, origin, query);
         db.close();
         console.log("Database closed");
         console.log('Records with key value "' + query + '" returned from index "' + indexName + '" on object store "'+ storeName+'"');
@@ -247,7 +254,7 @@ var sidb = function(_dbName) {
           cursor.continue();
 
         } else {
-          callback(resultFiltered);
+          successCallback(resultFiltered, origin, query);
           db.close();
           console.log("Database closed");
           console.log('Processed query: "'+query+'" finished\n'+ counter + ' records returned from object store "' + storeName + '"');
@@ -262,7 +269,7 @@ var sidb = function(_dbName) {
         console.log("Database closed");
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
-          errorCallback(event);
+          errorCallback(event, origin);
         taskQueue.shift();
         checkTasks();
       };
@@ -347,17 +354,18 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} dbName Database name
    * @param {string} storeName Objects store name
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
+   * @param {function} [errorCallback] Function called on error. Receives as parameters event and origin.
    */
-  function newStore(storeName, errorCallback) {
-    var db;
+  function newStore(storeName, successCallback, errorCallback) {
     var version;
+    var origin='newStore';
 
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event, origin);
       } else {
         console.log("Error opening database " + dbName + " : " + request.error);
       }
@@ -394,7 +402,7 @@ var sidb = function(_dbName) {
         store.onerror = function(event) {
           console.log("error");
           if (errorCallback) {
-            errorCallback(event);
+            errorCallback(event, origin);
           } else {
             console.log("Error in database " + dbName + " : " + db.error);
           }
@@ -402,6 +410,9 @@ var sidb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
+        if(successCallback){
+          successCallback(event,origin);
+        };
         db.close();
         taskQueue.shift();
         console.log("New objectStore " + storeName + " created");
@@ -415,14 +426,16 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name
    * @param {(object | object[])} obj An object or objects array to insert in object store
+   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function newRecord(storeName, obj, errorCallback) {
+  function newRecord(storeName, obj, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var origin='newRecord';
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event, origin);
       } else {
         console.log("Error opening database " + dbName + " : " + request.error);
       }
@@ -444,6 +457,9 @@ var sidb = function(_dbName) {
             counter++;
             if (counter == objSize) {
               console.log("Records added in store " + storeName);
+              if(successCallback){
+                successCallback(event, origin);
+              };
               db.close();
               taskQueue.shift();
               console.log("Database " + dbName + " closed");
@@ -453,7 +469,7 @@ var sidb = function(_dbName) {
 
           request.onerror = function(event) {
             if (errorCallback) {
-              errorCallback(event);
+              errorCallback(event, origin);
             } else {
               console.log(
                 "Error adding records to store " +
@@ -468,6 +484,9 @@ var sidb = function(_dbName) {
         var request = store.add(obj);
         request.onsuccess = function(event) {
           console.log("record added");
+          if(successCallback){
+            successCallback(event, origin);
+          };
           db.close();
           taskQueue.shift();
           console.log("Database " + dbName + " closed");
@@ -476,7 +495,7 @@ var sidb = function(_dbName) {
 
         request.onerror = function(event) {
           if (errorCallback) {
-            errorCallback(event);
+            errorCallback(event, origin);
           } else {
             console.log(
               "Error adding record to store " +
@@ -496,17 +515,18 @@ var sidb = function(_dbName) {
    * @param {string} storeName Object store name
    * @param {string} indexName Index name
    * @param {string} keyPath Key that the index use
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
    */
-  function newIndex(storeName, indexName, keyPath, errorCallback) {
-    var db;
+  function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
     var version;
+    var origin='newIndex';
 
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event, origin);
       } else {
         console.log("Error opening database " + dbName + " : " + request.error);
       }
@@ -544,6 +564,9 @@ var sidb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
+        if(successCallback){
+          successCallback(event,origin);
+        };
         db.close();
         taskQueue.shift();
         console.log(
@@ -554,7 +577,7 @@ var sidb = function(_dbName) {
 
       request.onerror = function(event) {
         if (errorCallback) {
-          errorCallback(event);
+          errorCallback(event, origin);
         } else {
           console.log(
             "Error creating index " +
@@ -570,20 +593,21 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes an object store.
+   * Deletes an object store.
    * @private
    * @param {string} storeName Object store name
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeStore(storeName, errorCallback) {
-    var db;
+  function deleteStore(storeName, successCallback, errorCallback) {
     var version;
+    var origin='deleteStore';
 
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event, origin);
       } else {
         console.log("Error opening database " + dbName + " : " + request.error);
       }
@@ -606,6 +630,9 @@ var sidb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
+        if(successCallback){
+          successCallback(event,origin);
+        };
         db.close();
         console.log("ObjectStore " + storeName + " deleted");
         taskQueue.shift();
@@ -614,7 +641,7 @@ var sidb = function(_dbName) {
 
       request.onerror = function(event) {
         if (errorCallback) {
-          errorCallback(event);
+          errorCallback(event,origin);
         } else {
           console.log(
             "Error deleting store " +
@@ -630,32 +657,37 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes a Database
+   * Deletes a Database
    * @private
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeDB(errorCallback) {
+  function deleteDB( successCallback, errorCallback) {
     var request = window.indexedDB.deleteDatabase(dbName);
+    var origin='deleteDB';
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event,origin);
       } else {
         console.log(
           "Error deleting database " + dbName + " : " + request.error
         );
-      }
+      };
     };
 
     request.onsuccess = function(event) {
-      taskQueue.shift();
+      if(successCallback){
+        successCallback(event, origin);
+      };
       console.log("Database " + dbName + " deleted");
+      taskQueue.shift();      
       checkTasks();
     };
   }
 
   /**
-   * Removes one or more records from a store. Records are selected by the query.
+   * Deletes one or more records from a store. Records are selected by the query.
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
@@ -666,11 +698,18 @@ var sidb = function(_dbName) {
    * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
    * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
+   * @param {function(event,origin)} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
-  function removeRecord(storeName, indexName, query, errorCallback) {
+  function delRecords(storeName, indexName, query, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
+    var origin='deleteRecord';
+    var isIndexKeyValue;
+    if(typeof(query)=='number'){
+      isIndexKeyValue=true;
+    } else {
+      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+    };
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
@@ -678,7 +717,8 @@ var sidb = function(_dbName) {
 
     request.onsuccess = function (event) {
       var db = event.target.result;
-      var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+      var conditionsBlocksArray;
+      conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
 
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
@@ -719,6 +759,9 @@ var sidb = function(_dbName) {
           cursor.continue();
 
         } else {
+          if(successCallback){
+            successCallback(event, origin, query);
+          };
           db.close();
           console.log("Database closed");
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records deleted from object store "' + storeName + '"');
@@ -730,7 +773,7 @@ var sidb = function(_dbName) {
 
       var onerrorFunction = function (event) {
         if (errorCallback) {
-          errorCallback(event);
+          errorCallback(event, origin);
         };
 
         taskQueue.shift();
@@ -742,7 +785,9 @@ var sidb = function(_dbName) {
 
       if (indexName != null) {
         if (isIndexKeyValue) {
+          // if is a number here is converted to string
           query = index.keyPath + '=' + query;
+          conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
         };
         var request = index.openCursor();
         request.onsuccess = onsuccesCursor;
@@ -756,21 +801,22 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Removes an index
+   * Deletes an index
    * @private
    * @param {string} storeName Object store name
    * @param {string} indexName Index name
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function removeIndex(storeName, indexName, errorCallback) {
-    var db;
+  function deleteIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
+    var origin='deleteIndex';
 
     var request = window.indexedDB.open(dbName);
 
     request.onerror = function(event) {
       if (errorCallback) {
-        errorCallback(event);
+        errorCallback(event, origin);
       } else {
         console.log("Error opening database " + dbName + " : " + request.error);
       }
@@ -795,17 +841,18 @@ var sidb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
+        if(successCallback){
+          successCallback(event, origin);
+        };
         db.close();
-        taskQueue.shift();
-        console.log(
-          "Index " + indexName + " in objectStore " + storeName + " deleted"
-        );
+        console.log( "Index " + indexName + " in objectStore " + storeName + " deleted");
+        taskQueue.shift();        
         checkTasks();
       };
 
       request.onerror = function(event) {
         if (errorCallback) {
-          errorCallback(event);
+          errorCallback(event, origin);
         } else {
           console.log(
             "Error deleting index " +
@@ -833,11 +880,18 @@ var sidb = function(_dbName) {
    * 'peter'                                    // Single value always refers to the index keypath.
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param  {object} objectValues New property value after update. Can be an array of values.
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param  {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function updateByIndex(storeName, indexName, query, objectValues, errorCallback) {
+  function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var isIndexKeyValue = (query.match(operatorRgx)) ? false : true;
+    var origin='updateRecords';
+    var isIndexKeyValue;
+    if(typeof(query)=='number'){
+      isIndexKeyValue=true;
+    } else {
+      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+    };
 
     request.onerror = function (event) {
       alert("Error. You must allow web app to use indexedDB.");
@@ -845,7 +899,8 @@ var sidb = function(_dbName) {
 
     request.onsuccess = function (event) {
       var db = event.target.result;
-      var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+      var conditionsBlocksArray;
+      conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
       console.log("Database " + dbName + " opened");
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
@@ -861,7 +916,7 @@ var sidb = function(_dbName) {
         var cursor = event.target.result;
         var keys = Object.keys(objectValues); //Array with the property names that will be updated
         var newObjectValuesSize = keys.length;
-        var extMode = conditionsBlocksArray[0].externalLogOperator;
+        var extMode = (conditionsBlocksArray)?conditionsBlocksArray[0].externalLogOperator:null; //external logical operator
 
         // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
         // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
@@ -898,10 +953,13 @@ var sidb = function(_dbName) {
           cursor.continue();
 
         } else {
+          if(successCallback){
+            successCallback(event, origin, query);
+          };
           db.close();
           console.log("Database closed");
-          taskQueue.shift();
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records updated from object store "' + storeName + '"');
+          taskQueue.shift();          
           checkTasks();
         };
 
@@ -909,18 +967,20 @@ var sidb = function(_dbName) {
 
       var onerrorFunction = function (event) {
         if (errorCallback)
-          errorCallback(event);
+          errorCallback(event, origin);
 
         db.close();
         console.log("Database closed");
-        taskQueue.shift();
         console.log('Error retrieving records: ' + event.target.error);
+        taskQueue.shift();        
         checkTasks();
       }
 
       if (indexName != null) {
-        if (!isIndexKeyValue) {
+        if (isIndexKeyValue) {
+          // If query is a single number value then is mofied to be valid to the query system
           query = index.keyPath + '=' + query;
+          conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
         };
         var request = index.openCursor();
         request.onsuccess = onsuccesCursor;
@@ -935,7 +995,7 @@ var sidb = function(_dbName) {
 
   //#endregion Private functions
 
-  
+
   //#region Query system
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1012,6 +1072,8 @@ var sidb = function(_dbName) {
     makeConditionsBlocksArray: function (query) {
 
       var t = this;
+
+      query = query.replace(/[\"\']/g,'');
 
       var blocks = query.match(t.blockRgx);
 
@@ -1090,7 +1152,6 @@ var sidb = function(_dbName) {
       } else {
         // If condition is a multiple sentence like: " (a = 5 &amp; b = 10) || (c &lt; 4 &amp; f > 10) "
         var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
-        console.log('External operator: ' + query.match(t.blockOperatorRgx));
         if (extLogOperator) {
           if (extLogOperator == '&amp;' || extLogOperator == '&amp;&amp;') {
             extLogOperator = 'and';
@@ -1196,47 +1257,47 @@ var sidb = function(_dbName) {
 
     switch (type) {
       case "newStore":
-        newStore(task.storeName, task.errorCallback);
+        newStore(task.storeName, task.successCallback, task.errorCallback);
         break;
 
       case "newRecords":
-        newRecord(task.storeName, task.obj, task.errorCallback);
+        newRecord(task.storeName, task.obj, task.successCallback, task.errorCallback);
         break;
 
       case "newDB":
         newDB(task.errorCallback);
         break;
 
-      case "removeStore":
-        removeStore(task.storeName, errorCallback);
+      case "deleteStore":
+        deleteStore(task.storeName, task.successCallback, errorCallback);
         break;
 
-      case "removeDB":
-        removeDB(task.errorCallback);
+      case "deleteDB":
+        deleteDB(task.successCallback, task.errorCallback);
         break;
 
-      case "removeRecords":
-        removeRecord(task.storeName, task.indexName, task.query, task.errorCallback);
+      case "deleteRecords":
+        delRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
-      case "removeIndex":
-        removeIndex(task.storeName, task.indexName, task.errorCallback);
+      case "deleteIndex":
+        deleteIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
         break;
 
       case "updateRecordsByIndex":
-        updateByIndex( task.storeName, task.indexName, task.query, task.objectValues, task.errorCallback);
+        updateRecords( task.storeName, task.indexName, task.query, task.objectValues, task.successCallback, task.errorCallback);
         break;
 
       case "newIndex":
-        newIndex( task.storeName, task.indexName, task.keyPath, task.errorCallback);
+        newIndex( task.storeName, task.indexName, task.keyPath, task.successCallback, task.errorCallback);
         break;
 
       case "lastRecords":
-        lastRecords( task.storeName, task.maxResults, task.callback, task.errorCallback);
+        lastRecords( task.storeName, task.maxResults, task.successCallback, task.errorCallback);
         break;
 
       case "getRecords":
-        getRecords(task.storeName, task.indexName, task.query, task.callback, task.errorCallback);
+        getRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
       default:
@@ -1279,7 +1340,8 @@ var sidb = function(_dbName) {
      * @public
      * @instance
      * @param {string} storeName Object store name.
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1301,11 +1363,12 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    store: function(storeName, errorCallback) {
+    store: function(storeName, successCallback, errorCallback) {
       // Make the task object
       var task = {
         type: "newStore",
         storeName: storeName,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1319,7 +1382,8 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name where the record is added.
      * @param {(object | object[])} obj An object or objects array to insert in the object store.
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1347,11 +1411,12 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    records: function(storeName, obj, errorCallback) {
+    records: function(storeName, obj, successCallback, errorCallback) {
       var task = {
         type: "newRecords",
         storeName: storeName,
         obj: obj,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1365,7 +1430,8 @@ var sidb = function(_dbName) {
      * @param {string} storeName Object store name where the index is created.
      * @param {string} indexName Index name.
      * @param {string} keyPath Key (property of stored objects) that the index use to order and filter.
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1397,13 +1463,14 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    index: function(storeName, indexName, keyPath, errorCallback) {
+    index: function(storeName, indexName, keyPath, successCallback, errorCallback) {
       var task = {
         type: "newIndex",
         storeName: storeName,
         indexName: indexName,
         keyPath: keyPath,
-        errorCallback
+        successCallback: successCallback,
+        errorCallback: errorCallback
       };
 
       taskQueue.push(task);
@@ -1411,36 +1478,21 @@ var sidb = function(_dbName) {
   };
 
   /**
-   * Contains remove methods
+   * Contains delete methods
    * @namespace
    */
-  this.remove = {
+  this.del = {
     /**
-     * Adds the task "remove a database" to the task queue.
+     * Adds the task "delete a database" to the task queue.
      * @public
      * @instance
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      */
-    db: function(errorCallback) {
+    db: function( successCallback, errorCallback) {
       var task = {
-        type: "removeDB",
-        errorCallback
-      };
-
-      taskQueue.push(task);
-    },
-
-    /**
-     * Adds the task "remove a store from database" to the task queue.
-     * @public
-     * @instance
-     * @param {string} storeName Object store name
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
-     */
-    store: function(storeName, errorCallback) {
-      var task = {
-        type: "removeStore",
-        storeName: storeName,
+        type: "deleteDB",
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1448,7 +1500,26 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Adds the task "remove a record/s from the object store" to the task queue.
+     * Adds the task "delete a store from database" to the task queue.
+     * @public
+     * @instance
+     * @param {string} storeName Object store name
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     */
+    store: function(storeName, successCallback, errorCallback) {
+      var task = {
+        type: "deleteStore",
+        storeName: storeName,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
+
+      taskQueue.push(task);
+    },
+
+    /**
+     * Adds the task "delete a record/s from the object store" to the task queue.
      * @public
      * @instance
      * @param {string} storeName Object store name.
@@ -1459,7 +1530,8 @@ var sidb = function(_dbName) {
      * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||).
      * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
      * 'peter'                                    // Single value always refers to the index keypath.
-     * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1472,14 +1544,14 @@ var sidb = function(_dbName) {
      * }
      *
      * //
-     * // Removes records where age is 40 using the index named 'ages' with the keypath 'age' as query.
+     * // Deletes records where age is 40 using the index named 'ages' with the keypath 'age' as query.
      * //
-     * mydb.remove.record('objectStoreName', 'ages', 40);
+     * mydb.del.record('objectStoreName', 'ages', 40);
      *
      * //
-     * // Removes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.
+     * // Deletes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.
      * //
-     * mydb.remove.records(
+     * mydb.del.records(
      *    'objectStoreName',          
      *    null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.
      *    'age &lt; 20 &amp; salary > 1500'      
@@ -1487,12 +1559,13 @@ var sidb = function(_dbName) {
      *
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query, errorCallback) {
+    records: function(storeName, indexName, query, successCallback, errorCallback) {
       var task = {
-        type: "removeRecords",
+        type: "deleteRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1500,18 +1573,20 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Adds the task "remove an index from an object store" to the task queue.
+     * Adds the task "delete an index from an object store" to the task queue.
      * @public
      * @instance
      * @param {string} storeName Object store name
      * @param {string} indexName Index name
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      */
-    index: function(storeName, indexName, errorCallback) {
+    index: function(storeName, indexName, successCallback, errorCallback) {
       var task = {
-        type: "removeIndex",
+        type: "deleteIndex",
         storeName: storeName,
         indexName: indexName,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1537,7 +1612,8 @@ var sidb = function(_dbName) {
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
-     * @param  {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1558,6 +1634,7 @@ var sidb = function(_dbName) {
      *     'names',
      *     'Peter',
      *     {age: 33, salary: 1650},
+     *     null,
      *     myErrorCallback
      * );
      *
@@ -1574,6 +1651,7 @@ var sidb = function(_dbName) {
      *         return oldSalary + 200;
      *         };
      *     },
+     *     null,
      *     myErrorCallback
      * );
      * 
@@ -1590,13 +1668,14 @@ var sidb = function(_dbName) {
      * };
      *
      */
-    records: function(storeName, indexName, query, objectValues, errorCallback) {
+    records: function(storeName, indexName, query, objectValues, successCallback, errorCallback) {
       var task = {
         type: "updateRecordsByIndex",
         storeName: storeName,
         indexName: indexName,
         query: query,
         objectValues: objectValues,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1615,7 +1694,8 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {number} maxResults Limits the records retrieved.
-     * @param {function} callback Callback called when done. Receives as parameter the retrieved records in an array.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1649,12 +1729,12 @@ var sidb = function(_dbName) {
      * };     
      *
      */
-    lastRecords: function(storeName, maxResults, callback, errorCallback) {
+    lastRecords: function(storeName, maxResults, successCallback, errorCallback) {
       var task = {
         type: "lastRecords",
         storeName: storeName,
         maxResults: maxResults,
-        callback: callback,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1674,7 +1754,8 @@ var sidb = function(_dbName) {
      * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks
      * 'peter'                                    // Single value always refers to the index keypath.
      * A single value always refers to the index keypath so the index can not be null in this case.
-     * @param {function(object[])} callback Receives as parameter the result. Can be an object array or an object.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sidb();
      *
@@ -1727,13 +1808,13 @@ var sidb = function(_dbName) {
      * // Execs all pending tasks
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query, callback, errorCallback) {
+    records: function(storeName, indexName, query, successCallback, errorCallback) {
       var task = {
         type: "getRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
-        callback: callback,
+        successCallback: successCallback,
         errorCallback: errorCallback
       };
 
@@ -1742,9 +1823,6 @@ var sidb = function(_dbName) {
   };  
 
   //#endregion Task queue system
-
-  
-
 
   /**
    * Contains some util methods
@@ -1811,7 +1889,7 @@ var sidb = function(_dbName) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 07 2018 20:55:13 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 08 2018 23:34:40 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

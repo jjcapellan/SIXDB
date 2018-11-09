@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_remove.html">remove</a><ul class='methods'><li data-type='method'><a href="sidb_remove.html#db">db</a></li><li data-type='method'><a href="sidb_remove.html#index">index</a></li><li data-type='method'><a href="sidb_remove.html#records">records</a></li><li data-type='method'><a href="sidb_remove.html#store">store</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#isIndexedDBavailable">isIndexedDBavailable</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -58,7 +58,7 @@
 <li><a href="#Insert-records">Insert records</a></li>
 <li><a href="#Read-records">Read records</a></li>
 <li><a href="#Update-records">Update records</a></li>
-<li><a href="#Remove-records">Remove records</a></li>
+<li><a href="#Delete-records">Delete records</a></li>
 </ul>
 </li>
 <li><a href="#Query-system">Query language</a></li>
@@ -375,7 +375,7 @@ function myErrorCallback(event){
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h3><a name="Remove-records"></a><strong>Remove records</strong></h3><p>SIDB has the method remove.records() for this case.</p>
+mydb.execTasks();</code></pre><h3><a name="Delete-records"></a><strong>Delete records</strong></h3><p>SIDB has the method del.records() for this case.</p>
 <pre class="prettyprint source lang-javascript"><code>//
 // First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
@@ -383,13 +383,13 @@ var mydb = new sidb('companyDB');
 
 
 //
-// To remove one or more records there is the method remove.records():
+// To delete one or more records there is the method del.records():
 //
-//     remove.records( storeName, indexName, query, errorCallback)
+//     del.records( storeName, indexName, query, errorCallback)
 //
-// For eample, this removes the record with ID 5 from the object store &quot;southFactory&quot;
+// For eample, this deletes the record with ID 5 from the object store &quot;southFactory&quot;
 //
-mydb.remove.records(
+mydb.del.records(
     'southFactory',     // Object store name
     'IDs',              // Index name
     5,                  // Query. A single value refers to the index keypath.
@@ -398,9 +398,9 @@ mydb.remove.records(
 
 
 //
-// Removes all records from manufacturing department with salaries highter than 1200 or age highter than 60
+// deletes all records from manufacturing department with salaries highter than 1200 or age highter than 60
 //
-mydb.remove.records(
+mydb.del.records(
     'southFactory',
     null,
     '(department=&quot;manufacturing&quot;) & (salary > 1200 | age > 60)'             // Query with 2 groups of conditions
@@ -425,9 +425,9 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong</code></pre></l
 ((salary > 1000 & name != 'Peter') | ID = 5) | (name = 'Adam' & salary &lt; 900) // This is wrong</code></pre></li>
 <li>Outside of a conditions Outside group there can't be another without parentheses.<pre class="prettyprint source lang-javascript"><code>(salary > 1000 & name != 'Peter') | (name = 'Adam')   // This is correct
 (salary > 1000 & name != 'Peter') | name = 'Adam'     // This is wrong</code></pre></li>
-<li>Only one type of logical operator can be used between groups of conditions<pre class="prettyprint source lang-javascript"><code>(a=2 & c&lt;10) | (d!=1) | (d=10 & e>=12)  // This is correct
-(a=2 & c&lt;10) | (d!=1) & (d=10 & e>=12)  // This is wrong</code></pre></li>
-<li>We can use a single value as a query when the value refers to the keypath of an existing index<pre class="prettyprint source lang-javascript"><code>mydb.remove.records(
+<li>Only one type of logical operator can be used between groups of conditions<pre class="prettyprint source lang-javascript"><code>(a = 2 & c &lt; 10) | (d != 1) | (d = 10 & e >= 12)  // This is correct
+(a = 2 & c &lt; 10) | (d != 1) & (d = 10 & e >= 12)  // This is wrong</code></pre></li>
+<li>We can use a single value as a query when the value refers to the keypath of an existing index<pre class="prettyprint source lang-javascript"><code>mydb.del.records(
   'southFactory',     // Object store name
   'IDs',              // Index name. Contains all objects with ID property in the object store &quot;southFactory&quot;
   5,                  // Query. A single value refers to the index keypath.
@@ -459,7 +459,7 @@ mydb.update.records(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 07 2018 20:55:13 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Nov 08 2018 23:34:40 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

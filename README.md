@@ -403,15 +403,13 @@ mydb.del.records(
     myErrorCallback     // Optional parameter. Function to handle errors.                     
 );
 ```
-* Spaces or symbols in the value of a condition must be enclosed in quotation marks.
+* Spaces or symbols in the value of a condition must be enclosed in quotation marks. Parentheses and nested quotes are not supported.
 ```javascript
 name = 'John Smith'     // This is correct
 equation = 'e = v / t'  // This is correct
 equation = e = v / t    // This is very wrong. The query system can't parse that "=" without quotes.
-```
-* The nested quotes are not supported
-```javascript
 message = 'This is my "message"'    // This is wrong.
+message = 'This (is) my message'    // This is wrong.
 ```
 
 

@@ -45,9 +45,59 @@ var sidb = function(_dbName) {
    * @type {string}
    * @readonly
    */
-  var dbName = _dbName;  
+  var dbName = _dbName; 
+  
+    /**
+   * Console output mode.
+   * @private
+   * @type {boolean} True to turn off console output.
+   * @readonly
+   */
+  var dbName = _dbName; 
+  var consoleOff=false;
 
   
+
+  this.setConsoleOff = function(off){
+    if(typeof(off)=='boolean'){
+      consoleOff=off;
+    };
+  }
+
+  var logEnum={
+    open:1,
+    close:2,
+    lastRecords:3,
+    getAll:4
+    
+  };
+
+  function logger(t,args){
+    if(consoleOff)
+    return;
+
+    switch (t) {
+      case 1:
+        console.log('Database ' + dbName + ' opened');
+
+        break;
+
+      case 2:
+        console.log('Database ' + dbName + ' closed');
+        break;
+
+      case 3:
+        console.log(args[0] + ' last records returned from store "' + args[1] + '"');
+        break;
+
+      case 4:
+        console.log('All records returned from store "' + args[0] + '"');
+        break;
+
+      default:
+        break;
+    }
+  }
 
   
   //#region Private functions
@@ -72,8 +122,7 @@ var sidb = function(_dbName) {
     request.onsuccess = function (event) {
       var db = event.target.result;
       var resultFiltered = [];
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var counter = 0;
 
@@ -91,8 +140,9 @@ var sidb = function(_dbName) {
         } else {
           successCallback(resultFiltered, origin);
           db.close();
-          console.log("Database closed");
-          console.log(counter + ' last records returned from object store "' + storeName + '"');
+          logger(logEnum.close);
+          //console.log(counter + ' last records returned from object store "' + storeName + '"');
+          logger(logEnum.lastRecords,[counter,storeName]);
           done();
         };
       };
@@ -100,14 +150,15 @@ var sidb = function(_dbName) {
       var onsuccesGetAllFunction = function (event) {
         successCallback(event.target.result, origin);
         db.close();
-        console.log("Database closed");
-        console.log('All records returned from object store "' + storeName + '"');
+        logger(logEnum.close);
+        //console.log('All records returned from object store "' + storeName + '"');
+        logger(logEnum.getAll,[storeName]);
         done();
       };
 
       var onerrorFunction = function (event) {
         db.close();
-        console.log("Database closed");
+        logger(logEnum.close);
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
           errorCallback(event, origin);
@@ -162,8 +213,7 @@ var sidb = function(_dbName) {
     request.onsuccess = function (event) {
       var db = event.target.result;   
       var conditionsBlocksArray = (!isIndexKeyValue)?qrySys.makeConditionsBlocksArray(query):null;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
       var counter = 0;
@@ -175,7 +225,7 @@ var sidb = function(_dbName) {
       var onsuccesIndexGetKey = function(event){
         successCallback(event.target.result, origin, query);
         db.close();
-        console.log("Database closed");
+        logger(logEnum.close);
         console.log('Records with key value "' + query + '" returned from index "' + indexName + '" on object store "'+ storeName+'"');
         done();
       };
@@ -212,7 +262,7 @@ var sidb = function(_dbName) {
         } else {
           successCallback(resultFiltered, origin, query);
           db.close();
-          console.log("Database closed");
+          logger(logEnum.close);
           console.log('Processed query: "'+query+'" finished\n'+ counter + ' records returned from object store "' + storeName + '"');
           done();
         };
@@ -221,7 +271,7 @@ var sidb = function(_dbName) {
 
       var onerrorFunction = function (event) {
         db.close();
-        console.log("Database closed");
+        logger(logEnum.close);
         console.log('Error retrieving records: ' + event.target.error);
         if (errorCallback)
           errorCallback(event, origin);
@@ -394,8 +444,7 @@ var sidb = function(_dbName) {
 
     request.onsuccess = function(event) {
       var db = event.target.result;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var counter = 0;
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       if (Array.isArray(obj)) {
@@ -412,7 +461,7 @@ var sidb = function(_dbName) {
                 successCallback(event, origin);
               };
               db.close();
-              console.log("Database " + dbName + " closed");
+              logger(logEnum.close);
               done();
             }
           };
@@ -438,7 +487,7 @@ var sidb = function(_dbName) {
             successCallback(event, origin);
           };
           db.close();
-          console.log("Database " + dbName + " closed");
+          logger(logEnum.close);
           done();
         };
 
@@ -664,8 +713,7 @@ var sidb = function(_dbName) {
       var db = event.target.result;
       var conditionsBlocksArray;
       conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
       var counter = 0;
@@ -708,7 +756,7 @@ var sidb = function(_dbName) {
             successCallback(event, origin, query);
           };
           db.close();
-          console.log("Database closed");
+          logger(logEnum.close);
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records deleted from object store "' + storeName + '"');
           done();
         };
@@ -720,7 +768,7 @@ var sidb = function(_dbName) {
           errorCallback(event, origin);
         };
         db.close();
-        console.log("Database closed");
+        logger(logEnum.close);
         console.log('Error deleting records' + event.target.error);
         done();
       }
@@ -842,7 +890,7 @@ var sidb = function(_dbName) {
       var db = event.target.result;
       var conditionsBlocksArray;
       conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-      console.log("Database " + dbName + " opened");
+      logger('open');
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
 
@@ -898,7 +946,7 @@ var sidb = function(_dbName) {
             successCallback(event, origin, query);
           };
           db.close();
-          console.log("Database closed");
+          logger(logEnum.close);
           console.log('Processed query: "' + query + '" finished\n' + counter + ' records updated from object store "' + storeName + '"');
           done();
         };
@@ -910,7 +958,7 @@ var sidb = function(_dbName) {
           errorCallback(event, origin);
 
         db.close();
-        console.log("Database closed");
+        logger(logEnum.close);
         console.log('Error retrieving records: ' + event.target.error);
         done();
       }
@@ -948,25 +996,16 @@ var sidb = function(_dbName) {
    */
   var qrySys = {
 
-    // Initialization of regex vars used by makeConditionsBlockArray() to parse the query string
-
-
     /**
      * Initializes the regex variables used to parse the query string
      * @return {void}
      */
     init: function () {
-      this.blockRgx = /(?<=\()([^)]+)(?=\))/g;
-      this.blockOperatorRgx = /(?<=(\)\s*))([\&\|]+)(?=(\s*\())/g;
-      this.operandRgx = /[\w'"]+/g;
+      this.blockRgx = /\(.*?(?=\))/g;
+      this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
       this.operatorRgx = /(=|>|<|>=|<=|!=)+/g;
-      /*
-      this.leftOperandRgx = /([\w]+)(?=\s*(=|>|<|>=|<=|!=)+)/g;
-      this.rightOperandRgx = /(?<=(=|>|<|>=|<=|!=)+\s*)([\w]+)/g;
-      */
-
-     this.rightOperandRgx = /(?<=([=|>|<]\s*["']?))([^"^']+)(?=["']?\s*[\&\|]*)/g;
-     this.leftOperandRgx = /(?<!([="']+)[\s\w]*)(\w+)(?=\s*[=|>|<|!]{1})/g;
+      this.rightOperandRgx = /(?:([=><]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><])\s*["']?[^"']+["']?(?=$)/g;
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!])/g;
     },
 
     /**
@@ -981,34 +1020,57 @@ var sidb = function(_dbName) {
     makeConditionsBlocksArray: function (query) {
 
       var t = this;
+      var conditionsBlocksArray = [];
 
-      //query = query.replace(/[\"\']/g,'');
-
+      //// Gets blocks
+      //
       var blocks = query.match(t.blockRgx);
+      // Delete left parentheses
+      if(blocks){
+        var i=0;
+        for(i=0;i<blocks.length;i++){
+          blocks[i]=blocks[i].substr(1);
+        };
+      };
 
       // Logical operators between blocks, all must be the same type
       var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
 
-      var conditionsBlocksArray = [];
+      
 
       var pushConditionBlockToArray = function (qry, extLogOperator) {
 
+        //// Gets left operands
+        //
         var leftOperands = qry.match(t.leftOperandRgx);
+
+        //// Gets right operands
+        //
         var rightOperands = qry.match(t.rightOperandRgx);
+        var i=0;
+        for(i=0;i<rightOperands.length;i++){
+          // Delete the operator
+          while(rightOperands[i][0].match(/[=><!]/g)){
+            rightOperands[i]=rightOperands[i].substr(1);
+          };
+          // Delete quotes and trim white spaces
+          rightOperands[i] = rightOperands[i].replace(/["']/g, '').trim();
+        };
+
+        //// Gets operators
+        //// Removing righ operands (values) before extract comparison operators avoids 
+        //// problems with literal values that include comparisson symbols(= , >,...) quoted.
         //
-        // Removing righ operands (values) before extract comparison operators avoids 
-        // problems with literal values that include comparisson symbols(= , >,...) quoted.
-        //
-        var operators = qry.replace(t.rightOperandRgx,'').match(t.operatorRgx);
+        for(i=0;i<rightOperands.length;i++){
+          qry=qry.replace(rightOperands[i],'');
+        };
+        var operators = qry.match(t.operatorRgx);
 
         
         var conditionsArray = [];
 
         // If query is like: " c = 15 "
         if (leftOperands.length == 1) {
-
-          /*var operands = qry.match(t.operandRgx); // array with 2 elements: keyPath and value
-          var operator = qry.match(t.operatorRgx); // the only comparisson operator*/
 
           conditionsArray.push(
             {

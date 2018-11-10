@@ -119,7 +119,7 @@ mydb.get.lastRecords(store,null,successCallback,errorCallback);
 mydb.get.records(store,null,'department = manufacturing & age > 30',successCallback,errorCallback);
 
 // Gets records using a query with quotes and the logical operator ||
-mydb.get.records(store,null,'department="manufacturing" || salary > 1390',successCallback,errorCallback);
+mydb.get.records(store,null,'department= "manufacturing" || salary > 1390',successCallback,errorCallback);
 
 // Query with 2 sets of conditions
 mydb.get.records(store,null,'(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',successCallback,errorCallback);

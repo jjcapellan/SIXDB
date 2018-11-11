@@ -1,4 +1,10 @@
 # SIXDB (simple indexedDB)  
+![Docsbadge](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
+![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
+![size (minified)](https://img.shields.io/bundlephobia/min/react.svg)
+[![HitCount](http://hits.dwyl.io/jjcapellan/SIXDB.svg)](http://hits.dwyl.io/jjcapellan/SIXDB)
+
+
   
 
 SIXDB is a basic and very easy to use library wrapper for indexedDB.  

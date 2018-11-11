@@ -12,7 +12,7 @@ IndexedDB is the recommended solution for the persistent storage of large volume
 But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.  
 SIXDB adds an abstraction layer over indexedDB that hides that complexity.  
 
-You can learn how to use SIXDB in less than 5 minuts (or maybe 6 ;)).  
+You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).  
 Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB/)
 
 

@@ -1,5 +1,5 @@
 /**
- *  Test the SIDB functionalities
+ *  Test the SIXDB functionalities
  */
 
 /** Data to use in the test
@@ -23,7 +23,7 @@ var employee = {
     department: 'manufacturing',
     age: 32,
     salary: 1200
-}
+};
 
 // An array of objects to save in the database
 var employeesArray = [
@@ -85,98 +85,113 @@ var employeesArray = [
     }
 ];
 
+// HTML element to show the resuls
 var tableResults = document.getElementById('tbl_results');
-var store='southFactory';
-var index='IDs';
+
+//Object store name
+var store = 'southFactory';
+
+// Index name
+var index = 'IDs';
+
+// True if there are not errors
+var failed = false;
+
+
 
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate a sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
+// Activate this line to turn off the console output
 //mydb.setConsoleOff(true);
 
-// Creates a store
+// Creates a store named 'southFactory'
 mydb.add.store(store, successCallback, errorCallback);
 
-// Creates an index
-mydb.add.index(store, index, 'id',successCallback,errorCallback);
+// Creates an index named 'IDs'
+mydb.add.index(store, index, 'id', successCallback, errorCallback);
 
 // Insert one object
-mydb.add.records(store,employee,successCallback,errorCallback);
+mydb.add.records(store, employee, successCallback, errorCallback);
 
 // Gets the record with id = 1
-mydb.get.records(store,index,1,successCallback,errorCallback);
+mydb.get.records(store, index, 1, successCallback, errorCallback);
 
 // Insert an array of objects
-mydb.add.records(store,employeesArray,successCallback,errorCallback);
+mydb.add.records(store, employeesArray, successCallback, errorCallback);
 
-// Execs a custom task
-mydb.add.customTask(showInfo,this,'Custom task executed');
+// Execs the custom task showInfo 
+mydb.add.customTask(showInfo, this, 'Custom task executed');
 
 // Gets all records
-mydb.get.lastRecords(store,null,successCallback,errorCallback);
+mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Gets records using a query of 2 conditions and logical operator &
-mydb.get.records(store,null,'department = manufacturing & age > 30',successCallback,errorCallback);
+mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);
 
 // Gets records using a query with quotes and the logical operator ||
-mydb.get.records(store,null,'department= "manufacturing" || salary > 1390',successCallback,errorCallback);
+mydb.get.records(store, null, 'department= "manufacturing" || salary > 1390', successCallback, errorCallback);
 
 //Counts records
-mydb.get.count(store,null,'salary>1000',successCallback); 
+mydb.get.count(store, null, 'salary>1000', successCallback);
 
 //Counts records
-mydb.get.count(store,index,'id=3',successCallback); 
+mydb.get.count(store, index, 'id=3', successCallback);
 
-//Counts all records
-mydb.get.count(store,null,null,successCallback);
+//Counts all records in store
+mydb.get.count(store, null, null, successCallback);
 
-//Counts all records
-mydb.get.count(store,index,null,successCallback);
+//Counts all records in index
+mydb.get.count(store, index, null, successCallback);
 
 // Query with 2 sets of conditions
-mydb.get.records(store,null,'(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',successCallback,errorCallback);
+mydb.get.records(store, null, '(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)', successCallback, errorCallback);
 
 // Updates salary an age of the record with id = 4
-mydb.update.records(store,index,4,{salary: 1450, age: 42},successCallback, errorCallback);
+mydb.update.records(store, index, 4, { salary: 1450, age: 42 }, successCallback, errorCallback);
 
 // Gets all records
-mydb.get.lastRecords(store,null,successCallback,errorCallback);
+mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Updates the salary of records with accounting department using a function
-mydb.update.records(store,null,'department="accounting"',{salary: function(oldSalary){return oldSalary+200}},successCallback,errorCallback);
+mydb.update.records(store, null, 'department="accounting"', { salary: function (oldSalary) { return oldSalary + 200 } }, successCallback, errorCallback);
 
 // Gets the records from the accounting department
-mydb.get.records(store,null,'department="accounting"',successCallback,errorCallback);
+mydb.get.records(store, null, 'department="accounting"', successCallback, errorCallback);
 
 // Delete the record wich id = 4
-mydb.del.records(store,index,4,successCallback,errorCallback);
+mydb.del.records(store, index, 4, successCallback, errorCallback);
 
 // Gets all records
-mydb.get.lastRecords(store,null,successCallback,errorCallback);
+mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Delete records with a query
-mydb.del.records(store,null,'salary>1300',successCallback,errorCallback);
+mydb.del.records(store, null, 'salary>1300', successCallback, errorCallback);
 
 // Gets all records
-mydb.get.lastRecords(store,null,successCallback,errorCallback);
+mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Deletes a index
-mydb.del.index(store,index,successCallback,errorCallback);
+mydb.del.index(store, index, successCallback, errorCallback);
 
 // Deletes a store
-mydb.del.store(store,successCallback,errorCallback);
+mydb.del.store(store, successCallback, errorCallback);
 
 // Deletes the database
-mydb.del.db(successCallback,errorCallback);
+mydb.del.db(successCallback, errorCallback);
 
 // Sends a custom task
-mydb.add.customTask(showInfo,this,'Test finished');
+mydb.add.customTask(checkTest, this);
 
 // Execs all pending task
 mydb.execTasks();
 
+
+//
+//Custom Functions
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 function successCallback(event, origin, query) {
@@ -191,7 +206,19 @@ function successCallback(event, origin, query) {
 
 function errorCallback(event,origin){
     var message = origin + ' execution failed';
+    failed=true;
     showInfo(message,true);
+}
+
+function checkTest() {
+    if (failed) {
+        message = 'Test failed';
+        showInfo(message, true);
+    }
+    else {
+        message = 'Test passed';
+        showInfo(message);
+    };
 }
 
 function showResults(results) {

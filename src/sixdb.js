@@ -1,6 +1,6 @@
 /**
  *  Simple IndexedDB
- *  @desc Simple IndexedDB (SIDB) is a wrapper for indexedDB API.
+ *  @desc Simple IndexedDB (SIXDB) is a wrapper for indexedDB API.
  *  @author Juan Jose Capellan <soycape@hotmail.com>
  */
 
@@ -30,11 +30,11 @@
  */
 
 /**
- * Creates an sidb (simple indexedDB) object that manage the new indexedDB database.
+ * Creates an sixdb (simple indexedDB) object that manage the new indexedDB database.
  * @class
  * @param  {string} _dbName Name for the new database.
  */
-var sidb = function(_dbName) {
+var sixdb = function(_dbName) {
 
 
   var db; // current instance of the opened database
@@ -79,6 +79,11 @@ var sidb = function(_dbName) {
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
 
+  /**
+   * Opens the database
+   * @private
+   * @return {void}
+   */
   function openDb(){
     var request = window.indexedDB.open(dbName);
 
@@ -971,6 +976,7 @@ var sidb = function(_dbName) {
 
   /**
    * qrySys contains all methods to manage the string queries
+   * @private
    * @typedef {Object} qrySys
    * @property {function} init Inits the regex variables used to parse the query strings.
    * @property {function} testConditionBlock Test a conditions block.
@@ -992,7 +998,7 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Transforms a query string into an array of objects that is used by SIDB to process the query.
+     * Transforms a query string into an array of objects that is used by SIXDB to process the query.
      * @param  {string} query String that contains a query. Example of valid querys:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
@@ -1375,7 +1381,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // Callback function to process a possible error
      * //
@@ -1419,7 +1425,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // Object to insert in the object store
      * //
@@ -1468,7 +1474,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // Object to insert in the object store
      * //
@@ -1513,13 +1519,13 @@ var sidb = function(_dbName) {
     },
 
     /**
-     * Add a specific function to the SIDB task queue.
+     * Add a specific function to the SIXDB task queue.
      * @param  {any} fn Our custom function that we want to add to the task queue.
      * @param  {any} context It is usually "this".
      * @param  {...any} args Arguments for the function.
      * @return {void}
      * @example
-     * var mydb = new sidb('companyDB');
+     * var mydb = new sixdb('companyDB');
      *
      * var store= 'southFactory';
      *
@@ -1639,7 +1645,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1723,7 +1729,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1806,7 +1812,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // An example of object stored in the object store "storeName"
      * //
@@ -1867,7 +1873,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // An example of object stored in the object store
      * //
@@ -1945,7 +1951,7 @@ var sidb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
-     * var mydb = new sidb('myDatabase');
+     * var mydb = new sixdb('myDatabase');
      *
      * // An example of object stored in the object store
      * //

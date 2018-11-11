@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sidb.html">sidb</a><ul class='methods'><li data-type='method'><a href="sidb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sidb.html#getName">getName</a></li><li data-type='method'><a href="sidb.html#setConsoleOff">setConsoleOff</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sidb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sidb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sidb_add.html#index">index</a></li><li data-type='method'><a href="sidb_add.html#records">records</a></li><li data-type='method'><a href="sidb_add.html#store">store</a></li></ul></li><li><a href="sidb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sidb_del.html#db">db</a></li><li data-type='method'><a href="sidb_del.html#index">index</a></li><li data-type='method'><a href="sidb_del.html#records">records</a></li><li data-type='method'><a href="sidb_del.html#store">store</a></li></ul></li><li><a href="sidb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sidb_get.html#.count">count</a></li><li data-type='method'><a href="sidb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sidb_get.html#records">records</a></li></ul></li><li><a href="sidb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sidb_update.html#.records">records</a></li></ul></li><li><a href="sidb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sidb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -47,8 +47,8 @@
 
 
     <section class="readme">
-        <article><h1>SIDB (simple indexedDB)</h1><p>SIDB is a basic and very easy to use library wrapper for indexedDB.<br>IndexedDB is the recommended solution for the persistent storage of large volumes of structured data in the browser.<br>But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.<br>SIDB adds an abstraction layer over indexedDB that hides that complexity.  </p>
-<p>You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).</p>
+        <article><h1>SIXDB (simple indexedDB)</h1><p>SIXDB is a basic and very easy to use library wrapper for indexedDB.<br>IndexedDB is the recommended solution for the persistent storage of large volumes of structured data in the browser.<br>But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.<br>SIXDB adds an abstraction layer over indexedDB that hides that complexity.  </p>
+<p>You can learn how to use SIXDB in less than 5 minuts (or maybe 6 ;)).</p>
 <h2>In this document ...</h2><hr>
 <ul>
 <li><a href="#Features">Features</a></li>
@@ -73,13 +73,13 @@
 <li>Simple and flexible methods to perform CRUD operations.</li>
 <li>Insertion operations allow several entries to be entered at the same time.</li>
 <li>Update operations accept <a href="#Using-functions">functions as value</a> to modify the current value of the record.</li>
-<li>Lightweight. SIDB takes less than 30Kb minified and less than 5Kb compressed with gzip.</li>
+<li>Lightweight. SIXDB takes less than 30Kb minified and less than 5Kb compressed with gzip.</li>
 <li>Default errorCallback in all methods. ErrorCallback parameter is optional.</li>
 <li>Complete documentation with examples.</li>
 </ul>
 <h2><a name="Installation"></a>Installation</h2><hr>
-<p>Download &quot;sidb.js&quot; or the minified version &quot;sidb.min.js&quot; from src folder to your proyect folder and add a reference in your html:</p>
-<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sidb.js&quot;>&lt;/script></code></pre><h2><a name="Tutorial"></a>Tutorial</h2><hr>
+<p>Download &quot;sixdb.js&quot; or the minified version &quot;sixdb.min.js&quot; from src folder to your proyect folder and add a reference in your html:</p>
+<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.js&quot;>&lt;/script></code></pre><h2><a name="Tutorial"></a>Tutorial</h2><hr>
 <p>For the tutorial we will use an employees list from a supposed factory:</p>
 <table>
 <thead>
@@ -146,15 +146,15 @@
 <p>Each row represents a record. IndexedDB treats records as objects where each property represents a column.<br>These records are stored in an <strong>object store</strong>. The <strong>object store</strong> accepts objects of different types.<br>I could store other record without age column and with a lastName column.</p>
 <p>The <strong>index</strong> is a subset of records from the object store that share the same property (<strong>keypath</strong>).<br>We could create at most an <strong>index</strong> for each property (column). The <strong>index</strong> order the records by its <strong>keypath</strong>.</p>
 <h3><a name="Database-structure-creation"></a><strong>Database structure creation</strong></h3><pre class="prettyprint source lang-javascript"><code>//
-// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+// First step is instantiate an SIXDB object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
 // We need to create at least one object store. 
 // The object store is used to store the records (objects). It's similar to a table in a relational database.
-// SIDB adds an autoincrement primary key (named &quot;nid&quot;) to each store.
+// SIXDB adds an autoincrement primary key (named &quot;nid&quot;) to each store.
 // To create it we need the method add.store():
 //
 //     add.store( storeName, errorCallback)
@@ -183,11 +183,11 @@ mydb.add.index('southFactory', 'IDs', 'ID');
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h3><a name="Insert-records"></a><strong>Insert records</strong></h3><p>With SIDB we can insert records individually or through an objects array.</p>
+mydb.execTasks();</code></pre><h3><a name="Insert-records"></a><strong>Insert records</strong></h3><p>With SIXDB we can insert records individually or through an objects array.</p>
 <pre class="prettyprint source lang-javascript"><code>//
-// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+// First step is instantiate a sixdb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -223,11 +223,11 @@ mydb.add.records(
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h3><a name="Read-records"></a><strong>Read records</strong></h3><p>SIDB can read the records using two methods and 5 types of query.</p>
+mydb.execTasks();</code></pre><h3><a name="Read-records"></a><strong>Read records</strong></h3><p>SIXDB can read the records using two methods and 5 types of query.</p>
 <pre class="prettyprint source lang-javascript"><code>//
-// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -291,7 +291,7 @@ mydb.execTasks();
 
 
 //
-// Simple function that receives the query result from SIDB methods and show it on console.
+// Simple function that receives the query result from SIXDB methods and show it on console.
 // The result received can be a single object or an object array. 
 // 
 //
@@ -318,9 +318,9 @@ function readerCallback(queryResult) {
     };
 };</code></pre><h3><a name="Update-records"></a><strong>Update records</strong></h3><p>The method update.records() allows us to update the records in many ways.</p>
 <pre class="prettyprint source lang-javascript"><code>//
-// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -377,11 +377,11 @@ function myErrorCallback(event){
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h3><a name="Delete-records"></a><strong>Delete records</strong></h3><p>SIDB has the method del.records() for this case.</p>
+mydb.execTasks();</code></pre><h3><a name="Delete-records"></a><strong>Delete records</strong></h3><p>SIXDB has the method del.records() for this case.</p>
 <pre class="prettyprint source lang-javascript"><code>//
-// First step is instantiate an sidb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called &quot;companyDB&quot; (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -414,7 +414,7 @@ mydb.del.records(
 // we must use the function execTasks() to execute them.
 //
 mydb.execTasks();</code></pre><h2><a name="Query-system"></a><strong>Query language</strong></h2><hr>
-<p>Some SIDB methods receive as parameter to select records a string with an expression that represents the query.
+<p>Some SIXDB methods receive as parameter to select records a string with an expression that represents the query.
 Write a query is very intuitive. Is similar to write the condition in an &quot;if&quot; sentence.<br>A simple query would be: <code>recordProperty = value</code> 
 There are some rules:</p>
 <ul>
@@ -442,7 +442,7 @@ message = 'This is my &quot;message&quot;'    // This is wrong.
 message = 'This (is) my message'    // This is wrong.</code></pre></li>
 </ul>
 <h2><a name="Using-functions"></a><strong>Using functions as values</strong></h2><hr>
-<p>SIDB allows send a function in a query to modify records value.<br>To do this, we will consider the function as if it were the new value in the update.records() method.<br>This function will receive the current record value as a parameter and return the new value.</p>
+<p>SIXDB allows send a function in a query to modify records value.<br>To do this, we will consider the function as if it were the new value in the update.records() method.<br>This function will receive the current record value as a parameter and return the new value.</p>
 <pre class="prettyprint source lang-javascript"><code>//
 // The object values parameter accepts functions as value whose receives the old value an returns the new value.
 // Here all salaries from manufacturing department are increased by 300.
@@ -453,10 +453,10 @@ mydb.update.records(
     'department = &quot;manufacturing&quot;',
     {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
     myErrorCallback
-);</code></pre><h2><a name="Task-queue"></a><strong>The SIDB task queue</strong></h2><hr>
-<p>SIDB is based on a <strong>task queue</strong> to manage the the creation, insertion, reading, and deletion orders.<br>The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.<br>When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.<br>The result is that the orders are executed sequentially.<br>The method <em>add.customTask</em> allows us to add our own task to the queue. 
+);</code></pre><h2><a name="Task-queue"></a><strong>The SIXDB task queue</strong></h2><hr>
+<p>SIXDB is based on a <strong>task queue</strong> to manage the creation, insertion, reading, and deletion orders.<br>The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.<br>When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.<br>The result is that the orders are executed sequentially.<br>The method <em>add.customTask</em> allows us to add our own task to the queue. 
 Here a quick example:</p>
-<pre class="prettyprint source lang-Javascript"><code>var mydb = new sidb('companyDB');
+<pre class="prettyprint source lang-Javascript"><code>var mydb = new sixdb('companyDB');
 
 var store= 'southFactory';
 
@@ -498,7 +498,7 @@ mydb.get.lastRecords(
 // Once we have introduced the operations that we want to perform on the database, 
 // we must use the function execTasks() to execute them.
 //
-mydb.execTasks();</code></pre><h2><a name="License"></a><strong>License</strong></h2><p>SIDB is licensed under the terms of the MIT open source license.</p></article>
+mydb.execTasks();</code></pre><h2><a name="License"></a><strong>License</strong></h2><p>SIXDB is licensed under the terms of the MIT open source license.</p></article>
     </section>
 
 
@@ -511,7 +511,7 @@ mydb.execTasks();</code></pre><h2><a name="License"></a><strong>License</strong>
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 11 2018 13:53:33 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 11 2018 17:47:58 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

@@ -1,12 +1,12 @@
-# SIDB (simple indexedDB)  
+# SIXDB (simple indexedDB)  
   
 
-SIDB is a basic and very easy to use library wrapper for indexedDB.  
+SIXDB is a basic and very easy to use library wrapper for indexedDB.  
 IndexedDB is the recommended solution for the persistent storage of large volumes of structured data in the browser.  
 But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.  
-SIDB adds an abstraction layer over indexedDB that hides that complexity.  
+SIXDB adds an abstraction layer over indexedDB that hides that complexity.  
 
-You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
+You can learn how to use SIXDB in less than 5 minuts (or maybe 6 ;)).
 
 
 ## In this document ...
@@ -31,7 +31,7 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
 * Simple and flexible methods to perform CRUD operations.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
-* Lightweight. SIDB takes less than 30Kb minified and less than 5Kb compressed with gzip.
+* Lightweight. SIXDB takes less than 30Kb minified and less than 5Kb compressed with gzip.
 * Default errorCallback in all methods. ErrorCallback parameter is optional.
 * Complete documentation with examples.
 
@@ -39,9 +39,9 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
 
 ## <a name="Installation"></a>Installation
 ***
-Download "sidb.js" or the minified version "sidb.min.js" from src folder to your proyect folder and add a reference in your html:
+Download "sixdb.js" or the minified version "sixdb.min.js" from src folder to your proyect folder and add a reference in your html:
 ```html
-<script src = "sidb.js"></script>
+<script src = "sixdb.js"></script>
 ```
 
 
@@ -71,15 +71,15 @@ We could create at most an **index** for each property (column). The **index** o
 
 ```javascript
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate an SIXDB object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
 // We need to create at least one object store. 
 // The object store is used to store the records (objects). It's similar to a table in a relational database.
-// SIDB adds an autoincrement primary key (named "nid") to each store.
+// SIXDB adds an autoincrement primary key (named "nid") to each store.
 // To create it we need the method add.store():
 //
 //     add.store( storeName, errorCallback)
@@ -113,13 +113,13 @@ mydb.execTasks();
 
 
 ### <a name="Insert-records"></a>**Insert records**
-With SIDB we can insert records individually or through an objects array.
+With SIXDB we can insert records individually or through an objects array.
 
 ```javascript
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate a sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -159,13 +159,13 @@ mydb.execTasks();
 ```
 
 ### <a name="Read-records"></a>**Read records**
-SIDB can read the records using two methods and 5 types of query.
+SIXDB can read the records using two methods and 5 types of query.
 
 ```javascript
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -229,7 +229,7 @@ mydb.execTasks();
 
 
 //
-// Simple function that receives the query result from SIDB methods and show it on console.
+// Simple function that receives the query result from SIXDB methods and show it on console.
 // The result received can be a single object or an object array. 
 // 
 //
@@ -261,9 +261,9 @@ function readerCallback(queryResult) {
 The method update.records() allows us to update the records in many ways.
 ```javascript
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -324,12 +324,12 @@ mydb.execTasks();
 ```
 
 ### <a name="Delete-records"></a>**Delete records**
-SIDB has the method del.records() for this case.
+SIXDB has the method del.records() for this case.
 ```javascript
 //
-// First step is instantiate an sidb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate an sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 
 //
@@ -368,7 +368,7 @@ mydb.execTasks();
 
 ## <a name="Query-system"></a>**Query language**
 ***
-Some SIDB methods receive as parameter to select records a string with an expression that represents the query.
+Some SIXDB methods receive as parameter to select records a string with an expression that represents the query.
 Write a query is very intuitive. Is similar to write the condition in an "if" sentence.  
 A simple query would be: `recordProperty = value` 
 There are some rules:
@@ -417,7 +417,7 @@ message = 'This (is) my message'    // This is wrong.
 
 ## <a name="Using-functions"></a>**Using functions as values**
 ***
-SIDB allows send a function in a query to modify records value.  
+SIXDB allows send a function in a query to modify records value.  
 To do this, we will consider the function as if it were the new value in the update.records() method.  
 This function will receive the current record value as a parameter and return the new value.
 
@@ -435,16 +435,16 @@ mydb.update.records(
 );
 ```
 
-## <a name="Task-queue"></a>**The SIDB task queue**  
+## <a name="Task-queue"></a>**The SIXDB task queue**  
 ***
-SIDB is based on a **task queue** to manage the the creation, insertion, reading, and deletion orders.  
+SIXDB is based on a **task queue** to manage the creation, insertion, reading, and deletion orders.  
 The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.  
 When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.  
 The result is that the orders are executed sequentially.  
 The method *add.customTask* allows us to add our own task to the queue. 
 Here a quick example:
 ```Javascript
-var mydb = new sidb('companyDB');
+var mydb = new sixdb('companyDB');
 
 var store= 'southFactory';
 
@@ -490,6 +490,6 @@ mydb.execTasks();
 ```
 
 ## <a name="License"></a>**License**  
-SIDB is licensed under the terms of the MIT open source license.
+SIXDB is licensed under the terms of the MIT open source license.
 
 

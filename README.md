@@ -464,7 +464,7 @@ mydb.add.records(
 // 
 // This task is executed after the previous insertion task and before the next reading task.
 //
-add.customTask(
+mydb.add.customTask(
     function(m){                                // Custom function
         alert(m);
     },

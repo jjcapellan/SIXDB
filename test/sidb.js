@@ -35,9 +35,9 @@
  * @param  {string} _dbName Name for the new database.
  */
 var sidb = function(_dbName) {
-  //// Private ////////////////////////////////////
 
-  
+
+  var db; // current instance of the opened database
 
   /**
    * Data base name.
@@ -79,6 +79,20 @@ var sidb = function(_dbName) {
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
 
+  function openDb(){
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function (event) {
+      alert("Error. You must allow web app to use indexedDB.");
+    };
+
+    request.onsuccess = function (event) {
+      db = event.target.result;
+      logger(logEnum.open);
+      done();
+    }
+  }
+
   /**
    * Gets last records from an object store
    * @private
@@ -88,189 +102,175 @@ var sidb = function(_dbName) {
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter and origin.
    */
   function lastRecords(storeName, maxResults, successCallback, errorCallback) {
-    var request = window.indexedDB.open(dbName);
-    var origin='lastRecords';
+    var origin = 'get -> lastRecords(...)';
+    logger(logEnum.begin,[origin]);
+    var resultFiltered = [];
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var counter = 0;
 
-    request.onerror = function (event) {
-      alert("Error. You must allow web app to use indexedDB.");
-    };
+    //// Executed if maxResults is not null. Opens a cursor to count the results.
+    //
+    var onsuccesCursorFunction = function (event) {
 
-    request.onsuccess = function (event) {
-      var db = event.target.result;
-      var resultFiltered = [];
-      logger(logEnum.open);
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      var counter = 0;
+      var cursor = event.target.result;
 
-      
-
-      var onsuccesCursorFunction = function (event) {
-
-        var cursor = event.target.result;
-
-        if (cursor && counter < maxResults) {
-          resultFiltered.push(cursor.value);
-          counter++;
-          cursor.continue();
-        } else {
-          successCallback(resultFiltered, origin);
-          db.close();
-          logger(logEnum.close);
-          logger(logEnum.lastRecords,[counter,storeName]);
-          done();
-        };
-      };
-
-      var onsuccesGetAllFunction = function (event) {
-        successCallback(event.target.result, origin);
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.getAll,[storeName]);
-        done();
-      };
-
-      var onerrorFunction = function (event) {
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.error,[origin,event.target.error]);
-        if (errorCallback)
-          errorCallback(event, origin);
-        done();
-      };
-
-      if (maxResults != null) {
-        // Opens a cursor from last record in reverse direction
-        var request = store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
-        request.onsuccess = onsuccesCursorFunction;
-        request.onerror = onerrorFunction;
+      if (cursor && counter < maxResults) {
+        resultFiltered.push(cursor.value);
+        counter++;
+        cursor.continue();
       } else {
-        // Gets all records. It is faster than openCursor.
-        var request = store.getAll();
-        request.onsuccess = onsuccesGetAllFunction;
-        request.onerror = onerrorFunction;
+        successCallback(resultFiltered, origin);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.lastRecords, [counter, storeName]);
+        done();
       };
-
     };
-    }
+    
+    //// Executed if maxResults is null. Is faster. Don't needs cursor. (It's faster)
+    //
+    var onsuccesGetAllFunction = function (event) {
+      successCallback(event.target.result, origin);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getAll, [storeName]);
+      done();
+    };
+
+    var onerrorFunction = function (event) {
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.error, [origin, event.target.error]);
+      if (errorCallback)
+        errorCallback(event, origin);
+      done();
+    };
+
+    if (maxResults != null) {
+      // Opens a cursor from last record in reverse direction
+      var request = store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
+      request.onsuccess = onsuccesCursorFunction;
+      request.onerror = onerrorFunction;
+    } else {
+      // Gets all records. It is faster than openCursor.
+      var request = store.getAll();
+      request.onsuccess = onsuccesGetAllFunction;
+      request.onerror = onerrorFunction;
+    };
+
+  }
 
   /**
    * Gets a record/s from an object store using a key value from an index.
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array or an object.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
   function getRecords(storeName, indexName, query, successCallback, errorCallback) {
-    var request = window.indexedDB.open(dbName);
-    var origin='getRecords';
+    var origin = 'get -> getRecords(...)';
+    logger(logEnum.begin,[origin]);
     var isIndexKeyValue;
-    if(typeof(query)=='number'){
-      isIndexKeyValue=true;
+    if (typeof (query) == 'number') {
+      isIndexKeyValue = true;
     } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
-    };
-    
-
-    request.onerror = function (event) {
-      alert("Error. You must allow web app to use indexedDB.");
+      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
     };
 
-    request.onsuccess = function (event) {
-      var db = event.target.result;   
-      var conditionsBlocksArray = (!isIndexKeyValue)?qrySys.makeConditionsBlocksArray(query):null;
-      logger(logEnum.open);
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      var index;
-      var counter = 0;
+    var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+    logger(logEnum.open);
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var index;
+    var counter = 0;
 
-      if (indexName != null) index = store.index(indexName);
+    if (indexName != null) index = store.index(indexName);
 
-      var resultFiltered = [];
+    var resultFiltered = [];
 
-      var onsuccesIndexGetKey = function(event){
-        successCallback(event.target.result, origin, query);
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.getByIndexKey,[query,indexName,storeName]);
-        done();
-      };
+    var onsuccesIndexGetKey = function (event) {
+      successCallback(event.target.result, origin, query);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getByIndexKey, [query, indexName, storeName]);
+      done();
+    };
 
-      var onsuccesCursor = function (event) {
-        
-        var cursor = event.target.result;
-        var extMode = conditionsBlocksArray[0].externalLogOperator;
-        
+    var onsuccesCursor = function (event) {
+
+      var cursor = event.target.result;
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+
+      var test = false;
+
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      if (cursor) {
+        var i = 0;
         var test = false;
-
-        // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-        //
-        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-        if (cursor) {
-          var i = 0;
-          var test = false;
-          for (i = 0; i < conditionsBlocksArray.length; i++) {
-            var conditions = conditionsBlocksArray[i].conditionsArray;
-            var intMode = conditionsBlocksArray[i].internalLogOperator;
-            test = qrySys.testConditionBlock(cursor, conditions, intMode);
-            if (test == exitsInFirstTrue){
-              break;
-            }
-          };
-
-          if (test) {
-            resultFiltered.push(cursor.value);
-            counter++;
-          };
-          cursor.continue();
-
-        } else {
-          successCallback(resultFiltered, origin, query);
-          db.close();
-          logger(logEnum.close);
-          logger(logEnum.query,[query,counter,storeName]);
-          done();
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
         };
 
-      } // end onsuccesCursor
+        if (test) {
+          resultFiltered.push(cursor.value);
+          counter++;
+        };
+        cursor.continue();
 
-      var onerrorFunction = function (event) {
+      } else {
+        successCallback(resultFiltered, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.error,[origin,event.target.error]);
-        if (errorCallback)
-          errorCallback(event, origin);
+        logger(logEnum.query, [query, counter, storeName]);
         done();
       };
 
-      if (indexName != null) {
-        if(!isIndexKeyValue){
+    } // end onsuccesCursor
+
+    var onerrorFunction = function (event) {
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.error, [origin, event.target.error]);
+      if (errorCallback)
+        errorCallback(event, origin);
+      done();
+    };
+
+    if (indexName != null) {
+      if (!isIndexKeyValue) {
         var request = index.openCursor();
         request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
-        }else{
-          var request = index.get(query);
+      } else {
+        var request = index.get(query);
         request.onsuccess = onsuccesIndexGetKey;
         request.onerror = onerrorFunction;
-        }
-      } else {
-        var request = store.openCursor();
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
-      };
+      }
+    } else {
+      var request = store.openCursor();
+      request.onsuccess = onsuccesCursor;
+      request.onerror = onerrorFunction;
     };
   }
 
   /**
    * The conditionObject contains the three elements to test a condition.
+   * @private
    * @typedef {Object} conditionObject
    * @property {string} keyPath Indicates a key path to test.
    * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=" ).
@@ -294,7 +294,8 @@ var sidb = function(_dbName) {
    */
   function newDB(errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var origin='newDB()';
+    var origin='add -> newDB(...)';
+    logger(logEnum.begin,[origin]);
 
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
@@ -334,20 +335,8 @@ var sidb = function(_dbName) {
    */
   function newStore(storeName, successCallback, errorCallback) {
     var version;
-    var origin='newStore';
-
-    var request = window.indexedDB.open(dbName);
-
-    request.onerror = function(event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      } else {
-        logger(logEnum.error,[origin,event.target.result]);
-      }
-    };
-
-    request.onsuccess = function(event) {
-      var db = event.target.result;
+    var origin='add -> newStore(...)';
+    logger(logEnum.begin,[origin]);
 
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
@@ -391,7 +380,6 @@ var sidb = function(_dbName) {
         logger(logEnum.newStore,[storeName]);
         done();
       };
-    };
   }
 
   /**
@@ -403,70 +391,57 @@ var sidb = function(_dbName) {
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
   function newRecord(storeName, obj, successCallback, errorCallback) {
-    var request = window.indexedDB.open(dbName);
-    var origin='newRecord';
+    var origin = "add -> newRecord(...)";
+    logger(logEnum.begin,[origin]);
+    var counter = 0;
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    if (Array.isArray(obj)) {
+      var i, objSize;
+      objSize = obj.length;
 
-    request.onerror = function(event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      } else {
-        logger(logEnum.error,[origin,event.target.error]);
-      }
-    };
-
-    request.onsuccess = function(event) {
-      var db = event.target.result;
-      logger(logEnum.open);
-      var counter = 0;
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      if (Array.isArray(obj)) {
-        var i, objSize;
-        objSize = obj.length;
-
-        for (i = 0; i < objSize; i++) {
-          var request = store.add(obj[i]);
-          request.onsuccess = function(event) {
-            counter++;
-            if (counter == objSize) {
-              logger(logEnum.newRecord,[storeName]);
-              if(successCallback){
-                successCallback(event, origin);
-              };
-              db.close();
-              logger(logEnum.close);
-              done();
-            }
-          };
-
-          request.onerror = function(event) {
-            if (errorCallback) {
-              errorCallback(event, origin);
-            } else {
-              logger(logEnum.error,[origin,event.target.error]);
-            }
-          };
-        }
-      } else {
-        var request = store.add(obj);
+      for (i = 0; i < objSize; i++) {
+        var request = store.add(obj[i]);
         request.onsuccess = function(event) {
-          logger(logEnum.newRecord,[storeName]);
-          if(successCallback){
-            successCallback(event, origin);
-          };
-          db.close();
-          logger(logEnum.close);
-          done();
+          counter++;
+          if (counter == objSize) {
+            logger(logEnum.newRecord, [storeName]);
+            if (successCallback) {
+              successCallback(event, origin);
+            }
+            db.close();
+            logger(logEnum.close);
+            done();
+          }
         };
 
         request.onerror = function(event) {
           if (errorCallback) {
             errorCallback(event, origin);
           } else {
-            logger(logEnum.error,[origin,event.target.error]);
+            logger(logEnum.error, [origin, event.target.error]);
           }
         };
       }
-    };
+    } else {
+      var request = store.add(obj);
+      request.onsuccess = function(event) {
+        logger(logEnum.newRecord, [storeName]);
+        if (successCallback) {
+          successCallback(event, origin);
+        }
+        db.close();
+        logger(logEnum.close);
+        done();
+      };
+
+      request.onerror = function(event) {
+        if (errorCallback) {
+          errorCallback(event, origin);
+        } else {
+          logger(logEnum.error, [origin, event.target.error]);
+        }
+      };
+    }
   }
 
   /**
@@ -480,60 +455,163 @@ var sidb = function(_dbName) {
    */
   function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
     var version;
-    var origin='newIndex';
+    var origin = 'add -> newIndex()';
+    logger(logEnum.begin,[origin]);
 
-    var request = window.indexedDB.open(dbName);
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    logger(logEnum.version);
+    var newVersion = version + 1;
 
-    request.onerror = function(event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+
+      var upgradeTransaction = event.target.transaction;
+      var store = upgradeTransaction.objectStore(storeName);
+      if (!store.indexNames.contains(indexName)) {
+        store.createIndex(indexName, keyPath);
       } else {
-        logger(logEnum.error,[origin,event.target.error]);
+        db.close();
+        logger(logEnum.existIndex, [indexName, storeName]);
+        done();
+        return;
       }
     };
 
-    request.onsuccess = function(event) {
-      var db = event.target.result;
-
-      version = db.version;
-      db.close();
-      logger(logEnum.version);
-      var newVersion = version + 1;
-
-      request = window.indexedDB.open(dbName, newVersion);
-
-      request.onupgradeneeded = function(event) {
-        db = event.target.result;
-
-        var upgradeTransaction = event.target.transaction;
-        var store = upgradeTransaction.objectStore(storeName);
-        if (!store.indexNames.contains(indexName)) {
-          store.createIndex(indexName, keyPath);
-        } else {
-          db.close();
-          logger(logEnum.existIndex,[indexName,storeName]);
-          done();
-          return;
-        }
+    request.onsuccess = function (event) {
+      if (successCallback) {
+        successCallback(event, origin);
       };
+      db.close();
+      logger(logEnum.newIndex, [indexName, storeName]);
+      done();
+    };
 
-      request.onsuccess = function(event) {
-        if(successCallback){
-          successCallback(event,origin);
+    request.onerror = function (event) {
+      if (errorCallback) {
+        errorCallback(event, origin);
+      } else {
+        logger(logEnum.error, [origin, event.target.error]);
+      }
+    };
+  }
+
+
+  /**
+     * Count the records
+     * @private
+     * @param  {string} storeName Store name.
+     * @param {string | null} indexName Index name. The records of the store are counted.
+     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * With null query, all records are counted.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     */
+  function count(storeName, indexName, query, successCallback, errorCallback) {
+    var origin = 'get -> count(...)'
+    logger(logEnum.begin,[origin]);
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var index;
+    var counter = 0;
+
+    if (indexName != null)
+      index = store.index(indexName);
+
+    if (!query) {
+      if (indexName)
+        query = index.keyPath + '!= null';
+      else
+        query = store.keyPath + '!= -1';
+    }
+
+    var onSuccessNoQuery = function (event) {
+      var cursor = event.target.result;
+      var message;
+      if (cursor) {
+        counter++;
+        cursor.continue();
+      } else {
+        if (indexName) {
+          message = 'There are ' + counter + 'records in the index "' + indexName + '" from store "' + storeName + "'";
+        } else {
+          message = 'There are ' + counter + 'records in the store "' + storeName;
+        }
+        if (successCallback)
+          successCallback(event.target.result, origin);
+        logger(logEnum.custom, [message]);
+        done();
+      }
+    };
+
+    var onSuccessQuery = function (event) {
+      var cursor = event.target.result;
+      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      var extMode = conditionsBlocksArray[0].externalLogOperator; //external logical operator
+
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+
+      if (cursor) {
+        var i = 0;
+        var test = false;
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
+        };
+
+        if (test) {
+          counter++;
+        };
+        cursor.continue();
+
+      } else {
+        if (successCallback) {
+          successCallback(counter, origin, query);
         };
         db.close();
-        logger(logEnum.newIndex,[indexName,storeName]);
+        logger(logEnum.close);
+        logger(logEnum.countQuery, [query, counter, storeName]);
         done();
       };
 
-      request.onerror = function(event) {
-        if (errorCallback) {
-          errorCallback(event, origin);
-        } else {
-          logger(logEnum.error,[origin,event.target.error]);
-        }
-      };
     };
+
+    var onError = function (event) {
+      if (errorCallback)
+        errorCallback(event.target.error);
+      db.close();
+      logger(logEnum.error, [event.target.error]);
+      done();
+    };
+
+    if (indexName) {
+      var request = index.openCursor();
+      request.onsuccess = onSuccessQuery;
+      request.onerror = onError;
+    } else {
+      var request = store.openCursor();
+      request.onsuccess = onSuccessQuery;
+      request.onerror = onError;
+    }; //end if else block
+
+
   }
 
   /**
@@ -543,52 +621,43 @@ var sidb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function deleteStore(storeName, successCallback, errorCallback) {
+  function delStore(storeName, successCallback, errorCallback) {
     var version;
-    var origin='deleteStore';
+    var origin = 'del -> delStore(...)';
+    logger(logEnum.begin,[origin]);
 
-    var request = window.indexedDB.open(dbName);
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    logger(logEnum.version);
+    var newVersion = version + 1;
 
-    request.onerror = function(event) {
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+      db.deleteObjectStore(storeName);
+    };
+
+    request.onsuccess = function (event) {
+      if (successCallback) {
+        successCallback(event, origin);
+      };
+      db.close();
+      logger(logEnum.delStore, [storeName]);
+      done();
+    };
+
+    request.onerror = function (event) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        logger(logEnum.error,[origin,event.target.error]);
+        logger(logEnum.error, [origin, event.target.error]);
       }
-    };
-
-    request.onsuccess = function(event) {
-      var db = event.target.result;
-
-      version = db.version;
-      db.close();
-      logger(logEnum.version);
-      var newVersion = version + 1;
-
-      request = window.indexedDB.open(dbName, newVersion);
-
-      request.onupgradeneeded = function(event) {
-        db = event.target.result;
-
-        db.deleteObjectStore(storeName);
-      };
-
-      request.onsuccess = function(event) {
-        if(successCallback){
-          successCallback(event,origin);
-        };
-        db.close();
-        logger(logEnum.delStore,[storeName]);
-        done();
-      };
-
-      request.onerror = function(event) {
-        if (errorCallback) {
-          errorCallback(event,origin);
-        } else {
-          logger(logEnum.error,[origin,event.target.error]);
-        }
-      };
     };
   }
 
@@ -598,9 +667,10 @@ var sidb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function deleteDB( successCallback, errorCallback) {
+  function delDB( successCallback, errorCallback) {
     var request = window.indexedDB.deleteDatabase(dbName);
-    var origin='deleteDB';
+    var origin='del -> delDB(...)';
+    logger(logEnum.begin,[origin]);
 
     request.onerror = function(event) {
       if (errorCallback) {
@@ -624,109 +694,105 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(event,origin)} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
   function delRecords(storeName, indexName, query, successCallback, errorCallback) {
-    var request = window.indexedDB.open(dbName);
-    var origin='deleteRecord';
+    var origin = 'del -> delRecords(...)';
+    logger(logEnum.begin,[origin]);
+
+    //// Gets isIndexKeyValue
+    //// True if query is a single value (an index key)
+    // 
     var isIndexKeyValue;
-    if(typeof(query)=='number'){
-      isIndexKeyValue=true;
+    if (typeof (query) == 'number') {
+      isIndexKeyValue = true;
     } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
     };
 
-    request.onerror = function (event) {
-      alert("Error. You must allow web app to use indexedDB.");
-    };
+    var conditionsBlocksArray;
+    conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var index;
+    var counter = 0;
 
-    request.onsuccess = function (event) {
-      var db = event.target.result;
-      var conditionsBlocksArray;
-      conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-      logger(logEnum.open);
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      var index;
-      var counter = 0;
+    if (indexName != null) index = store.index(indexName);
 
-      if (indexName != null) index = store.index(indexName);
+    var onsuccesCursor = function (event) {
 
-      var onsuccesCursor = function (event) {
+      var cursor = event.target.result;
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
 
-        var cursor = event.target.result;
-        var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var test = false;
 
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      if (cursor) {
+        var i = 0;
         var test = false;
-
-        // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-        //
-        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-        if (cursor) {
-          var i = 0;
-          var test = false;
-          for (i = 0; i < conditionsBlocksArray.length; i++) {
-            var conditions = conditionsBlocksArray[i].conditionsArray;
-            var intMode = conditionsBlocksArray[i].internalLogOperator;
-            test = qrySys.testConditionBlock(cursor, conditions, intMode);
-            if (test == exitsInFirstTrue) {
-              break;
-            }
-          };
-
-          if (test) {
-            var request = cursor.delete();
-            request.onsuccess = function () {
-              counter++;
-            };
-          };
-          cursor.continue();
-
-        } else {
-          if(successCallback){
-            successCallback(event, origin, query);
-          };
-          db.close();
-          logger(logEnum.close);
-          logger(logEnum.query,[query,counter,storeName]);
-          done();
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
         };
 
-      } // end onsuccesCursor
+        if (test) {
+          var request = cursor.delete();
+          request.onsuccess = function () {
+            counter++;
+          };
+        };
+        cursor.continue();
 
-      var onerrorFunction = function (event) {
-        if (errorCallback) {
-          errorCallback(event, origin);
+      } else {
+        if (successCallback) {
+          successCallback(event, origin, query);
         };
         db.close();
         logger(logEnum.close);
-        logger(logEnum.error,[origin,event.target.error]);
+        logger(logEnum.query, [query, counter, storeName]);
         done();
-      }
+      };
 
-      if (indexName != null) {
-        if (isIndexKeyValue) {
-          // if is a number here is converted to string
-          query = index.keyPath + '=' + query;
-          conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-        };
-        var request = index.openCursor();
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
-      } else {
-        var request = store.openCursor();
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
-      }
-    };
+    } // end onsuccesCursor
+
+    var onerrorFunction = function (event) {
+      if (errorCallback) {
+        errorCallback(event, origin);
+      };
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.error, [origin, event.target.error]);
+      done();
+    }
+
+    if (indexName != null) {
+      if (isIndexKeyValue) {
+        // if is a number here is converted to string
+        query = index.keyPath + '=' + query;
+        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      };
+      var request = index.openCursor();
+      request.onsuccess = onsuccesCursor;
+      request.onerror = onerrorFunction;
+    } else {
+      var request = store.openCursor();
+      request.onsuccess = onsuccesCursor;
+      request.onerror = onerrorFunction;
+    }
   }
 
   /**
@@ -737,54 +803,46 @@ var sidb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function deleteIndex(storeName, indexName, successCallback, errorCallback) {
+  function delIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
-    var origin='deleteIndex';
+    var origin = 'del -> delIndex(...)';
+    logger(logEnum.begin,[origin]);
 
-    var request = window.indexedDB.open(dbName);
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    logger(logEnum.version);
+    var newVersion = version + 1;
 
-    request.onerror = function(event) {
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function (event) {
+      db = event.target.result;
+
+      var upgradeTransaction = event.target.transaction;
+      var store = upgradeTransaction.objectStore(storeName);
+      store.deleteIndex(indexName);
+    };
+
+    request.onsuccess = function (event) {
+      if (successCallback) {
+        successCallback(event, origin);
+      };
+      db.close();
+      logger(logEnum.delIndex, [indexName, storeName]);
+      done();
+    };
+
+    request.onerror = function (event) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        logger(logEnum.error,[origin,event.target.error]);
+        logger(logEnum.error, [origin, event.target.error]);
       }
-    };
-
-    request.onsuccess = function(event) {
-      var db = event.target.result;
-
-      version = db.version;
-      db.close();
-      logger(logEnum.version);
-      var newVersion = version + 1;
-
-      request = window.indexedDB.open(dbName, newVersion);
-
-      request.onupgradeneeded = function(event) {
-        db = event.target.result;
-
-        var upgradeTransaction = event.target.transaction;
-        var store = upgradeTransaction.objectStore(storeName);
-        store.deleteIndex(indexName);
-      };
-
-      request.onsuccess = function(event) {
-        if(successCallback){
-          successCallback(event, origin);
-        };
-        db.close();
-        logger(logEnum.delIndex,[indexName,storeName]);
-        done();
-      };
-
-      request.onerror = function(event) {
-        if (errorCallback) {
-          errorCallback(event, origin);
-        } else {
-          logger(logEnum.error,[origin,event.target.error]);
-        }
-      };
     };
   }
 
@@ -792,123 +850,116 @@ var sidb = function(_dbName) {
    * Updates one or more records. Records are selected by the query and updated with the objectValues.
    * @private
    * @param  {string} storeName Object store name.
-   * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower)
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param  {object} objectValues New property value after update. Can be an array of values.
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param  {function} [errorCallback] Function called on error. Receives event parameter.
    */
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
-    var request = window.indexedDB.open(dbName);
-    var origin='updateRecords';
+    var origin = 'update -> updateRecords(...)';
+
+    //// Gets isIndexKeyValue
+    //// If true then is query is a single value (an index key)
     var isIndexKeyValue;
-    if(typeof(query)=='number'){
-      isIndexKeyValue=true;
+    if (typeof (query) == 'number') {
+      isIndexKeyValue = true;
     } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx))?false:true;
+      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
     };
 
-    request.onerror = function (event) {
-      alert("Error. You must allow web app to use indexedDB.");
+    var conditionsBlocksArray;
+    conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var index;
+
+    if (indexName != null) {
+      index = store.index(indexName);
     };
 
-    request.onsuccess = function (event) {
-      var db = event.target.result;
-      var conditionsBlocksArray;
-      conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-      logger('open');
-      var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-      var index;
+    var counter = 0;
 
-      if (indexName != null) {
-        index = store.index(indexName);
-      };
+    var onsuccesCursor = function (event) {
 
-      var counter = 0;
+      var cursor = event.target.result;
+      var keys = Object.keys(objectValues); //Array with the property names that will be updated
+      var newObjectValuesSize = keys.length;
+      var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null; //external logical operator
 
-      var onsuccesCursor = function (event) {
-
-        var cursor = event.target.result;
-        var keys = Object.keys(objectValues); //Array with the property names that will be updated
-        var newObjectValuesSize = keys.length;
-        var extMode = (conditionsBlocksArray)?conditionsBlocksArray[0].externalLogOperator:null; //external logical operator
-
-        // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-        // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-        //
-        var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-        if (cursor) {
-          var i = 0;
-          var test = false;
-          for (i = 0; i < conditionsBlocksArray.length; i++) {
-            var conditions = conditionsBlocksArray[i].conditionsArray;
-            var intMode = conditionsBlocksArray[i].internalLogOperator;
-            test = qrySys.testConditionBlock(cursor, conditions, intMode);
-            if (test == exitsInFirstTrue) {
-              break;
-            }
-          };
-
-          if (test) {
-            var updateData = cursor.value;
-            var i = 0;
-            for (i = 0; i < newObjectValuesSize; i++) {
-              // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-              updateData[keys[i]] =
-                typeof objectValues[keys[i]] == "function"
-                  ? objectValues[keys[i]](updateData[keys[i]])
-                  : objectValues[keys[i]];
-            }
-
-            var request = cursor.update(updateData);
-            request.onsuccess = function () {
-              counter++;
-            };
-          };
-          cursor.continue();
-
-        } else {
-          if(successCallback){
-            successCallback(event, origin, query);
-          };
-          db.close();
-          logger(logEnum.close);
-          logger(logEnum.query,[query,counter,storeName]);
-          done();
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      if (cursor) {
+        var i = 0;
+        var test = false;
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
         };
 
-      }
+        if (test) {
+          var updateData = cursor.value;
+          var i = 0;
+          for (i = 0; i < newObjectValuesSize; i++) {
+            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+            updateData[keys[i]] =
+              typeof objectValues[keys[i]] == "function"
+                ? objectValues[keys[i]](updateData[keys[i]])
+                : objectValues[keys[i]];
+          }
 
-      var onerrorFunction = function (event) {
-        if (errorCallback)
-          errorCallback(event, origin);
+          var request = cursor.update(updateData);
+          request.onsuccess = function () {
+            counter++;
+          };
+        };
+        cursor.continue();
 
+      } else {
+        if (successCallback) {
+          successCallback(event, origin, query);
+        };
         db.close();
         logger(logEnum.close);
-        logger(logEnum.error,[origin,event.target.error]);
+        logger(logEnum.query, [query, counter, storeName]);
         done();
-      }
-
-      if (indexName != null) {
-        if (isIndexKeyValue) {
-          // If query is a single number value then is mofied to be valid to the query system
-          query = index.keyPath + '=' + query;
-          conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-        };
-        var request = index.openCursor();
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
-      } else {
-        var request = store.openCursor();
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
       };
+
+    }
+
+    var onerrorFunction = function (event) {
+      if (errorCallback)
+        errorCallback(event, origin);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.error, [origin, event.target.error]);
+      done();
+    }
+
+    if (indexName != null) {
+      if (isIndexKeyValue) {
+        // If query is a single number value then is mofied to be valid to the query system
+        query = index.keyPath + '=' + query;
+        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      };
+      var request = index.openCursor();
+      request.onsuccess = onsuccesCursor;
+      request.onerror = onerrorFunction;
+    } else {
+      var request = store.openCursor();
+      request.onsuccess = onsuccesCursor;
+      request.onerror = onerrorFunction;
     };
   }
 
@@ -942,11 +993,11 @@ var sidb = function(_dbName) {
 
     /**
      * Transforms a query string into an array of objects that is used by SIDB to process the query.
-     * @param  {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks 
+     * @param  {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * @return {object[]} Returns and array of coditions blocks.
      */
     makeConditionsBlocksArray: function (query) {
@@ -1186,7 +1237,16 @@ var sidb = function(_dbName) {
   var taskQueue = [];
 
   /**
+   * Object task to open database used by the Task queue system 
+   * @private
+   */
+  var tkOpen={
+    type:"openDb"
+  };
+
+  /**
    * Delete a task from the queue when a is finished and checks for pending tasks.
+   * @private
    * @return {void}
    */
   function done() {
@@ -1211,6 +1271,11 @@ var sidb = function(_dbName) {
     var task = taskQueue[0];
 
     switch (type) {
+
+      case 'openDb':
+        openDb();
+        break;
+
       case "newStore":
         newStore(task.storeName, task.successCallback, task.errorCallback);
         break;
@@ -1223,38 +1288,42 @@ var sidb = function(_dbName) {
         newDB(task.errorCallback);
         break;
 
+      case "count":
+        count(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
+        break;
+
       case "custom":
-        customTaskActive = true;
+        logger(logEnum.begin,['custom task']);
         task.fn.apply(task.context, task.args);
         done();
         break;
 
-      case "deleteStore":
-        deleteStore(task.storeName, task.successCallback, errorCallback);
+      case "delStore":
+        delStore(task.storeName, task.successCallback, errorCallback);
         break;
 
-      case "deleteDB":
-        deleteDB(task.successCallback, task.errorCallback);
+      case "delDB":
+        delDB(task.successCallback, task.errorCallback);
         break;
 
-      case "deleteRecords":
+      case "delRecords":
         delRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
-      case "deleteIndex":
-        deleteIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
+      case "delIndex":
+        delIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
         break;
 
       case "updateRecordsByIndex":
-        updateRecords( task.storeName, task.indexName, task.query, task.objectValues, task.successCallback, task.errorCallback);
+        updateRecords(task.storeName, task.indexName, task.query, task.objectValues, task.successCallback, task.errorCallback);
         break;
 
       case "newIndex":
-        newIndex( task.storeName, task.indexName, task.keyPath, task.successCallback, task.errorCallback);
+        newIndex(task.storeName, task.indexName, task.keyPath, task.successCallback, task.errorCallback);
         break;
 
       case "lastRecords":
-        lastRecords( task.storeName, task.maxResults, task.successCallback, task.errorCallback);
+        lastRecords(task.storeName, task.maxResults, task.successCallback, task.errorCallback);
         break;
 
       case "getRecords":
@@ -1267,7 +1336,9 @@ var sidb = function(_dbName) {
   }
 
   /**
-   * Execs pending tasks. The tasks are executed sequentially. A task does not run until the previous one ends. This avoids problems arising from the asynchronous nature of the indexedDB api.
+   * Execs pending tasks. The tasks are executed sequentially. 
+   * A task does not run until the previous one ends. 
+   * This avoids problems arising from the asynchronous nature of the indexedDB api.
    * @public
    */
   this.execTasks = function() {
@@ -1276,11 +1347,15 @@ var sidb = function(_dbName) {
     }
   };
 
+  
+
   /**
    * Contains add methods
    * @namespace
    */
-  this.add = { /**
+  this.add = { 
+    
+    /**
      * Add the task "create new database" to the task queue. Internal use only.
      * @private
      * @instance
@@ -1291,6 +1366,7 @@ var sidb = function(_dbName) {
 
       taskQueue.push(task);
     },
+
     /**
      * Adds the task "create a new object store" to the task queue.
      * @public
@@ -1319,13 +1395,21 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    store: function(storeName, successCallback, errorCallback) {
+    store: function (storeName, successCallback, errorCallback) {
       // Make the task object
-      var task = { type: "newStore", storeName: storeName, successCallback: successCallback, errorCallback: errorCallback };
+      var task = {
+        type: "newStore",
+        storeName: storeName,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
 
+      // Adds the task open database to taskQueue
+      taskQueue.push(tkOpen);
       // Adds this task to taskQueue
       taskQueue.push(task);
     },
+
     /**
      * Add the task "insert new record in object store" to the task queue.
      * @public
@@ -1361,11 +1445,19 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    records: function(storeName, obj, successCallback, errorCallback) {
-      var task = { type: "newRecords", storeName: storeName, obj: obj, successCallback: successCallback, errorCallback: errorCallback };
+    records: function (storeName, obj, successCallback, errorCallback) {
+      var task = {
+        type: "newRecords",
+        storeName: storeName,
+        obj: obj,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
+
     /**
      * Adds the task "create a new index" to the task queue.
      * @public
@@ -1406,9 +1498,17 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    index: function(storeName, indexName, keyPath, successCallback, errorCallback) {
-      var task = { type: "newIndex", storeName: storeName, indexName: indexName, keyPath: keyPath, successCallback: successCallback, errorCallback: errorCallback };
+    index: function (storeName, indexName, keyPath, successCallback, errorCallback) {
+      var task = {
+        type: "newIndex",
+        storeName: storeName,
+        indexName: indexName,
+        keyPath: keyPath,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
 
@@ -1463,7 +1563,7 @@ var sidb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    customTask: function(fn, context, args) {
+    customTask: function (fn, context, args) {
       var argsArray = [];
       if (args) {
         var i = 0;
@@ -1471,10 +1571,16 @@ var sidb = function(_dbName) {
           argsArray[2 - i] = arguments[i];
         }
       }
-      var task = { type: "custom", fn: fn, context: context, args: argsArray };
+      var task = {
+        type: "custom",
+        fn: fn,
+        context: context,
+        args: argsArray
+      };
 
       taskQueue.push(task);
-    } };
+    }
+  };
 
   /**
    * Contains delete methods
@@ -1490,7 +1596,7 @@ var sidb = function(_dbName) {
      */
     db: function( successCallback, errorCallback) {
       var task = {
-        type: "deleteDB",
+        type: "delDB",
         successCallback: successCallback,
         errorCallback: errorCallback
       };
@@ -1508,12 +1614,13 @@ var sidb = function(_dbName) {
      */
     store: function(storeName, successCallback, errorCallback) {
       var task = {
-        type: "deleteStore",
+        type: "delStore",
         storeName: storeName,
         successCallback: successCallback,
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
 
@@ -1523,12 +1630,12 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
@@ -1560,7 +1667,7 @@ var sidb = function(_dbName) {
      */
     records: function(storeName, indexName, query, successCallback, errorCallback) {
       var task = {
-        type: "deleteRecords",
+        type: "delRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -1568,6 +1675,7 @@ var sidb = function(_dbName) {
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
 
@@ -1582,13 +1690,14 @@ var sidb = function(_dbName) {
      */
     index: function(storeName, indexName, successCallback, errorCallback) {
       var task = {
-        type: "deleteIndex",
+        type: "delIndex",
         storeName: storeName,
         indexName: indexName,
         successCallback: successCallback,
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     }
   };
@@ -1602,12 +1711,12 @@ var sidb = function(_dbName) {
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
      * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
@@ -1678,6 +1787,7 @@ var sidb = function(_dbName) {
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     }
   };
@@ -1737,6 +1847,7 @@ var sidb = function(_dbName) {
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
 
@@ -1746,12 +1857,12 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
@@ -1817,6 +1928,64 @@ var sidb = function(_dbName) {
         errorCallback: errorCallback
       };
 
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+    },
+
+    /**
+     * Adds the task "Count the records" to the task queue
+     * @param  {string} storeName Store name.
+     * @param {string | null} indexName Index name. The records of the store are counted.
+     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * With null query, all records are counted.
+     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @example
+     * var mydb = new sidb('myDatabase');
+     *
+     * // An example of object stored in the object store
+     * //
+     * var person = {
+     *     name: 'Peter',
+     *     age: 32
+     * };
+     * 
+     * //
+     * // Counts all records in the store "southFactory"
+     * //
+     * mydb.get.count('southFactory',null,null,succesFunction);
+     * 
+     * //
+     * // Counts all records in the index 'Names'
+     * //
+     * mydb.get.count('southFactory','Names',null,succesFunction); 
+     * 
+     * //
+     * // Counts all persons with age > 30
+     * //
+     * mydb.get.count('southFactory',null,'age > 30',succesFunction);
+     * 
+     * //
+     * // Execs all pending task
+     * //
+     * mydb.execTasks();
+     * 
+     */
+    count: function(storeName,indexName,query,successCallback,errorCallback){
+      var task = {
+        type: "count",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
+
+      taskQueue.push(tkOpen);
       taskQueue.push(task);
     }
   };  
@@ -1847,7 +2016,11 @@ var sidb = function(_dbName) {
     delStore: 16,
     delDb: 17,
     existIndex: 18,
-    existStore: 19
+    existStore: 19,
+    countQuery: 20,
+    custom:21,
+    begin:22,
+    finish:23
   };
 
   function logger(t, args) {
@@ -1855,13 +2028,25 @@ var sidb = function(_dbName) {
       return;
 
     switch (t) {
-      case 1:
+
+      case 21:
+        console.log(args[0]);
+        break;
+      case 22:
+      console.log('//--- ' + args[0] + ' ---------------------------->');
+      break;
+
+      case 23:
+      console.log('<--------------- ' + args[0] + ' finished -------//');
+      break;
+
+      /*case 1:
         console.log('Database ' + dbName + ' opened');
         break;
 
       case 2:
         console.log('Database ' + dbName + ' closed');
-        break;
+        break;*/
 
       case 3:
         console.log(args[0] + ' last records returned from store "' + args[1] + '"');
@@ -1885,7 +2070,7 @@ var sidb = function(_dbName) {
         break;
 
       case 8:
-        console.log('Database "' + dbname + '" already exists');
+        console.log('Database "' + dbName + '" already exists');
         break;
 
       case 9:
@@ -1931,6 +2116,11 @@ var sidb = function(_dbName) {
       case 19:
         console.log('Store "' + args[0] + '" already exists');
         break;
+
+        case 20:
+        console.log('Processed query finished: "'+args[0]+'"\n'+ args[1] +' records counted from the query to store: "'+args[2]+'"');
+        break;
+        
 
       default:
         break;

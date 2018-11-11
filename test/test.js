@@ -112,7 +112,7 @@ mydb.get.records(store,index,1,successCallback,errorCallback);
 mydb.add.records(store,employeesArray,successCallback,errorCallback);
 
 // Execs a custom task
-mydb.add.customTask(showInfo,this,'This is my custom task');
+mydb.add.customTask(showInfo,this,'Custom task executed');
 
 // Gets all records
 mydb.get.lastRecords(store,null,successCallback,errorCallback);
@@ -124,16 +124,16 @@ mydb.get.records(store,null,'department = manufacturing & age > 30',successCallb
 mydb.get.records(store,null,'department= "manufacturing" || salary > 1390',successCallback,errorCallback);
 
 //Counts records
-mydb.get.count(store,null,'salary>1000'); // This dont block execution
+mydb.get.count(store,null,'salary>1000',successCallback); 
 
 //Counts records
-mydb.get.count(store,index,'id=3'); 
+mydb.get.count(store,index,'id=3',successCallback); 
 
 //Counts all records
-mydb.get.count(store,null,null);
+mydb.get.count(store,null,null,successCallback);
 
 //Counts all records
-//mydb.get.count(store,index,null);
+mydb.get.count(store,index,null,successCallback);
 
 // Query with 2 sets of conditions
 mydb.get.records(store,null,'(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',successCallback,errorCallback);
@@ -181,17 +181,17 @@ mydb.execTasks();
 
 function successCallback(event, origin, query) {
   var message = origin + " executed";
-  if (query != null && query != undefined) message += " with query: " + query;
+  if (query) message += " with query: " + query;
   showInfo(message);
 
-  if (origin == "lastRecords" || origin == "getRecords") {
+  if (origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)") {
     showResults(event);
   }
 }
 
 function errorCallback(event,origin){
-    var message = 'Error on method ' + origin;
-    showInfo(message);
+    var message = origin + ' execution failed';
+    showInfo(message,true);
 }
 
 function showResults(results) {
@@ -251,10 +251,13 @@ function showResults(results) {
     }
 }
 
-function showInfo(message) {
+function showInfo(message,error) {
     var headerRow = document.createElement('tr');
     var cell = document.createElement('th');
     cell.setAttribute("colspan", 6);
+    if(error){
+        cell.style.backgroundColor='red';
+    };
     cell.textContent = message;
     headerRow.appendChild(cell);
     tableResults.appendChild(headerRow);

@@ -22,6 +22,7 @@ You can learn how to use SIDB in less than 5 minuts (or maybe 6 ;)).
 * [Query language](#Query-system)
 * [Using functions as values](#Using-functions)
 * [The task queue](#Task-queue)
+* [License](#License)
 
 ## <a name="Features"></a>Features
 ***
@@ -487,5 +488,8 @@ mydb.get.lastRecords(
 //
 mydb.execTasks();
 ```
+
+## <a name="License"></a>**License**  
+SIDB is licensed under the terms of the MIT open source license.
 
 

@@ -102,7 +102,8 @@ var sidb = function(_dbName) {
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter and origin.
    */
   function lastRecords(storeName, maxResults, successCallback, errorCallback) {
-    var origin = 'lastRecords';
+    var origin = 'get -> lastRecords(...)';
+    logger(logEnum.begin,[origin]);
     var resultFiltered = [];
     var store = db.transaction(storeName, "readwrite").objectStore(storeName);
     var counter = 0;
@@ -164,18 +165,19 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array or an object.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
    */
   function getRecords(storeName, indexName, query, successCallback, errorCallback) {
-    var origin = 'getRecords';
+    var origin = 'get -> getRecords(...)';
+    logger(logEnum.begin,[origin]);
     var isIndexKeyValue;
     if (typeof (query) == 'number') {
       isIndexKeyValue = true;
@@ -268,6 +270,7 @@ var sidb = function(_dbName) {
 
   /**
    * The conditionObject contains the three elements to test a condition.
+   * @private
    * @typedef {Object} conditionObject
    * @property {string} keyPath Indicates a key path to test.
    * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=" ).
@@ -291,7 +294,8 @@ var sidb = function(_dbName) {
    */
   function newDB(errorCallback) {
     var request = window.indexedDB.open(dbName);
-    var origin='newDB()';
+    var origin='add -> newDB(...)';
+    logger(logEnum.begin,[origin]);
 
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
@@ -331,7 +335,8 @@ var sidb = function(_dbName) {
    */
   function newStore(storeName, successCallback, errorCallback) {
     var version;
-    var origin='newStore';
+    var origin='add -> newStore(...)';
+    logger(logEnum.begin,[origin]);
 
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
@@ -386,8 +391,8 @@ var sidb = function(_dbName) {
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
   function newRecord(storeName, obj, successCallback, errorCallback) {
-    var origin = "newRecord";
-
+    var origin = "add -> newRecord(...)";
+    logger(logEnum.begin,[origin]);
     var counter = 0;
     var store = db.transaction(storeName, "readwrite").objectStore(storeName);
     if (Array.isArray(obj)) {
@@ -450,7 +455,8 @@ var sidb = function(_dbName) {
    */
   function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
     var version;
-    var origin = 'newIndex';
+    var origin = 'add -> newIndex()';
+    logger(logEnum.begin,[origin]);
 
     //// Gets the new version
     //
@@ -503,57 +509,52 @@ var sidb = function(_dbName) {
      * @private
      * @param  {string} storeName Store name.
      * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
-     * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      */
-  function count(storeName, indexName, query, successCallback, errorCallback){
-    var origin='count'
+  function count(storeName, indexName, query, successCallback, errorCallback) {
+    var origin = 'get -> count(...)'
+    logger(logEnum.begin,[origin]);
     var store = db.transaction(storeName, "readwrite").objectStore(storeName);
     var index;
-    var counter=0;
-    if(indexName!=null)
-    index=store.index(indexName);
-    //// Gets isIndexKeyValue
-    //// If true then is query is a single value (an index key)
-    var isIndexKeyValue=false;
-    if(query){
-    if (typeof (query) == 'number') {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    };
-  }; 
+    var counter = 0;
+
+    if (indexName != null)
+      index = store.index(indexName);
+
+    if (!query) {
+      if (indexName)
+        query = index.keyPath + '!= null';
+      else
+        query = store.keyPath + '!= -1';
+    }
 
     var onSuccessNoQuery = function (event) {
-      var cursor=event.target.result;
+      var cursor = event.target.result;
       var message;
-      if(cursor){
+      if (cursor) {
         counter++;
         cursor.continue();
       } else {
-        if(indexName){
-          message = 'There are '+ counter + 'records in the index "'+indexName+'" from store "'+storeName+"'";
+        if (indexName) {
+          message = 'There are ' + counter + 'records in the index "' + indexName + '" from store "' + storeName + "'";
         } else {
-          message = 'There are '+ counter + 'records in the store "'+storeName;
+          message = 'There are ' + counter + 'records in the store "' + storeName;
         }
         if (successCallback)
-        successCallback(event.target.result, origin);
+          successCallback(event.target.result, origin);
         logger(logEnum.custom, [message]);
         done();
       }
-      
-     
     };
 
-    var onSuccessQuery=function(event){
+    var onSuccessQuery = function (event) {
       var cursor = event.target.result;
       var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       var extMode = conditionsBlocksArray[0].externalLogOperator; //external logical operator
@@ -592,42 +593,22 @@ var sidb = function(_dbName) {
 
     };
 
-    var onError=function(event){
-      if(errorCallback)
-      errorCallback(event.target.error);
+    var onError = function (event) {
+      if (errorCallback)
+        errorCallback(event.target.error);
       db.close();
-      logger(logEnum.error,[event.target.error]);
+      logger(logEnum.error, [event.target.error]);
       done();
     };
 
     if (indexName) {
-      if (query) {
-        if (isIndexKeyValue) {
-          query = index.keyPath + '=' + query;
-          var request = index.openCursor(); // Here index.count(key) has bad performance.????? 
-          request.onsuccess=onSuccessNoQuery;
-        } else {
-          var request = index.openCursor();
-          request.onsuccess = onSuccessQuery;
-        };
-        
-        request.onerror = onError;
-      } else {
-        var request = index.openCursor();          // Here index.count(key) has bad performance.????? 
-        request.onsuccess = onSuccessNoQuery;
-        request.onerror = onError;
-      };
+      var request = index.openCursor();
+      request.onsuccess = onSuccessQuery;
+      request.onerror = onError;
     } else {
-      if (query) {
-        var request = store.openCursor();
-        request.onsuccess = onSuccessQuery;
-        request.onerror = onError;
-
-      } else {
-        var request = store.openCursor();              // Here index.count(key) has bad performance.????? 
-        request.onsuccess = onSuccessNoQuery;
-        request.onerror = onError;
-      };
+      var request = store.openCursor();
+      request.onsuccess = onSuccessQuery;
+      request.onerror = onError;
     }; //end if else block
 
 
@@ -642,7 +623,8 @@ var sidb = function(_dbName) {
    */
   function delStore(storeName, successCallback, errorCallback) {
     var version;
-    var origin = 'delStore';
+    var origin = 'del -> delStore(...)';
+    logger(logEnum.begin,[origin]);
 
     //// Gets the new version
     //
@@ -685,9 +667,10 @@ var sidb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function called on error. Receives event parameter.
    */
-  function deleteDB( successCallback, errorCallback) {
+  function delDB( successCallback, errorCallback) {
     var request = window.indexedDB.deleteDatabase(dbName);
-    var origin='deleteDB';
+    var origin='del -> delDB(...)';
+    logger(logEnum.begin,[origin]);
 
     request.onerror = function(event) {
       if (errorCallback) {
@@ -711,18 +694,19 @@ var sidb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(event,origin)} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
    */
   function delRecords(storeName, indexName, query, successCallback, errorCallback) {
-    var origin = 'deleteRecord';
+    var origin = 'del -> delRecords(...)';
+    logger(logEnum.begin,[origin]);
 
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
@@ -821,7 +805,8 @@ var sidb = function(_dbName) {
    */
   function delIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
-    var origin = 'delIndex';
+    var origin = 'del -> delIndex(...)';
+    logger(logEnum.begin,[origin]);
 
     //// Gets the new version
     //
@@ -834,18 +819,13 @@ var sidb = function(_dbName) {
     //// so a new version number is needed to trigger that event.
     //
     request = window.indexedDB.open(dbName, newVersion);
-    console.log('request');
 
     request.onupgradeneeded = function (event) {
       db = event.target.result;
-      console.log('event db open');
 
       var upgradeTransaction = event.target.transaction;
-      console.log('up transaction');
       var store = upgradeTransaction.objectStore(storeName);
-      console.log('store opened')
       store.deleteIndex(indexName);
-      console.log('index deleted');
     };
 
     request.onsuccess = function (event) {
@@ -870,20 +850,20 @@ var sidb = function(_dbName) {
    * Updates one or more records. Records are selected by the query and updated with the objectValues.
    * @private
    * @param  {string} storeName Object store name.
-   * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:
-   * c > 20                                     // Simple query
-   * c > 10 & name='peter'                      // Query with 2 conditions
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-   * 'peter'                                    // Single value always refers to the index keypath.
+   * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower)
+   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param  {object} objectValues New property value after update. Can be an array of values.
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param  {function} [errorCallback] Function called on error. Receives event parameter.
    */
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
-    var origin = 'updateRecords';
+    var origin = 'update -> updateRecords(...)';
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
@@ -1013,11 +993,11 @@ var sidb = function(_dbName) {
 
     /**
      * Transforms a query string into an array of objects that is used by SIDB to process the query.
-     * @param  {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks 
+     * @param  {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * @return {object[]} Returns and array of coditions blocks.
      */
     makeConditionsBlocksArray: function (query) {
@@ -1313,7 +1293,7 @@ var sidb = function(_dbName) {
         break;
 
       case "custom":
-        customTaskActive = true;
+        logger(logEnum.begin,['custom task']);
         task.fn.apply(task.context, task.args);
         done();
         break;
@@ -1322,11 +1302,11 @@ var sidb = function(_dbName) {
         delStore(task.storeName, task.successCallback, errorCallback);
         break;
 
-      case "deleteDB":
-        deleteDB(task.successCallback, task.errorCallback);
+      case "delDB":
+        delDB(task.successCallback, task.errorCallback);
         break;
 
-      case "deleteRecords":
+      case "delRecords":
         delRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
@@ -1616,7 +1596,7 @@ var sidb = function(_dbName) {
      */
     db: function( successCallback, errorCallback) {
       var task = {
-        type: "deleteDB",
+        type: "delDB",
         successCallback: successCallback,
         errorCallback: errorCallback
       };
@@ -1650,12 +1630,12 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
@@ -1687,7 +1667,7 @@ var sidb = function(_dbName) {
      */
     records: function(storeName, indexName, query, successCallback, errorCallback) {
       var task = {
-        type: "deleteRecords",
+        type: "delRecords",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -1731,12 +1711,12 @@ var sidb = function(_dbName) {
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
      * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
@@ -1877,12 +1857,12 @@ var sidb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
+     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
@@ -1956,13 +1936,11 @@ var sidb = function(_dbName) {
      * Adds the task "Count the records" to the task queue
      * @param  {string} storeName Store name.
      * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid querys:
-     * c > 20                                     // Simple query
-     * c > 10 & name='peter'                      // Query with 2 conditions
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||).
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks
-     * 'peter'                                    // Single value always refers to the index keypath.
-     * A single value always refers to the index keypath so the index can not be null in this case.
+     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
@@ -2040,7 +2018,9 @@ var sidb = function(_dbName) {
     existIndex: 18,
     existStore: 19,
     countQuery: 20,
-    custom:21
+    custom:21,
+    begin:22,
+    finish:23
   };
 
   function logger(t, args) {
@@ -2048,13 +2028,25 @@ var sidb = function(_dbName) {
       return;
 
     switch (t) {
-      case 1:
+
+      case 21:
+        console.log(args[0]);
+        break;
+      case 22:
+      console.log('//--- ' + args[0] + ' ---------------------------->');
+      break;
+
+      case 23:
+      console.log('<--------------- ' + args[0] + ' finished -------//');
+      break;
+
+      /*case 1:
         console.log('Database ' + dbName + ' opened');
         break;
 
       case 2:
         console.log('Database ' + dbName + ' closed');
-        break;
+        break;*/
 
       case 3:
         console.log(args[0] + ' last records returned from store "' + args[1] + '"');
@@ -2128,9 +2120,7 @@ var sidb = function(_dbName) {
         case 20:
         console.log('Processed query finished: "'+args[0]+'"\n'+ args[1] +' records counted from the query to store: "'+args[2]+'"');
         break;
-
-        case 21:
-        console.log(args[0]);
+        
 
       default:
         break;

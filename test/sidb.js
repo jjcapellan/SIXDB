@@ -45,10 +45,36 @@ var sidb = function(_dbName) {
    * @type {string}
    * @readonly
    */
-  var dbName = _dbName;  
+  var dbName = _dbName;
 
-  
+  /**
+   * Database name getter
+   * @public
+   * @return {string} Database name
+   */
+  this.getName = function () {
+    return dbName;
+  };
 
+  /**
+ * Console output mode. True to turn off console output.
+ * @private
+ * @type {boolean} 
+ * @default
+ * @readonly
+ */
+  var consoleOff = false;
+
+  /**
+   * Sets the consoleOff value
+   * @param {boolean} off True turn off the console output.
+   * @return {string} Database name
+   */
+  this.setConsoleOff = function (off) {
+    if (typeof (off) == 'boolean') {
+      consoleOff = off;
+    };
+  }
   
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
@@ -72,8 +98,7 @@ var sidb = function(_dbName) {
     request.onsuccess = function (event) {
       var db = event.target.result;
       var resultFiltered = [];
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var counter = 0;
 
@@ -85,14 +110,13 @@ var sidb = function(_dbName) {
 
         if (cursor && counter < maxResults) {
           resultFiltered.push(cursor.value);
-          console.log("pushed");
           counter++;
           cursor.continue();
         } else {
           successCallback(resultFiltered, origin);
           db.close();
-          console.log("Database closed");
-          console.log(counter + ' last records returned from object store "' + storeName + '"');
+          logger(logEnum.close);
+          logger(logEnum.lastRecords,[counter,storeName]);
           done();
         };
       };
@@ -100,15 +124,15 @@ var sidb = function(_dbName) {
       var onsuccesGetAllFunction = function (event) {
         successCallback(event.target.result, origin);
         db.close();
-        console.log("Database closed");
-        console.log('All records returned from object store "' + storeName + '"');
+        logger(logEnum.close);
+        logger(logEnum.getAll,[storeName]);
         done();
       };
 
       var onerrorFunction = function (event) {
         db.close();
-        console.log("Database closed");
-        console.log('Error retrieving records: ' + event.target.error);
+        logger(logEnum.close);
+        logger(logEnum.error,[origin,event.target.error]);
         if (errorCallback)
           errorCallback(event, origin);
         done();
@@ -162,8 +186,7 @@ var sidb = function(_dbName) {
     request.onsuccess = function (event) {
       var db = event.target.result;   
       var conditionsBlocksArray = (!isIndexKeyValue)?qrySys.makeConditionsBlocksArray(query):null;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
       var counter = 0;
@@ -175,8 +198,8 @@ var sidb = function(_dbName) {
       var onsuccesIndexGetKey = function(event){
         successCallback(event.target.result, origin, query);
         db.close();
-        console.log("Database closed");
-        console.log('Records with key value "' + query + '" returned from index "' + indexName + '" on object store "'+ storeName+'"');
+        logger(logEnum.close);
+        logger(logEnum.getByIndexKey,[query,indexName,storeName]);
         done();
       };
 
@@ -212,8 +235,8 @@ var sidb = function(_dbName) {
         } else {
           successCallback(resultFiltered, origin, query);
           db.close();
-          console.log("Database closed");
-          console.log('Processed query: "'+query+'" finished\n'+ counter + ' records returned from object store "' + storeName + '"');
+          logger(logEnum.close);
+          logger(logEnum.query,[query,counter,storeName]);
           done();
         };
 
@@ -221,8 +244,8 @@ var sidb = function(_dbName) {
 
       var onerrorFunction = function (event) {
         db.close();
-        console.log("Database closed");
-        console.log('Error retrieving records: ' + event.target.error);
+        logger(logEnum.close);
+        logger(logEnum.error,[origin,event.target.error]);
         if (errorCallback)
           errorCallback(event, origin);
         done();
@@ -271,6 +294,7 @@ var sidb = function(_dbName) {
    */
   function newDB(errorCallback) {
     var request = window.indexedDB.open(dbName);
+    var origin='newDB()';
 
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
@@ -284,9 +308,9 @@ var sidb = function(_dbName) {
       var db = event.target.result;
       db.close();
       if (noDb) {
-        console.log('Database "' + dbName + '" created.');
+        logger(logEnum.dbCreated);
       } else {
-        console.log('Database "' + dbName + '" already exists.');
+        logger(logEnum.dbExists);
       }
       done();
     };
@@ -295,9 +319,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event);
       } else {
-        console.log(
-          "Error creating database " + dbName + " : " + request.error
-        );
+        logger(logEnum.error,[origin,event.target.error]);
       }
     };
   }
@@ -320,7 +342,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        console.log("Error opening database " + dbName + " : " + request.error);
+        logger(logEnum.error,[origin,event.target.result]);
       }
     };
 
@@ -330,14 +352,14 @@ var sidb = function(_dbName) {
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
         db.close();
-        console.log('Object store "' + storeName + '" already exists');
+        logger(logEnum.existStore,[storeName]);
         done();
         return;
       }
 
       version = db.version;
       db.close();
-      console.log("Version tested");
+      logger(logEnum.version);
       var newVersion = version + 1;
       var store;
 
@@ -352,11 +374,11 @@ var sidb = function(_dbName) {
         });
 
         store.onerror = function(event) {
-          console.log("error");
+          logger(logEnum.error,[origin,event.target.result]);
           if (errorCallback) {
             errorCallback(event, origin);
           } else {
-            console.log("Error in database " + dbName + " : " + db.error);
+            logger(logEnum.error,[origin,event.target.result]);
           }
         };
       };
@@ -366,7 +388,7 @@ var sidb = function(_dbName) {
           successCallback(event,origin);
         };
         db.close();
-        console.log("New objectStore " + storeName + " created");
+        logger(logEnum.newStore,[storeName]);
         done();
       };
     };
@@ -388,14 +410,13 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        console.log("Error opening database " + dbName + " : " + request.error);
+        logger(logEnum.error,[origin,event.target.error]);
       }
     };
 
     request.onsuccess = function(event) {
       var db = event.target.result;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var counter = 0;
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       if (Array.isArray(obj)) {
@@ -407,12 +428,12 @@ var sidb = function(_dbName) {
           request.onsuccess = function(event) {
             counter++;
             if (counter == objSize) {
-              console.log("Records added in store " + storeName);
+              logger(logEnum.newRecord,[storeName]);
               if(successCallback){
                 successCallback(event, origin);
               };
               db.close();
-              console.log("Database " + dbName + " closed");
+              logger(logEnum.close);
               done();
             }
           };
@@ -421,24 +442,19 @@ var sidb = function(_dbName) {
             if (errorCallback) {
               errorCallback(event, origin);
             } else {
-              console.log(
-                "Error adding records to store " +
-                  storeName +
-                  " : " +
-                  request.error
-              );
+              logger(logEnum.error,[origin,event.target.error]);
             }
           };
         }
       } else {
         var request = store.add(obj);
         request.onsuccess = function(event) {
-          console.log("record added");
+          logger(logEnum.newRecord,[storeName]);
           if(successCallback){
             successCallback(event, origin);
           };
           db.close();
-          console.log("Database " + dbName + " closed");
+          logger(logEnum.close);
           done();
         };
 
@@ -446,12 +462,7 @@ var sidb = function(_dbName) {
           if (errorCallback) {
             errorCallback(event, origin);
           } else {
-            console.log(
-              "Error adding record to store " +
-                storeName +
-                " : " +
-                request.error
-            );
+            logger(logEnum.error,[origin,event.target.error]);
           }
         };
       }
@@ -477,7 +488,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        console.log("Error opening database " + dbName + " : " + request.error);
+        logger(logEnum.error,[origin,event.target.error]);
       }
     };
 
@@ -486,7 +497,7 @@ var sidb = function(_dbName) {
 
       version = db.version;
       db.close();
-      console.log("Version tested");
+      logger(logEnum.version);
       var newVersion = version + 1;
 
       request = window.indexedDB.open(dbName, newVersion);
@@ -500,12 +511,7 @@ var sidb = function(_dbName) {
           store.createIndex(indexName, keyPath);
         } else {
           db.close();
-          console.log(
-            'Index "' +
-              indexName +
-              '" already exists in object store ' +
-              storeName
-          );
+          logger(logEnum.existIndex,[indexName,storeName]);
           done();
           return;
         }
@@ -516,9 +522,7 @@ var sidb = function(_dbName) {
           successCallback(event,origin);
         };
         db.close();
-        console.log(
-          "New index " + indexName + " created in objectStore " + storeName
-        );
+        logger(logEnum.newIndex,[indexName,storeName]);
         done();
       };
 
@@ -526,14 +530,7 @@ var sidb = function(_dbName) {
         if (errorCallback) {
           errorCallback(event, origin);
         } else {
-          console.log(
-            "Error creating index " +
-              indexName +
-              " in store " +
-              storeName +
-              " : " +
-              request.error
-          );
+          logger(logEnum.error,[origin,event.target.error]);
         }
       };
     };
@@ -556,7 +553,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        console.log("Error opening database " + dbName + " : " + request.error);
+        logger(logEnum.error,[origin,event.target.error]);
       }
     };
 
@@ -565,7 +562,7 @@ var sidb = function(_dbName) {
 
       version = db.version;
       db.close();
-      console.log("Version tested");
+      logger(logEnum.version);
       var newVersion = version + 1;
 
       request = window.indexedDB.open(dbName, newVersion);
@@ -581,7 +578,7 @@ var sidb = function(_dbName) {
           successCallback(event,origin);
         };
         db.close();
-        console.log("ObjectStore " + storeName + " deleted");
+        logger(logEnum.delStore,[storeName]);
         done();
       };
 
@@ -589,14 +586,7 @@ var sidb = function(_dbName) {
         if (errorCallback) {
           errorCallback(event,origin);
         } else {
-          console.log(
-            "Error deleting store " +
-              storeName +
-              " in database " +
-              dbName +
-              " : " +
-              request.error
-          );
+          logger(logEnum.error,[origin,event.target.error]);
         }
       };
     };
@@ -616,9 +606,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event,origin);
       } else {
-        console.log(
-          "Error deleting database " + dbName + " : " + request.error
-        );
+        logger(logEnum.error,[origin,event.target.error]);
       };
     };
 
@@ -626,7 +614,7 @@ var sidb = function(_dbName) {
       if(successCallback){
         successCallback(event, origin);
       };
-      console.log("Database " + dbName + " deleted");
+      logger(logEnum.delDb);
       done();
     };
   }
@@ -664,8 +652,7 @@ var sidb = function(_dbName) {
       var db = event.target.result;
       var conditionsBlocksArray;
       conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-
-      console.log("Database " + dbName + " opened");
+      logger(logEnum.open);
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
       var counter = 0;
@@ -708,8 +695,8 @@ var sidb = function(_dbName) {
             successCallback(event, origin, query);
           };
           db.close();
-          console.log("Database closed");
-          console.log('Processed query: "' + query + '" finished\n' + counter + ' records deleted from object store "' + storeName + '"');
+          logger(logEnum.close);
+          logger(logEnum.query,[query,counter,storeName]);
           done();
         };
 
@@ -720,8 +707,8 @@ var sidb = function(_dbName) {
           errorCallback(event, origin);
         };
         db.close();
-        console.log("Database closed");
-        console.log('Error deleting records' + event.target.error);
+        logger(logEnum.close);
+        logger(logEnum.error,[origin,event.target.error]);
         done();
       }
 
@@ -760,7 +747,7 @@ var sidb = function(_dbName) {
       if (errorCallback) {
         errorCallback(event, origin);
       } else {
-        console.log("Error opening database " + dbName + " : " + request.error);
+        logger(logEnum.error,[origin,event.target.error]);
       }
     };
 
@@ -769,7 +756,7 @@ var sidb = function(_dbName) {
 
       version = db.version;
       db.close();
-      console.log("Version tested");
+      logger(logEnum.version);
       var newVersion = version + 1;
 
       request = window.indexedDB.open(dbName, newVersion);
@@ -787,7 +774,7 @@ var sidb = function(_dbName) {
           successCallback(event, origin);
         };
         db.close();
-        console.log( "Index " + indexName + " in objectStore " + storeName + " deleted");
+        logger(logEnum.delIndex,[indexName,storeName]);
         done();
       };
 
@@ -795,14 +782,7 @@ var sidb = function(_dbName) {
         if (errorCallback) {
           errorCallback(event, origin);
         } else {
-          console.log(
-            "Error deleting index " +
-              dbName +
-              " in object store " +
-              storeName +
-              " : " +
-              request.error
-          );
+          logger(logEnum.error,[origin,event.target.error]);
         }
       };
     };
@@ -842,7 +822,7 @@ var sidb = function(_dbName) {
       var db = event.target.result;
       var conditionsBlocksArray;
       conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-      console.log("Database " + dbName + " opened");
+      logger('open');
       var store = db.transaction(storeName, "readwrite").objectStore(storeName);
       var index;
 
@@ -898,8 +878,8 @@ var sidb = function(_dbName) {
             successCallback(event, origin, query);
           };
           db.close();
-          console.log("Database closed");
-          console.log('Processed query: "' + query + '" finished\n' + counter + ' records updated from object store "' + storeName + '"');
+          logger(logEnum.close);
+          logger(logEnum.query,[query,counter,storeName]);
           done();
         };
 
@@ -910,8 +890,8 @@ var sidb = function(_dbName) {
           errorCallback(event, origin);
 
         db.close();
-        console.log("Database closed");
-        console.log('Error retrieving records: ' + event.target.error);
+        logger(logEnum.close);
+        logger(logEnum.error,[origin,event.target.error]);
         done();
       }
 
@@ -948,25 +928,16 @@ var sidb = function(_dbName) {
    */
   var qrySys = {
 
-    // Initialization of regex vars used by makeConditionsBlockArray() to parse the query string
-
-
     /**
      * Initializes the regex variables used to parse the query string
      * @return {void}
      */
     init: function () {
-      this.blockRgx = /(?<=\()([^)]+)(?=\))/g;
-      this.blockOperatorRgx = /(?<=(\)\s*))([\&\|]+)(?=(\s*\())/g;
-      this.operandRgx = /[\w'"]+/g;
+      this.blockRgx = /\(.*?(?=\))/g;
+      this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
       this.operatorRgx = /(=|>|<|>=|<=|!=)+/g;
-      /*
-      this.leftOperandRgx = /([\w]+)(?=\s*(=|>|<|>=|<=|!=)+)/g;
-      this.rightOperandRgx = /(?<=(=|>|<|>=|<=|!=)+\s*)([\w]+)/g;
-      */
-
-     this.rightOperandRgx = /(?<=([=|>|<]\s*["']?))([^"^']+)(?=["']?\s*[\&\|]*)/g;
-     this.leftOperandRgx = /(?<!([="']+)[\s\w]*)(\w+)(?=\s*[=|>|<|!]{1})/g;
+      this.rightOperandRgx = /(?:([=><]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><])\s*["']?[^"']+["']?(?=$)/g;
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!])/g;
     },
 
     /**
@@ -981,34 +952,57 @@ var sidb = function(_dbName) {
     makeConditionsBlocksArray: function (query) {
 
       var t = this;
+      var conditionsBlocksArray = [];
 
-      //query = query.replace(/[\"\']/g,'');
-
+      //// Gets blocks
+      //
       var blocks = query.match(t.blockRgx);
+      // Delete left parentheses
+      if(blocks){
+        var i=0;
+        for(i=0;i<blocks.length;i++){
+          blocks[i]=blocks[i].substr(1);
+        };
+      };
 
       // Logical operators between blocks, all must be the same type
       var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
 
-      var conditionsBlocksArray = [];
+      
 
       var pushConditionBlockToArray = function (qry, extLogOperator) {
 
+        //// Gets left operands
+        //
         var leftOperands = qry.match(t.leftOperandRgx);
+
+        //// Gets right operands
+        //
         var rightOperands = qry.match(t.rightOperandRgx);
+        var i=0;
+        for(i=0;i<rightOperands.length;i++){
+          // Delete the operator
+          while(rightOperands[i][0].match(/[=><!]/g)){
+            rightOperands[i]=rightOperands[i].substr(1);
+          };
+          // Delete quotes and trim white spaces
+          rightOperands[i] = rightOperands[i].replace(/["']/g, '').trim();
+        };
+
+        //// Gets operators
+        //// Removing righ operands (values) before extract comparison operators avoids 
+        //// problems with literal values that include comparisson symbols(= , >,...) quoted.
         //
-        // Removing righ operands (values) before extract comparison operators avoids 
-        // problems with literal values that include comparisson symbols(= , >,...) quoted.
-        //
-        var operators = qry.replace(t.rightOperandRgx,'').match(t.operatorRgx);
+        for(i=0;i<rightOperands.length;i++){
+          qry=qry.replace(rightOperands[i],'');
+        };
+        var operators = qry.match(t.operatorRgx);
 
         
         var conditionsArray = [];
 
         // If query is like: " c = 15 "
         if (leftOperands.length == 1) {
-
-          /*var operands = qry.match(t.operandRgx); // array with 2 elements: keyPath and value
-          var operator = qry.match(t.operatorRgx); // the only comparisson operator*/
 
           conditionsArray.push(
             {
@@ -1206,8 +1200,8 @@ var sidb = function(_dbName) {
    */
   function checkTasks() {
     if (taskQueue.length == 0) {
-      idle = true;
-      console.log("No pending tasks");
+      idle = true;      
+      logger(logEnum.noTask);
       return;
     }
 
@@ -1829,6 +1823,123 @@ var sidb = function(_dbName) {
 
   //#endregion Task queue system
 
+
+  //#region Logger system
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  
+  var logEnum = {
+    open: 1,
+    close: 2,
+    lastRecords: 3,
+    getAll: 4,
+    getByIndexKey: 5,
+    error: 6,
+    dbCreated: 7,
+    dbExists: 8,
+    query: 9,
+    noTask: 10,
+    newRecord: 11,
+    version: 12,
+    newIndex: 13,
+    newStore: 14,
+    delIndex: 15,
+    delStore: 16,
+    delDb: 17,
+    existIndex: 18,
+    existStore: 19
+  };
+
+  function logger(t, args) {
+    if (consoleOff)
+      return;
+
+    switch (t) {
+      case 1:
+        console.log('Database ' + dbName + ' opened');
+        break;
+
+      case 2:
+        console.log('Database ' + dbName + ' closed');
+        break;
+
+      case 3:
+        console.log(args[0] + ' last records returned from store "' + args[1] + '"');
+        break;
+
+      case 4:
+        console.log('All records returned from store "' + args[0] + '"');
+        break;
+
+      case 5:
+        console.log('Records with key "' + args[0] + '" returned from index "' + args[1] + '" on object store "' + args[2] + '"')
+        break;
+
+      case 6:
+        console.error('Error in ' + args[0] + ':');
+        console.error(args[1]);
+        break;
+
+      case 7:
+        console.log('Database "' + dbName + '" created');
+        break;
+
+      case 8:
+        console.log('Database "' + dbname + '" already exists');
+        break;
+
+      case 9:
+        console.log('Processed query: "' + args[0] + '" finished\n' + args[1] + ' records returned from object store "' + args[2] + '"');
+        break;
+
+      case 10:
+        console.log("No pending tasks");
+        break;
+
+      case 11:
+        console.log('New record/s added to store "' + args[0] + '"');
+        break;
+
+      case 12:
+        console.log('Database version tested');
+        break;
+
+      case 13:
+        console.log('New index "' + args[0] + '" in store "' + args[1] + '"');
+        break;
+
+      case 14:
+        console.log('New store "' + args[0] + '" created');
+        break;
+
+      case 15:
+        console.log('Index "' + args[0] + '" deleted from store "' + args[1] + '"');
+        break;
+
+      case 16:
+        console.log('Store "' + args[0] + '" deleted');
+        break;
+
+      case 17:
+        console.log('Database "' + dbName + '" deleted');
+        break;
+
+      case 18:
+        console.log('Index "' + args[0] + '" already exists in store "' + args[1] + '"');
+        break;
+
+      case 19:
+        console.log('Store "' + args[0] + '" already exists');
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  //#endregion Logger system
+
+
   /**
    * Contains some util methods
    * @namespace
@@ -1844,7 +1955,6 @@ var sidb = function(_dbName) {
      * @returns {Array} The part of original array wich represents the page
      */
     pageFromArray: function(array, elementsPerPage, page) {
-      console.log(Array.isArray(array));
       var pageArray = array.slice(
         (page - 1) * elementsPerPage,
         page * elementsPerPage
@@ -1854,14 +1964,7 @@ var sidb = function(_dbName) {
   };
   
 
-  /**
-   * Gets the database name
-   * @public
-   * @return {string} Database name
-   */
-  this.getName = function() {
-    return dbName;
-  };
+  
 
   
 

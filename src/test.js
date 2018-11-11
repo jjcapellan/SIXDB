@@ -94,6 +94,8 @@ var index='IDs';
 //   
 var mydb = new sidb('companyDB');
 
+//mydb.setConsoleOff(true);
+
 // Creates a store
 mydb.add.store(store, successCallback, errorCallback);
 
@@ -120,6 +122,18 @@ mydb.get.records(store,null,'department = manufacturing & age > 30',successCallb
 
 // Gets records using a query with quotes and the logical operator ||
 mydb.get.records(store,null,'department= "manufacturing" || salary > 1390',successCallback,errorCallback);
+
+//Counts records
+mydb.get.count(store,null,'salary>1000'); // This dont block execution
+
+//Counts records
+mydb.get.count(store,index,'id=3'); 
+
+//Counts all records
+mydb.get.count(store,null,null);
+
+//Counts all records
+//mydb.get.count(store,index,null);
 
 // Query with 2 sets of conditions
 mydb.get.records(store,null,'(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',successCallback,errorCallback);

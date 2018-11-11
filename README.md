@@ -1,6 +1,8 @@
 # SIXDB (simple indexedDB)  
-![Docsbadge](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
-![GitHub](https://img.shields.io/github/license/mashape/apistatus.svg)
+
+![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg)
+![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
+![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![size (minified)](https://img.shields.io/bundlephobia/min/react.svg)
 [![HitCount](http://hits.dwyl.io/jjcapellan/SIXDB.svg)](http://hits.dwyl.io/jjcapellan/SIXDB)
 

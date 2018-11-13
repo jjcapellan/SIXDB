@@ -1,7 +1,8 @@
 # SIXDB (simple indexedDB)  
 
 
-![GitHub release](https://img.shields.io/github/release/jjcapellan/SIXDB.svg)
+
+![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/jjcapellan/sixdb.svg)
 ![GitHub file size](https://img.shields.io/github/size/jjcapellan/SIXDB/src/sixdb.min.js.svg)
 ![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
 ![GitHub license](https://img.shields.io/github/license/jjcapellan/SIXDB.svg)
@@ -50,7 +51,7 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.5.1/src/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.5.1/src/sixdb.min.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.min.js"></script>
 ```

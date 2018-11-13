@@ -89,7 +89,7 @@ var employeesArray = [
 var tableResults = document.getElementById('tbl_results');
 
 //Object store name
-var store = 'southFactory';
+var store = /*'southFactory'*/'southFactory';
 
 // Index name
 var index = 'IDs';
@@ -114,7 +114,7 @@ mydb.add.store(store, successCallback, errorCallback);
 mydb.add.index(store, index, 'id', successCallback, errorCallback);
 
 // Insert one object
-mydb.add.records(store, employee, successCallback, errorCallback);
+mydb.add.records(store, employee, successCallback,errorCallback);
 
 // Gets the record with id = 1
 mydb.get.records(store, index, 1, successCallback, errorCallback);
@@ -204,11 +204,10 @@ function successCallback(event, origin, query) {
   }
 }
 
-function errorCallback(event,origin){
-    var message = origin + ' execution failed';
-    failed=true;
-    showInfo(message,true);
-}
+function errorCallback(error){
+    failed = true;
+    showInfo(error.origin+' // '+ error.description,true);
+};
 
 function checkTest() {
     if (failed) {

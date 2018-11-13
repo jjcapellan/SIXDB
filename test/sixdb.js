@@ -56,7 +56,7 @@ var sixdb = function(_dbName) {
     return dbName;
   };
 
-  /**
+/**
  * Console output mode. True to turn off console output.
  * @private
  * @type {boolean} 
@@ -104,19 +104,41 @@ var sixdb = function(_dbName) {
    * @param {string} storeName Store name.
    * @param {number} maxResults Limits the records retrieved.
    * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
-   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter and origin.
+   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function lastRecords(storeName, maxResults, successCallback, errorCallback) {
-    var origin = 'get -> lastRecords(...)';
-    logger(logEnum.begin,[origin]);
+    var origin = "get -> lastRecords(...)";
     var resultFiltered = [];
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
     var counter = 0;
+
+    logger(logEnum.begin, [origin]);
+
+    if (!errorCallback) errorCallback = function() {
+        return;
+      };
+
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if (errorCallback) {
+        errorCallback(lastErrorObj);
+      }
+      logger(logEnum.error, [lastErrorObj]);
+      checkTasks();
+      return;
+    }
+
+   //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    };
 
     //// Executed if maxResults is not null. Opens a cursor to count the results.
     //
-    var onsuccesCursorFunction = function (event) {
-
+    var onsuccesCursorFunction = function(event) {
       var cursor = event.target.result;
 
       if (cursor && counter < maxResults) {
@@ -129,12 +151,12 @@ var sixdb = function(_dbName) {
         logger(logEnum.close);
         logger(logEnum.lastRecords, [counter, storeName]);
         done();
-      };
+      }
     };
-    
+
     //// Executed if maxResults is null. Is faster. Don't needs cursor. (It's faster)
     //
-    var onsuccesGetAllFunction = function (event) {
+    var onsuccesGetAllFunction = function(event) {
       successCallback(event.target.result, origin);
       db.close();
       logger(logEnum.close);
@@ -142,65 +164,117 @@ var sixdb = function(_dbName) {
       done();
     };
 
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       db.close();
       logger(logEnum.close);
-      logger(logEnum.error, [origin, event.target.error]);
-      if (errorCallback)
-        errorCallback(event, origin);
-      done();
+      errorSys.makeErrorObject(origin, 20, request.error);
+      logger(logEnum.error, [lastErrorObj]);
+      taskQueue.shift();
+      errorCallback(lastErrorObj);
+      checkTasks();
     };
 
+    //// Gets the correct request
     if (maxResults != null) {
-      // Opens a cursor from last record in reverse direction
-      var request = store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
+
+      /// Opens a cursor from last record in reverse direction
+      try{
+      var request = (store.openCursor(null, "prev").onsuccess = onsuccesCursorFunction);
+      } catch(e){
+        db.close();
+      logger(logEnum.close);
+      errorSys.makeErrorObject(origin, 20, request.error);
+      logger(logEnum.error, [lastErrorObj]);
+      taskQueue.shift();
+      errorCallback(lastErrorObj);
+      checkTasks();
+      };
       request.onsuccess = onsuccesCursorFunction;
       request.onerror = onerrorFunction;
+
+
     } else {
-      // Gets all records. It is faster than openCursor.
-      var request = store.getAll();
+      /// Gets all records. It is faster than openCursor.
+      var request = tryStoreGetAll(origin,store,errorCallback); //store.getAll();
+      if(!request){
+        checkTasks();
+        return;
+      }
       request.onsuccess = onsuccesGetAllFunction;
       request.onerror = onerrorFunction;
     };
+  } //end lastRecords()
 
-  }
+
+
 
   /**
    * Gets a record/s from an object store using a key value from an index.
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * @param {string | number} query Example of valid queries:<br>
    * property = value                           // Simple query<br>
    * c > 10 & name='peter'                      // Query with 2 conditions<br>
    * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
    * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array or an object.
-   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives event parameter.
+   * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function getRecords(storeName, indexName, query, successCallback, errorCallback) {
-    var origin = 'get -> getRecords(...)';
-    logger(logEnum.begin,[origin]);
-    var isIndexKeyValue;
-    if (typeof (query) == 'number') {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    };
-
-    var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-    logger(logEnum.open);
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
+    var origin = "get -> getRecords(...)";
     var index;
     var counter = 0;
-
-    if (indexName != null) index = store.index(indexName);
-
     var resultFiltered = [];
+    var isIndexKeyValue;
 
-    var onsuccesIndexGetKey = function (event) {
+    logger(logEnum.begin, [origin]);
+
+    if (!errorCallback) errorCallback = function() {
+        return;
+      };
+
+    // If test failed testArgs return true
+    if (errorSys.testArgs(origin, arguments)) {
+      taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      logger(logEnum.close);
+      if (errorCallback) {
+        errorCallback(lastErrorObj);
+      }
+      logger(logEnum.error, [lastErrorObj]);
+      checkTasks();
+      return;
+    }
+
+    //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    }
+
+    //// Gets index
+    if (indexName != null) {
+      index = getIndex(origin, store, indexName, errorCallback);
+      if (!index) {
+        checkTasks();
+        return;
+      }
+    }
+
+    //// Gets isIndexKeyValue
+    if (typeof query == "number") {
+      isIndexKeyValue = true;
+    } else {
+      isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
+    }
+
+    var conditionsBlocksArray = !isIndexKeyValue ? qrySys.makeConditionsBlocksArray(query) : null;
+
+    var onsuccesIndexGetKey = function(event) {
       successCallback(event.target.result, origin, query);
       db.close();
       logger(logEnum.close);
@@ -208,17 +282,15 @@ var sixdb = function(_dbName) {
       done();
     };
 
-    var onsuccesCursor = function (event) {
-
+    var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       var extMode = conditionsBlocksArray[0].externalLogOperator;
-
       var test = false;
 
       // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
         var i = 0;
         var test = false;
@@ -229,48 +301,67 @@ var sixdb = function(_dbName) {
           if (test == exitsInFirstTrue) {
             break;
           }
-        };
+        }
 
         if (test) {
           resultFiltered.push(cursor.value);
           counter++;
-        };
+        }
         cursor.continue();
-
       } else {
         successCallback(resultFiltered, origin, query);
         db.close();
         logger(logEnum.close);
         logger(logEnum.query, [query, counter, storeName]);
         done();
-      };
+      }
+    }; // end onsuccesCursor
 
-    } // end onsuccesCursor
-
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       db.close();
       logger(logEnum.close);
-      logger(logEnum.error, [origin, event.target.error]);
-      if (errorCallback)
-        errorCallback(event, origin);
-      done();
+      errorSys.makeErrorObject(origin, 20, request.error);
+      logger(logEnum.error, [lastErrorObj]);
+      taskQueue.shift();
+      if (errorCallback) errorCallback(lastErrorObj);
+      checkTasks();
     };
 
+    //// Gets correct request
     if (indexName != null) {
       if (!isIndexKeyValue) {
-        var request = index.openCursor();
+        var request = tryOpenCursor(origin,index,errorCallback); //index.openCursor();
+        if(!request){
+          checkTasks();
+          return;
+        }
         request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
       } else {
-        var request = index.get(query);
+        try {
+          var request = index.get(query);
+        } catch (e) {
+          db.close();
+          logger(logEnum.close);
+          errorSys.makeErrorObject(origin, 20, e);
+          logger(logEnum.error, [lastErrorObj]);
+          taskQueue.shift();
+          if (errorCallback) errorCallback(lastErrorObj);
+          checkTasks();
+        }
+
         request.onsuccess = onsuccesIndexGetKey;
         request.onerror = onerrorFunction;
       }
     } else {
-      var request = store.openCursor();
+      var request = tryOpenCursor(origin,store,errorCallback); //store.openCursor();
+      if(!request){
+        checkTasks();
+        return;
+      }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
-    };
+    }
   }
 
   /**
@@ -295,7 +386,7 @@ var sixdb = function(_dbName) {
   /**
    * Creates the new Database.
    * @private
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function newDB(errorCallback) {
     var request = window.indexedDB.open(dbName);
@@ -336,12 +427,23 @@ var sixdb = function(_dbName) {
    * @param {string} dbName Database name
    * @param {string} storeName Objects store name
    * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
-   * @param {function} [errorCallback] Function called on error. Receives as parameters event and origin.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function newStore(storeName, successCallback, errorCallback) {
     var version;
     var origin='add -> newStore(...)';
     logger(logEnum.begin,[origin]);
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
 
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
@@ -393,13 +495,50 @@ var sixdb = function(_dbName) {
    * @param {string} storeName Object store name
    * @param {(object | object[])} obj An object or objects array to insert in object store
    * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function newRecord(storeName, obj, successCallback, errorCallback) {
     var origin = "add -> newRecord(...)";
     logger(logEnum.begin,[origin]);
+
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
+
+    //// Gets store
+    var store = getStore(origin,storeName,'readwrite',errorCallback);//db.transaction(storeName, "readonly").objectStore(storeName);
+    if(!store){
+      checkTasks();
+      return;
+    };
+
+    //// Gets store
+    /*try{
+    var store = db.transaction(storeName, 'readwrite').objectStore(storeName);
+    } catch(e){
+      errorSys.makeErrorObject(origin,20,e);
+      taskQueue.shift();
+      db.close();
+      if(errorCallback){
+      errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };*/
+
     var counter = 0;
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
     if (Array.isArray(obj)) {
       var i, objSize;
       objSize = obj.length;
@@ -456,12 +595,27 @@ var sixdb = function(_dbName) {
    * @param {string} indexName Index name
    * @param {string} keyPath Key that the index use
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
     var version;
-    var origin = 'add -> newIndex()';
+    var origin = 'add -> newIndex(...)';
     logger(logEnum.begin,[origin]);
+
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
 
     //// Gets the new version
     //
@@ -479,7 +633,21 @@ var sixdb = function(_dbName) {
       db = event.target.result;
 
       var upgradeTransaction = event.target.transaction;
+
+      //// Gets store
+      try{
       var store = upgradeTransaction.objectStore(storeName);
+      } catch(e) {
+        errorSys.makeErrorObject(origin,20,e);
+      taskQueue.shift();
+      db.close();
+      if(errorCallback)
+      errorCallback(lastErrorObj);
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;        
+      };
+
       if (!store.indexNames.contains(indexName)) {
         store.createIndex(indexName, keyPath);
       } else {
@@ -513,25 +681,54 @@ var sixdb = function(_dbName) {
      * Count the records
      * @private
      * @param  {string} storeName Store name.
-     * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * @param {string | null} indexName Index name. With null is not used.
+     * @param {string | null} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
   function count(storeName, indexName, query, successCallback, errorCallback) {
     var origin = 'get -> count(...)'
     logger(logEnum.begin,[origin]);
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-    var index;
-    var counter = 0;
 
-    if (indexName != null)
-      index = store.index(indexName);
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
+
+    //// Gets store
+    var store = getStore(origin,storeName, 'readonly', errorCallback);
+    if(!store){
+      checkTasks();
+      return;
+    };
+
+    // Gets index
+    var index;
+    if(indexName!=null){
+      index=getIndex(origin,store,indexName,errorCallback);
+      if(!index){
+        checkTasks();
+        return;
+      };
+    };
+
+
+    var counter = 0;
 
     if (!query) {
       if (indexName)
@@ -607,11 +804,19 @@ var sixdb = function(_dbName) {
     };
 
     if (indexName) {
-      var request = index.openCursor();
+      var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      }
       request.onsuccess = onSuccessQuery;
       request.onerror = onError;
     } else {
-      var request = store.openCursor();
+      var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      }
       request.onsuccess = onSuccessQuery;
       request.onerror = onError;
     }; //end if else block
@@ -624,12 +829,23 @@ var sixdb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function delStore(storeName, successCallback, errorCallback) {
     var version;
     var origin = 'del -> delStore(...)';
     logger(logEnum.begin,[origin]);
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
 
     //// Gets the new version
     //
@@ -670,12 +886,22 @@ var sixdb = function(_dbName) {
    * Deletes a Database
    * @private
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delDB( successCallback, errorCallback) {
-    var request = window.indexedDB.deleteDatabase(dbName);
+  function delDB( successCallback, errorCallback) {    
     var origin='del -> delDB(...)';
     logger(logEnum.begin,[origin]);
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
+    var request = window.indexedDB.deleteDatabase(dbName);
 
     request.onerror = function(event) {
       if (errorCallback) {
@@ -699,19 +925,50 @@ var sixdb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * @param {string | number} query Example of valid queries:<br>
    * property = value                           // Simple query<br>
    * c > 10 & name='peter'                      // Query with 2 conditions<br>
    * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
    * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param {function(event,origin)} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Function to handle errors. Receives event as parameter.
+   * @param {function(event,origin)} [successCallback] Function called on success. Receives event, origin and query as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function delRecords(storeName, indexName, query, successCallback, errorCallback) {
     var origin = 'del -> delRecords(...)';
     logger(logEnum.begin,[origin]);
+
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
+
+    //// Gets store
+    var store = getStore(origin,storeName, 'readwrite', errorCallback);
+    if(!store){
+      checkTasks();
+      return;
+    };
+
+    // Gets index
+    var index;
+    if(indexName!=null){
+      index=getIndex(origin,store,indexName,errorCallback);
+      if(!index){
+        checkTasks();
+        return;
+      };
+    };
 
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
@@ -725,11 +982,7 @@ var sixdb = function(_dbName) {
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-    var index;
     var counter = 0;
-
-    if (indexName != null) index = store.index(indexName);
 
     var onsuccesCursor = function (event) {
 
@@ -790,14 +1043,22 @@ var sixdb = function(_dbName) {
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       };
-      var request = index.openCursor();
+      var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      };
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     } else {
-      var request = store.openCursor();
+      var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      };
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
-    }
+    };
   }
 
   /**
@@ -806,12 +1067,27 @@ var sixdb = function(_dbName) {
    * @param {string} storeName Object store name
    * @param {string} indexName Index name
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function delIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
     var origin = 'del -> delIndex(...)';
     logger(logEnum.begin,[origin]);
+
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // If test failed testArgs return true
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
 
     //// Gets the new version
     //
@@ -829,7 +1105,21 @@ var sixdb = function(_dbName) {
       db = event.target.result;
 
       var upgradeTransaction = event.target.transaction;
+
+      //// Gets store
+      try{
       var store = upgradeTransaction.objectStore(storeName);
+      } catch(e){
+        errorSys.makeErrorObject(origin,20,e);
+      taskQueue.shift();
+      db.close();
+      if(errorCallback)
+      errorCallback(lastErrorObj);
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return; 
+      };
+
       store.deleteIndex(indexName);
     };
 
@@ -856,19 +1146,52 @@ var sixdb = function(_dbName) {
    * @private
    * @param  {string} storeName Object store name.
    * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower)
-   * @param {string} query String that contains a query. Example of valid querys:<br>
+   * @param {string | number} query Example of valid queries:<br>
    * property = value                           // Simple query<br>
    * c > 10 & name='peter'                      // Query with 2 conditions<br>
    * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
    * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param  {object} objectValues New property value after update. Can be an array of values.
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param  {function} [errorCallback] Function called on error. Receives event parameter.
+   * @param  {object} objectValues Object with the new values (ex: {property1: value, property3: value}).
+   * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
+   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
     var origin = 'update -> updateRecords(...)';
+    logger(logEnum.begin,[origin]);
+
+    if(!errorCallback)
+      errorCallback=function(){return;};
+
+    // Tests arguments
+    if(errorSys.testArgs(origin, arguments)){
+      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
+      db.close();
+      if(errorCallback){
+        errorCallback(lastErrorObj);
+      };
+      logger(logEnum.error,[lastErrorObj]);
+      checkTasks();
+      return;
+    };
+
+    //// Gets store
+    var store = getStore(origin,storeName, 'readwrite', errorCallback);
+    if(!store){
+      checkTasks();
+      return;
+    };
+
+    //// Gets index
+    var index;
+    if(indexName!=null){
+      index=getIndex(origin,store,indexName,errorCallback);
+      if(!index){
+        checkTasks();
+        return;
+      };
+    };
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
@@ -881,12 +1204,6 @@ var sixdb = function(_dbName) {
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-    var store = db.transaction(storeName, "readwrite").objectStore(storeName);
-    var index;
-
-    if (indexName != null) {
-      index = store.index(indexName);
-    };
 
     var counter = 0;
 
@@ -958,11 +1275,19 @@ var sixdb = function(_dbName) {
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       };
-      var request = index.openCursor();
+      var request = tryOpenCursor(origin, index, errorCallback);// index.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      };
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     } else {
-      var request = store.openCursor();
+      var request = tryOpenCursor(origin, store, errorCallback); // store.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      };
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     };
@@ -970,6 +1295,58 @@ var sixdb = function(_dbName) {
 
   //#endregion Private functions
 
+  //#region helper functions
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+  function getStore(origin, storeName, rwMode, errorCallback){
+    try{
+    var store = db.transaction(storeName, rwMode).objectStore(storeName);
+    } 
+    catch(e){
+      reportCatch(origin, e, errorCallback);
+      return null;    
+    };
+    return store;
+  }
+
+  function getIndex(origin,store,indexName,errorCallback){
+    try{
+      var index = store.index(indexName);
+    } catch(e){
+      reportCatch(origin, e, errorCallback);
+      return null;
+    };
+    return index;
+  };
+
+  function tryStoreGetAll(origin, store, errorCallback){
+    try{
+      var request = store.getAll();
+    } catch(e){
+      reportCatch(origin, e, errorCallback);
+      return null;
+    };
+    return request;
+  };
+
+  function tryOpenCursor(origin, openerObj, errorCallback){
+    try{
+      var request = openerObj.openCursor();
+    } catch(e){
+      reportCatch(origin, e, errorCallback);
+      return null;
+    };
+    return request;
+  };
+
+  function reportCatch(origin, e, errorCallback) {
+    errorSys.makeErrorObject(origin, 20, e);
+    taskQueue.shift();
+    db.close();
+    errorCallback(lastErrorObj);
+    logger(logEnum.error, [lastErrorObj]);
+  };
+
+  //#endregion helper functions
 
   //#region Query system
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -999,7 +1376,7 @@ var sixdb = function(_dbName) {
 
     /**
      * Transforms a query string into an array of objects that is used by SIXDB to process the query.
-     * @param  {string} query String that contains a query. Example of valid querys:<br>
+     * @param  {string} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
@@ -1365,7 +1742,7 @@ var sixdb = function(_dbName) {
      * Add the task "create new database" to the task queue. Internal use only.
      * @private
      * @instance
-     * @param {function} [errorCallback] Function called on error. Receives event parameter.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
     db: function(errorCallback) {
       var task = { type: "newDB", errorCallback: errorCallback };
@@ -1379,7 +1756,7 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -1423,7 +1800,7 @@ var sixdb = function(_dbName) {
      * @param {string} storeName Object store name where the record is added.
      * @param {(object | object[])} obj An object or objects array to insert in the object store.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -1472,7 +1849,7 @@ var sixdb = function(_dbName) {
      * @param {string} indexName Index name.
      * @param {string} keyPath Key (property of stored objects) that the index use to order and filter.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -1598,7 +1975,7 @@ var sixdb = function(_dbName) {
      * @public
      * @instance
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
     db: function( successCallback, errorCallback) {
       var task = {
@@ -1636,13 +2013,13 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * @param {string | number} query Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -1717,7 +2094,7 @@ var sixdb = function(_dbName) {
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
      * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * @param {string} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
@@ -1726,7 +2103,7 @@ var sixdb = function(_dbName) {
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -1863,14 +2240,14 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid querys:<br>
+     * @param {string} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -1942,13 +2319,13 @@ var sixdb = function(_dbName) {
      * Adds the task "Count the records" to the task queue
      * @param  {string} storeName Store name.
      * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid querys:<br>
+     * @param {string | null} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -2067,8 +2444,7 @@ var sixdb = function(_dbName) {
         break;
 
       case 6:
-        console.error('Error in ' + args[0] + ':');
-        console.error(args[1]);
+        console.error(args[0]); // arrgs[0] is the errorObject
         break;
 
       case 7:
@@ -2135,6 +2511,361 @@ var sixdb = function(_dbName) {
 
   //#endregion Logger system
 
+
+  //#region Error handler
+
+  var lastErrorObj;
+  
+  /**
+  * Contains all error codes.
+  * @private
+  * @type {object} 
+  * @default
+  * @readonly
+  */
+  var errorSys = {
+    codes: {
+      // Incorrect parameter
+      1: 'storeName must be a string',
+      2: 'storeName is null',
+      3: 'obj is null',
+      4: 'indexName is null',
+      5: 'indexName must be a string',
+      6: 'keyPath is null',
+      7: 'keyPath must be a string',
+      8: 'query is null',
+      9: 'query must be a string or a number',
+      10: 'objectValues is null',
+      11: 'objectValues must be an object',
+      12: 'maxResults must be a number or null',
+      13: 'successCallback is not a function',
+      14: 'errorCallback is not a function',
+      15: 'obj must be an object or an array of objects',
+      16: 'query must be an string',
+      17: 'the specified index does not exist',
+      //IndexedDB error
+      20: 'IndexedDB error'
+    },
+
+    testArgs: function (origin, args) {
+
+      switch (origin) {
+
+        case 'get -> lastRecords(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // maxResults
+          if (typeof (args[1]) != 'number' && args[1] != null)
+            return this.makeErrorObject(origin, 12);
+
+          // succesCallback
+          if (!this.testCallback(args[2]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+
+          break;
+
+        case 'get -> getRecords(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // indexName
+          if (this.testStr(args[1])){
+            if(this.test==1)
+            return this.makeErrorObject(origin, 5);
+          };
+
+          //query
+          if (args[2]) {
+            var qtype = typeof (args[2]);
+            if (qtype != 'string' && qtype != 'number')
+              return this.makeErrorObject(origin, 9);
+          } else {
+            return this.makeErrorObject(origin, 8);
+          };
+
+          // succesCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[4]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'add -> newStore(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // succesCallback
+          if (!this.testCallback(args[1]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[2]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'add -> newRecord(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // obj
+          if (args[1]) {
+            if (typeof (args[1]) != 'object')
+              return this.makeErrorObject(origin, 15);     // obj is not an object
+          } else {
+            return this.makeErrorObject(origin, 3);
+          };
+
+          // succesCallback
+          if (!this.testCallback(args[2]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'add -> newIndex(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          //indexName
+          if (this.testStr(args[1]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 5) : this.makeErrorObject(origin, 4);
+
+          // keyPath
+          if (this.testStr(args[2]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 7) : this.makeErrorObject(origin, 6);
+
+          // succesCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[4]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'get -> count(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // indexName
+          if (args[1]) {
+            if (typeof (args[1]) != 'string')
+              return this.makeErrorObject(origin, 5);
+          };
+
+          // query
+          if (args[2]) {
+            if (typeof (args[2]) != 'string')
+              return this.makeErrorObject(origin, 16); // query must be a string
+          };
+
+          // succesCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[4]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'del -> delStore(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // succesCallback
+          if (!this.testCallback(args[1]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[2]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'del -> delDB(...)':
+          // succesCallback
+          if (!this.testCallback(args[0]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[1]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'del -> delRecords(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // indexName
+          if (args[1]) {
+            if (typeof (args[1]) != 'string')
+              return this.makeErrorObject(origin, 5);
+          };
+
+          //query
+          if (args[2]) {
+            var qtype = typeof (args[2]);
+            if (qtype != 'string' && qtype != 'number')
+              return this.makeErrorObject(origin, 9);   // not valid type 
+          } else {
+            return this.makeErrorObject(origin, 8);     // is null
+          };
+
+          // succesCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[4]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'del -> delIndex(...)':
+
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          //indexName
+          if (this.testStr(args[1]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 5) : this.makeErrorObject(origin, 4);
+
+          // succesCallback
+          if (!this.testCallback(args[2]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[3]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+        case 'update -> updateRecords(...)':
+          // storeName
+          if (this.testStr(args[0]))
+            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+
+          // indexName
+          if (args[1]) {
+            if (typeof (args[1]) != 'string')
+              return this.makeErrorObject(origin, 5);
+          };
+
+          //query
+          if (args[2]) {
+            var qtype = typeof (args[2]);
+            if (qtype != 'string' && qtype != 'number')
+              return this.makeErrorObject(origin, 9);   // not valid type 
+          } else {
+            return this.makeErrorObject(origin, 8);     // is null
+          };
+
+          // objectValues
+          if (args[3]) {
+            if (typeof (args[3]) != 'object')
+              return this.makeErrorObject(origin, 11);
+          } else {
+            return this.makeErrorObject(origin, 10);
+          };
+
+          // succesCallback
+          if (!this.testCallback(args[4]))
+            return this.makeErrorObject(origin, 13);
+
+          // errorCallback
+          if (!this.testCallback(args[5]))
+            return this.makeErrorObject(origin, 14);
+
+          return false;
+          break;
+
+
+        default:
+          return false;
+
+          break;
+
+      }
+    },
+
+    testStr: function (str) {
+      if (str) {
+        if (typeof (str) != 'string') {
+          this.test = 1;
+          return 1;
+        };                   // str isn't string
+      } else {
+        this.test = 2;
+        return 2;                   // str is null
+      };
+      return false;                  // str exist and is a string
+    },
+
+    testCallback: function (fn) {
+      if (fn) {
+        if (typeof (fn) != 'function') {
+          return false;
+        }
+        return true;
+      }
+    },
+
+    makeErrorObject: function(origin,errorCode, domException){
+      var errorObj = {};
+      if(!domException){
+      errorObj.code = errorCode;
+      errorObj.type = (errorCode<17)?'Invalid parameter':'IndexedDB error';
+      errorObj.origin = origin;
+      errorObj.description = this.codes[errorCode];
+      } else {
+      errorObj.code = 20;
+      errorObj.type = domException.name;
+      errorObj.origin = origin;
+      errorObj.description = domException.message;
+      };
+
+      lastErrorObj = errorObj;
+
+      return true;
+    }
+  }
+
+  //#endregion Error handler
 
   /**
    * Contains some util methods

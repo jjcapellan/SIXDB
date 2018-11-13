@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1362">line 1362</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1739">line 1739</a>
     </li></ul></dd>
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1572">line 1572</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1949">line 1949</a>
     </li></ul></dd>
     
 
@@ -367,7 +367,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1507">line 1507</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1884">line 1884</a>
     </li></ul></dd>
     
 
@@ -420,7 +420,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}//// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error creating the new index: ' + event.target.error);}//// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".//mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);// Execs all pending tasks//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}//// Callback function to process a possible error//var myErrorCallback = function(e){    console.log(e);}//// This code adds the task "create a new index" to the task queue.// In this case the new index "ages" order the records by the record property "age".// Only records with a property named "age" are in the index "ages".//mydb.add.index('objectStoreName', 'ages', 'age', myErrorCallback);// Execs all pending tasks//mydb.execTasks();</code></pre>
 
 
 
@@ -604,7 +604,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -643,7 +643,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1454">line 1454</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1831">line 1831</a>
     </li></ul></dd>
     
 
@@ -696,7 +696,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}// Callback function to process a possible error//var myErrorCallback = function(event){    console.log('Error inserting the new record: ' + event.target.error);}//// Inserts new record in object store. (needs execTasks() to execute)//mydb.add.records('objectStoreName', person, myErrorCallback);// Execs all pending tasks.//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Object to insert in the object store//var person = {    name: 'Peter',    age: 32}// Callback function to process a possible error//var myErrorCallback = function(e){    console.log(e);}//// Inserts new record in object store. (needs execTasks() to execute)//mydb.add.records('objectStoreName', person, myErrorCallback);// Execs all pending tasks.//mydb.execTasks();</code></pre>
 
 
 
@@ -852,7 +852,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -891,7 +891,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1404">line 1404</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1781">line 1781</a>
     </li></ul></dd>
     
 
@@ -944,7 +944,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Callback function to process a possible error//var myErrorCallback = function(event){  console.log('Error creating new object store:' + event.target.error);}//// This code adds the task "create a new object store" to the task queue//mydb.add.store('objectStoreName', myErrorCallback);//// Execs all pending tasks//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// Callback function to process a possible error//var myErrorCallback = function(e){  console.log(e);}//// This code adds the task "create a new object store" to the task queue//mydb.add.store('objectStoreName', myErrorCallback);//// Execs all pending tasks//mydb.execTasks();</code></pre>
 
 
 
@@ -1066,7 +1066,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -1106,7 +1106,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 11 2018 23:51:41 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Nov 13 2018 19:37:07 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

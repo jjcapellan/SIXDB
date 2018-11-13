@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1805">line 1805</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2182">line 2182</a>
     </li></ul></dd>
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1984">line 1984</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2367">line 2367</a>
     </li></ul></dd>
     
 
@@ -190,7 +190,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// An example of object stored in the object store//var person = {    name: 'Peter',    age: 32};//// Counts all records in the store "southFactory"//mydb.get.count('southFactory',null,null,succesFunction);//// Counts all records in the index 'Names'//mydb.get.count('southFactory','Names',null,succesFunction); //// Counts all persons with age > 30//mydb.get.count('southFactory',null,'age > 30',succesFunction);//// Execs all pending task//mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// An example of object stored in the object store//var person = {    name: 'Peter',    age: 32};// Simple success callback//function successFunction(count,origin,query){    console.log(count + ' records counted with query "' + query + '"");}//// Counts all records in the store "southFactory"//mydb.get.count('southFactory',null,null,successFunction);//// Counts all records in the index 'Names'//mydb.get.count('southFactory','Names',null,successFunction); //// Counts all persons with age > 30//mydb.get.count('southFactory',null,'age > 30',successFunction);//// Execs all pending task//mydb.execTasks();</code></pre>
 
 
 
@@ -314,7 +314,7 @@
 
             
 
-            <td class="description last">String that contains a query. Example of valid querys:<br>property = value                           // Simple query<br>c > 10 & name='peter'                      // Query with 2 conditions<br>(c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>(a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>With null query, all records are counted.</td>
+            <td class="description last">String that contains a query. Example of valid queries:<br>property = value                           // Simple query<br>c > 10 & name='peter'                      // Query with 2 conditions<br>(c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>(a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>With null query, all records are counted.</td>
         </tr>
 
     
@@ -347,7 +347,7 @@
 
             
 
-            <td class="description last">Function called on success. Receives event and origin as parameters.</td>
+            <td class="description last">Function called on success. Receives the result (number), origin and query as parameters.</td>
         </tr>
 
     
@@ -380,7 +380,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -419,7 +419,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1847">line 1847</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2224">line 2224</a>
     </li></ul></dd>
     
 
@@ -625,7 +625,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -664,7 +664,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line1927">line 1927</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2304">line 2304</a>
     </li></ul></dd>
     
 
@@ -838,7 +838,7 @@
 
             
 
-            <td class="description last">String that contains a query. Example of valid querys:<br>property = value                           // Simple query<br>c > 10 & name='peter'                      // Query with 2 conditions<br>(c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>(a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>'peter'                                    // Single value always refers to the index keypath.<br>A single value always refers to the index keypath so the index can not be null in this case.</td>
+            <td class="description last">String that contains a query. Example of valid queries:<br>property = value                           // Simple query<br>c > 10 & name='peter'                      // Query with 2 conditions<br>(c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>(a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>'peter'                                    // Single value always refers to the index keypath.<br>A single value always refers to the index keypath so the index can not be null in this case.</td>
         </tr>
 
     
@@ -871,7 +871,7 @@
 
             
 
-            <td class="description last">Function called on success. Receives event and origin as parameters.</td>
+            <td class="description last">Function called on success. Receives event, origin and query as parameters.</td>
         </tr>
 
     
@@ -904,7 +904,7 @@
 
             
 
-            <td class="description last">Function called on error. Receives event and origin as parameters.</td>
+            <td class="description last">Optional function to handle errors. Receives an error object as argument.</td>
         </tr>
 
     
@@ -944,7 +944,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Nov 11 2018 23:51:41 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Nov 13 2018 19:37:07 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

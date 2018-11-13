@@ -688,7 +688,7 @@ var sixdb = function(_dbName) {
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
+     * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
   function count(storeName, indexName, query, successCallback, errorCallback) {
@@ -1762,8 +1762,8 @@ var sixdb = function(_dbName) {
      *
      * // Callback function to process a possible error
      * //
-     * var myErrorCallback = function(event){
-     *   console.log('Error creating new object store:' + event.target.error);
+     * var myErrorCallback = function(e){
+     *   console.log(e);
      * }
      *
      *
@@ -1813,8 +1813,8 @@ var sixdb = function(_dbName) {
      *
      * // Callback function to process a possible error
      * //
-     * var myErrorCallback = function(event){
-     *     console.log('Error inserting the new record: ' + event.target.error);
+     * var myErrorCallback = function(e){
+     *     console.log(e);
      * }
      *
      *
@@ -1864,8 +1864,8 @@ var sixdb = function(_dbName) {
      * //
      * // Callback function to process a possible error
      * //
-     * var myErrorCallback = function(event){
-     *     console.log('Error creating the new index: ' + event.target.error);
+     * var myErrorCallback = function(e){
+     *     console.log(e);
      * }
      *
      *
@@ -1993,7 +1993,7 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
     store: function(storeName, successCallback, errorCallback) {
       var task = {
@@ -2020,7 +2020,7 @@ var sixdb = function(_dbName) {
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -2069,7 +2069,7 @@ var sixdb = function(_dbName) {
      * @param {string} storeName Object store name
      * @param {string} indexName Index name
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
     index: function(storeName, indexName, successCallback, errorCallback) {
       var task = {
@@ -2104,7 +2104,7 @@ var sixdb = function(_dbName) {
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
      * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -2154,8 +2154,8 @@ var sixdb = function(_dbName) {
      *
      * // Optional callback function to process errors
      * //
-     * function myErrorCallback(event){
-     *     console.log(event.target.error);
+     * function myErrorCallback(e){
+     *     console.log(e);
      * };
      *
      */
@@ -2187,7 +2187,7 @@ var sixdb = function(_dbName) {
      * @param {string} storeName Store name.
      * @param {number} maxResults Limits the records retrieved.
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -2248,7 +2248,7 @@ var sixdb = function(_dbName) {
      * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -2325,8 +2325,8 @@ var sixdb = function(_dbName) {
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
-     * @param {function} [errorCallback] Function called on error. Receives event and origin as parameters.
+     * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
+     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
      *
@@ -2337,20 +2337,26 @@ var sixdb = function(_dbName) {
      *     age: 32
      * };
      * 
+     * // Simple success callback
+     * //
+     * function successFunction(count,origin,query){
+     *     console.log(count + ' records counted with query "' + query + '"");
+     * }
+     * 
      * //
      * // Counts all records in the store "southFactory"
      * //
-     * mydb.get.count('southFactory',null,null,succesFunction);
+     * mydb.get.count('southFactory',null,null,successFunction);
      * 
      * //
      * // Counts all records in the index 'Names'
      * //
-     * mydb.get.count('southFactory','Names',null,succesFunction); 
+     * mydb.get.count('southFactory','Names',null,successFunction); 
      * 
      * //
      * // Counts all persons with age > 30
      * //
-     * mydb.get.count('southFactory',null,'age > 30',succesFunction);
+     * mydb.get.count('southFactory',null,'age > 30',successFunction);
      * 
      * //
      * // Execs all pending task

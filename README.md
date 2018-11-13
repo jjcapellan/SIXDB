@@ -1,10 +1,7 @@
 # SIXDB (simple indexedDB)  
-
-![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg)
 ![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
 ![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)
 ![size (minified)](https://img.shields.io/bundlephobia/min/react.svg)
-[![HitCount](http://hits.dwyl.io/jjcapellan/SIXDB.svg)](http://hits.dwyl.io/jjcapellan/SIXDB)
 
 
   
@@ -31,6 +28,7 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 * [Query language](#Query-system)
 * [Using functions as values](#Using-functions)
 * [The task queue](#Task-queue)
+* [The SIXDB error handling](#Error-handling)
 * [License](#License)
 
 ## <a name="Features"></a>Features
@@ -40,7 +38,7 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 * Simple and flexible methods to perform CRUD operations.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
-* Lightweight. SIXDB takes less than 30Kb minified and less than 5Kb compressed with gzip.
+* Lightweight. SIXDB takes less than 100Kb minified and less than 10Kb compressed with gzip.
 * Default errorCallback in all methods. ErrorCallback parameter is optional.
 * Complete [documentation](https://jjcapellan.github.io/SIXDB/) with examples.
 
@@ -185,7 +183,7 @@ var mydb = new sixdb('companyDB');
 //
 // To get the last records we use get.lastRecords():
 //
-//     get.lastRecords( storeName, maxResults, succesCallback, errorCallback)
+//     get.lastRecords( storeName, maxResults, successCallback, errorCallback)
 //
 // Reads the 5 last records from "southFactory" object store.
 // The third parameter is a function that will receive the result of the query.
@@ -210,7 +208,7 @@ mydb.get.lastRecords(
 //
 // The method get.records() lets us use querys:
 //
-//     get.records( storeName, indexName, query, succesCallback, errorCallback)
+//     get.records( storeName, indexName, query, successCallback, errorCallback)
 //
 // Gets the record with ID "2" from the index "IDs" in store "southFactory".
 // If you replace 'Adam' with null then the query sends all index records to the function readerCallback
@@ -325,8 +323,8 @@ mydb.update.records(
 //
 // Example of a simple error callback
 //
-function myErrorCallback(event){
-    console.log('Error updating records: ' + event.target.error);
+function myErrorCallback(e){
+    console.error(e);
 };
 
 
@@ -502,6 +500,17 @@ mydb.get.lastRecords(
 //
 mydb.execTasks();
 ```
+## <a name="Error-handling"></a>**The SIXDB error handling**  
+By default all errors are catched and hanled by a basic function that sends the error object to console and prevents an exception to stop the execution of the task queue.  
+When an error is captured, the transaction is closed, the current task is stopped and the next one is started.  
+The error callbacks reciebe an error object.  
+The error object has this properties:
+* code: {number} An id number.
+* type: {string} Type of error.
+* origing: {string} Function where the error occurred.
+* description: {string} More detailed info about the error.
+
+
 
 ## <a name="License"></a>**License**  
 SIXDB is licensed under the terms of the MIT open source license.

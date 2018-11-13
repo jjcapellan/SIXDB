@@ -2407,7 +2407,7 @@ var sixdb = function(_dbName) {
   };
 
   function logger(t, args) {
-    if (consoleOff)
+    if (consoleOff && t!=6)
       return;
 
     switch (t) {

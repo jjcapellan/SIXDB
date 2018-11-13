@@ -105,7 +105,7 @@ var failed = false;
 var mydb = new sixdb('companyDB');
 
 // Activate this line to turn off the console output
-//mydb.setConsoleOff(true);
+// mydb.setConsoleOff(true);
 
 // Creates a store named 'southFactory'
 mydb.add.store(store, successCallback, errorCallback);

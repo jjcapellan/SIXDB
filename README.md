@@ -57,7 +57,7 @@ There are two alternatives:
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.5.1/src/sixdb.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js"></script>
 ``` 
 
 

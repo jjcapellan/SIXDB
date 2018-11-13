@@ -1,7 +1,10 @@
 # SIXDB (simple indexedDB)  
+
+
+![GitHub release](https://img.shields.io/github/release/jjcapellan/SIXDB.svg)
+![GitHub file size](https://img.shields.io/github/size/jjcapellan/SIXDB/src/sixdb.min.js.svg)
 ![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
-![GitHub license](https://img.shields.io/github/license/mashape/apistatus.svg)
-![size (minified)](https://img.shields.io/bundlephobia/min/react.svg)
+![GitHub license](https://img.shields.io/github/license/jjcapellan/SIXDB.svg)
 
 
   

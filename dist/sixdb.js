@@ -1,47 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>sixdb.js - Documentation</title>
-
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
-</nav>
-
-<div id="main">
-    
-    <h1 class="page-title">sixdb.js</h1>
-    
-
-    
-
-
-
-    
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/**
+/**
  *  Simple IndexedDB
  *  @desc Simple IndexedDB (SIXDB) is a wrapper for indexedDB API.
- *  @author Juan Jose Capellan &lt;soycape@hotmail.com>
+ *  @author Juan Jose Capellan <soycape@hotmail.com>
  */
 
 /** 
@@ -175,7 +135,7 @@ var sixdb = function(_dbName) {
     var onsuccesCursorFunction = function(event) {
       var cursor = event.target.result;
 
-      if (cursor &amp;&amp; counter &lt; maxResults) {
+      if (cursor && counter < maxResults) {
         resultFiltered.push(cursor.value);
         counter++;
         cursor.continue();
@@ -241,12 +201,12 @@ var sixdb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} query Example of valid queries:&lt;br>
-   * property = value                           // Simple query&lt;br>
-   * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-   * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+   * @param {string | number} query Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
@@ -308,14 +268,14 @@ var sixdb = function(_dbName) {
       var extMode = conditionsBlocksArray[0].externalLogOperator;
       var test = false;
 
-      // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
         var i = 0;
         var test = false;
-        for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
           test = qrySys.testConditionBlock(cursor, conditions, intMode);
@@ -384,7 +344,7 @@ var sixdb = function(_dbName) {
    * @private
    * @typedef {Object} conditionObject
    * @property {string} keyPath Indicates a key path to test.
-   * @property {string} cond A comparison operator ( "&lt;" , ">" , "=" , "!=" , "&lt;=" , ">=", "&lt;>" ).
+   * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=", "<>" ).
    * @property {any} value Indicates the value to test.
    * @example
    *
@@ -395,7 +355,7 @@ var sixdb = function(_dbName) {
    * }
    *
    * // Example of conditionObject
-   * var condition = { keyPath: 'age', cond: '&lt;', value: 45};
+   * var condition = { keyPath: 'age', cond: '<', value: 45};
    */
 
   /**
@@ -536,7 +496,7 @@ var sixdb = function(_dbName) {
       var i, objSize;
       objSize = obj.length;
 
-      for (i = 0; i &lt; objSize; i++) {
+      for (i = 0; i < objSize; i++) {
         var request = store.add(obj[i]);
         request.onsuccess = function(event) {
           counter++;
@@ -651,11 +611,11 @@ var sixdb = function(_dbName) {
      * @private
      * @param  {string} storeName Store name.
      * @param {string | null} indexName Index name. With null is not used.
-     * @param {string | null} query String that contains a query. Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+     * @param {string | null} query String that contains a query. Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
      * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
@@ -705,7 +665,7 @@ var sixdb = function(_dbName) {
       var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       var extMode = conditionsBlocksArray[0].externalLogOperator; //external logical operator
 
-      // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
@@ -713,7 +673,7 @@ var sixdb = function(_dbName) {
       if (cursor) {
         var i = 0;
         var test = false;
-        for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
           test = qrySys.testConditionBlock(cursor, conditions, intMode);
@@ -855,12 +815,12 @@ var sixdb = function(_dbName) {
    * @private
    * @param {string} storeName Object store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} query Example of valid queries:&lt;br>
-   * property = value                           // Simple query&lt;br>
-   * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-   * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+   * @param {string | number} query Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * @param {function(event,origin)} [successCallback] Function called on success. Receives event, origin and query as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
@@ -915,14 +875,14 @@ var sixdb = function(_dbName) {
 
       var test = false;
 
-      // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
         var i = 0;
         var test = false;
-        for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
           test = qrySys.testConditionBlock(cursor, conditions, intMode);
@@ -1048,12 +1008,12 @@ var sixdb = function(_dbName) {
    * @private
    * @param  {string} storeName Object store name.
    * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower)
-   * @param {string | number} query Example of valid queries:&lt;br>
-   * property = value                           // Simple query&lt;br>
-   * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-   * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+   * @param {string | number} query Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param  {object} objectValues Object with the new values (ex: {property1: value, property3: value}).
    * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
@@ -1110,14 +1070,14 @@ var sixdb = function(_dbName) {
       var newObjectValuesSize = keys.length;
       var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null; //external logical operator
 
-      // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
         var i = 0;
         var test = false;
-        for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
           test = qrySys.testConditionBlock(cursor, conditions, intMode);
@@ -1129,7 +1089,7 @@ var sixdb = function(_dbName) {
         if (test) {
           var updateData = cursor.value;
           var i = 0;
-          for (i = 0; i &lt; newObjectValuesSize; i++) {
+          for (i = 0; i < newObjectValuesSize; i++) {
             // If the new value for the property keys[i] is a function then the new value is function(oldValue)
             updateData[keys[i]] =
               typeof objectValues[keys[i]] == "function"
@@ -1277,19 +1237,19 @@ var sixdb = function(_dbName) {
      */
     init: function () {
       this.blockRgx = /\(.*?(?=\))/g;
-      this.blockOperatorRgx = /[\&amp;\|]+(?=(\s*\())/g;
-      this.operatorRgx = /(=|>|&lt;|>=|&lt;=|!=|&lt;>|\^)+/g;
-      this.rightOperandRgx = /(?:([=>&lt;\^]))\s*["']?[^"']+["']?\s*(?=[&amp;\|])|(?:[=>&lt;\^])\s*["']?[^"']+["']?(?=$)/g;
-      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|&lt;|!|^])/g;
+      this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
+      this.operatorRgx = /(=|>|<|>=|<=|!=|<>|\^)+/g;
+      this.rightOperandRgx = /(?:([=><\^]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><\^])\s*["']?[^"']+["']?(?=$)/g;
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!|^])/g;
     },
 
     /**
      * Transforms a query string into an array of objects that is used by SIXDB to process the query.
-     * @param  {string} query String that contains a query. Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+     * @param  {string} query String that contains a query. Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * @return {object[]} Returns and array of coditions blocks.
      */
     makeConditionsBlocksArray: function (query) {
@@ -1303,7 +1263,7 @@ var sixdb = function(_dbName) {
       // Delete left parentheses
       if(blocks){
         var i=0;
-        for(i=0;i&lt;blocks.length;i++){
+        for(i=0;i<blocks.length;i++){
           blocks[i]=blocks[i].substr(1);
         };
       };
@@ -1323,9 +1283,9 @@ var sixdb = function(_dbName) {
         //
         var rightOperands = qry.match(t.rightOperandRgx);
         var i=0;
-        for(i=0;i&lt;rightOperands.length;i++){
+        for(i=0;i<rightOperands.length;i++){
           // Delete the operator
-          while(rightOperands[i][0].match(/[=>&lt;!\^]/g)){
+          while(rightOperands[i][0].match(/[=><!\^]/g)){
             rightOperands[i]=rightOperands[i].substr(1);
           };
           // Delete quotes and trim white spaces
@@ -1336,7 +1296,7 @@ var sixdb = function(_dbName) {
         //// Removing righ operands (values) before extract comparison operators avoids 
         //// problems with literal values that include comparisson symbols(= , >,...) quoted.
         //
-        for(i=0;i&lt;rightOperands.length;i++){
+        for(i=0;i<rightOperands.length;i++){
           qry=qry.replace(rightOperands[i],'');
         };
         var operators = qry.match(t.operatorRgx);
@@ -1350,7 +1310,7 @@ var sixdb = function(_dbName) {
           conditionsArray.push(
             {
               keyPath: leftOperands[0],   // property
-              cond: operators[0],         // =, >, &lt;, ...
+              cond: operators[0],         // =, >, <, ...
               value: rightOperands[0]     // value
             }
           );
@@ -1367,17 +1327,17 @@ var sixdb = function(_dbName) {
 
         } else {
 
-          // if query is like: " c = 15 &amp; a > 30 "
-          var logOperatorsType = qry.match(/[\&amp;\|]+/g)[0];
+          // if query is like: " c = 15 & a > 30 "
+          var logOperatorsType = qry.match(/[\&\|]+/g)[0];
 
-          if (logOperatorsType == '&amp;' || logOperatorsType == '&amp;&amp;') {
+          if (logOperatorsType == '&' || logOperatorsType == '&&') {
             logOperatorsType = 'and';
           } else {
             logOperatorsType = 'or';
           };
 
           var i = 0;
-          for (i = 0; i &lt; operators.length; i++) {
+          for (i = 0; i < operators.length; i++) {
             conditionsArray.push(
               {
                 keyPath: leftOperands[i],
@@ -1399,14 +1359,14 @@ var sixdb = function(_dbName) {
       };
 
 
-      // If condition is a single sentence like: " a = 10 &amp; b > 5 "
+      // If condition is a single sentence like: " a = 10 & b > 5 "
       if (!blocks) {
         pushConditionBlockToArray(query, null);
         return conditionsBlocksArray;
       } else {
-        // If condition is a multiple sentence like: " (a = 5 &amp; b = 10) || (c &lt; 4 &amp; f > 10) "        
+        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "        
         if (extLogOperator) {
-          if (extLogOperator == '&amp;' || extLogOperator == '&amp;&amp;') {
+          if (extLogOperator == '&' || extLogOperator == '&&') {
             extLogOperator = 'and';
           } else {
             extLogOperator = 'or';
@@ -1414,7 +1374,7 @@ var sixdb = function(_dbName) {
         };
 
         var i = 0;
-        for (i = 0; i &lt; blocks.length; i++) {
+        for (i = 0; i < blocks.length; i++) {
 
           pushConditionBlockToArray(blocks[i], extLogOperator);
 
@@ -1425,7 +1385,7 @@ var sixdb = function(_dbName) {
 
     /**
      * Test a block of conditions. For example:
-     * (a&lt;100 &amp;&amp; a>20) || (b = 30 &amp; c != 50 &amp;&amp; a >= 200)   &lt;==== Here are 2 conditions blocks. The first block has 2 conditions.
+     * (a<100 && a>20) || (b = 30 & c != 50 && a >= 200)   <==== Here are 2 conditions blocks. The first block has 2 conditions.
      * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson. 
      * @param  {conditionObject[]} conditionsArray Contains the conditions.
      * @param  {string | null} operator Is a logical operator that can be "and", "or" or null.
@@ -1437,7 +1397,7 @@ var sixdb = function(_dbName) {
 
       var test = (operator == 'and' || operator == null) ? true : false;
       if (operator == 'and' || operator == null) {
-        for (i = 0; i &lt; conditionsArray.length; i++) {
+        for (i = 0; i < conditionsArray.length; i++) {
           test = t.testCondition(
             cursor.value[conditionsArray[i].keyPath],
             conditionsArray[i].cond,
@@ -1446,7 +1406,7 @@ var sixdb = function(_dbName) {
           if (!test) return false;
         }
       } else {
-        for (i = 0; i &lt; conditionsArray.length; i++) {
+        for (i = 0; i < conditionsArray.length; i++) {
           test = t.testCondition(
             cursor.value[conditionsArray[i].keyPath],
             conditionsArray[i].cond,
@@ -1463,7 +1423,7 @@ var sixdb = function(_dbName) {
      * Test a conditional expression as false or true
      * @private
      * @param {string | number} value1 First value to compare
-     * @param {string} condition Comparison operator ( = , > , &lt; , >= , &lt;= , != )
+     * @param {string} condition Comparison operator ( = , > , < , >= , <= , != )
      * @param {string | number} value2 Second value to compare
      * @returns {boolean} Result after evaluating the condition
      */
@@ -1478,23 +1438,23 @@ var sixdb = function(_dbName) {
           result = value1 > value2 ? true : false;
           return result;
 
-        case "&lt;":
-          result = value1 &lt; value2 ? true : false;
+        case "<":
+          result = value1 < value2 ? true : false;
           return result;
 
         case ">=":
           result = value1 >= value2 ? true : false;
           return result;
 
-        case "&lt;=":
-          result = value1 &lt;= value2 ? true : false;
+        case "<=":
+          result = value1 <= value2 ? true : false;
           return result;
 
         case "!=":
           result = value1 != value2 ? true : false;
           return result;
 
-        case "&lt;>":                        // string value1 contains substring value2
+        case "<>":                        // string value1 contains substring value2
         if(typeof(value1)!='string'){
           return false;
         };
@@ -1867,7 +1827,7 @@ var sixdb = function(_dbName) {
       var argsArray = [];
       if (args) {
         var i = 0;
-        for (i = 2; i &lt; arguments.length; i++) {
+        for (i = 2; i < arguments.length; i++) {
           argsArray[2 - i] = arguments[i];
         }
       }
@@ -1930,12 +1890,12 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Object store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} query Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-     * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+     * @param {string | number} query Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
@@ -1955,12 +1915,12 @@ var sixdb = function(_dbName) {
      * mydb.del.record('objectStoreName', 'ages', 40);
      *
      * //
-     * // Deletes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.
+     * // Deletes records with age < 20 and salary > 1500 using a conditionObject array as query.
      * //
      * mydb.del.records(
      *    'objectStoreName',          
      *    null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.
-     *    'age &lt; 20 &amp; salary > 1500'      
+     *    'age < 20 & salary > 1500'      
      * );
      *
      * mydb.execTasks();
@@ -2011,12 +1971,12 @@ var sixdb = function(_dbName) {
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
      * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-     * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+     * @param {string} query String that contains a query. Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param  {object} objectValues Object with the new values.
      * The values not only can be a single value, it can be a function that receives the old value and returns a new value.
      * (Example: objectValues = {property1:'value1', property4: value4, property6: function(oldValue){return oldValue + 100;}})
@@ -2048,13 +2008,13 @@ var sixdb = function(_dbName) {
      *
      *
      * //
-     * // Increases the salary in 200 to all persons with age > 40 and salary &lt; 1000 using a conditionObject array as query.
+     * // Increases the salary in 200 to all persons with age > 40 and salary < 1000 using a conditionObject array as query.
      * // We can send a function to the property salary on selected records.
      * //
      * mydb.update.records(
      *     'objectStoreName',
      *     null,
-     *     'age > 40 &amp; salary &lt; 1000',
+     *     'age > 40 & salary < 1000',
      *     {salary: function(oldSalary){
      *         return oldSalary + 200;
      *         };
@@ -2132,7 +2092,7 @@ var sixdb = function(_dbName) {
      * function myCallback(resultsArray){
      *     var size = resultsArray.length();
      *     var i=0;
-     *     for(i=0;i&lt;size;i++){
+     *     for(i=0;i<size;i++){
      *         console.log('Name: ' + resultsArray[i].name + ' Age: ' + resultsArray[i].age + '\n');
      *     };
      * };     
@@ -2157,12 +2117,12 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
-     * 'peter'                                    // Single value always refers to the index keypath.&lt;br>
+     * @param {string} query String that contains a query. Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
      * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
@@ -2184,7 +2144,7 @@ var sixdb = function(_dbName) {
      *
      *     if(Array.isArray(result)){
      *         var i=0;
-     *         for(i=0;i&lt;result.length)
+     *         for(i=0;i<result.length)
      *         console.log('Name: ' + result[i].name + ' Age: ' + result[i].age + '\n');
      *     } else {
      *         console.log('Name: ' + result.name + ' Age: ' + result.age + '\n');
@@ -2210,7 +2170,7 @@ var sixdb = function(_dbName) {
      * mydb.get.records(
      *    'objectStoreName',
      *    null,
-     *    'age>30 &amp; name != "Peter"', 
+     *    'age>30 & name != "Peter"', 
      *    myCallback
      * );
      *
@@ -2236,11 +2196,11 @@ var sixdb = function(_dbName) {
      * Adds the task "Count the records" to the task queue
      * @param  {string} storeName Store name.
      * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid queries:&lt;br>
-     * property = value                           // Simple query&lt;br>
-     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
-     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
-     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+     * @param {string | null} query String that contains a query. Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
      * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
@@ -2330,7 +2290,7 @@ var sixdb = function(_dbName) {
   };
 
   function logger(t, args) {
-    if (consoleOff &amp;&amp; t!=6)
+    if (consoleOff && t!=6)
       return;
 
     switch (t) {
@@ -2343,7 +2303,7 @@ var sixdb = function(_dbName) {
       break;
 
       case 23:
-      console.log('&lt;--------------- ' + args[0] + ' finished -------//');
+      console.log('<--------------- ' + args[0] + ' finished -------//');
       break;
 
       /*case 1:
@@ -2480,7 +2440,7 @@ var sixdb = function(_dbName) {
             return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
 
           // maxResults
-          if (typeof (args[1]) != 'number' &amp;&amp; args[1] != null)
+          if (typeof (args[1]) != 'number' && args[1] != null)
             return this.makeErrorObject(origin, 12);
 
           // succesCallback
@@ -2509,7 +2469,7 @@ var sixdb = function(_dbName) {
           //query
           if (args[2]) {
             var qtype = typeof (args[2]);
-            if (qtype != 'string' &amp;&amp; qtype != 'number')
+            if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);
           } else {
             return this.makeErrorObject(origin, 8);
@@ -2660,7 +2620,7 @@ var sixdb = function(_dbName) {
           //query
           if (args[2]) {
             var qtype = typeof (args[2]);
-            if (qtype != 'string' &amp;&amp; qtype != 'number')
+            if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);   // not valid type 
           } else {
             return this.makeErrorObject(origin, 8);     // is null
@@ -2712,7 +2672,7 @@ var sixdb = function(_dbName) {
           //query
           if (args[2]) {
             var qtype = typeof (args[2]);
-            if (qtype != 'string' &amp;&amp; qtype != 'number')
+            if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);   // not valid type 
           } else {
             return this.makeErrorObject(origin, 8);     // is null
@@ -2780,7 +2740,7 @@ var sixdb = function(_dbName) {
       var errorObj = {};
       if(!domException){
       errorObj.code = errorCode;
-      errorObj.type = (errorCode&lt;17)?'Invalid parameter':'IndexedDB error';
+      errorObj.type = (errorCode<17)?'Invalid parameter':'IndexedDB error';
       errorObj.origin = origin;
       errorObj.description = this.codes[errorCode];
       } else {
@@ -2827,22 +2787,3 @@ var sixdb = function(_dbName) {
   this.add.db();
   this.execTasks();
 };
-</code></pre>
-        </article>
-    </section>
-
-
-
-
-</div>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 14 2018 23:04:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
-</footer>
-
-<script>prettyPrint();</script>
-<script src="scripts/linenumber.js"></script>
-</body>
-</html>

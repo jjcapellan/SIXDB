@@ -132,7 +132,7 @@ mydb.get.lastRecords(store, null, successCallback, errorCallback);
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 
 // Gets records wich name starts with "al"
-mydb.get.records(store, null, 'name^Al', successCallback, errorCallback);
+mydb.get.records(store, null, 'name ^ Al', successCallback, errorCallback);
 
 // Gets records using a query of 2 conditions and logical operator &
 mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);
@@ -144,7 +144,7 @@ mydb.get.records(store, null, 'department= "manufacturing" || salary > 1390', su
 mydb.get.count(store, null, 'salary>1000', successCallback);
 
 //Counts records
-mydb.get.count(store, index, 'id=3', successCallback);
+mydb.get.count(store, index, 'id = 3', successCallback);
 
 //Counts all records in store
 mydb.get.count(store, null, null, successCallback);

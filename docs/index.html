@@ -85,8 +85,8 @@
 <h2><a name="Installation"></a>Installation</h2><hr>
 <p>There are two alternatives:</p>
 <ul>
-<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
-<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js&quot;>&lt;/script></code></pre></li>
 </ul>
 <h2><a name="Tutorial"></a>Tutorial</h2><hr>
 <p>For the tutorial we will use an employees list from a supposed factory:</p>
@@ -427,18 +427,23 @@ mydb.execTasks();</code></pre><h2><a name="Query-system"></a><strong>Query langu
 Write a query is very intuitive. Is similar to write the condition in an &quot;if&quot; sentence.<br>A simple query would be: <code>recordProperty = value</code> 
 There are some rules:</p>
 <ul>
-<li>You can use these comparisson operators:  <strong>=</strong> , <strong>&gt;</strong>, <strong>\&lt;</strong>, <strong>&gt;=</strong>, <strong>&lt;=</strong>, <strong>!=</strong></li>
+<li>You can use these normal comparisson operators:  <strong>=</strong> , <strong>&gt;</strong>, <strong>\&lt;</strong>, <strong>&gt;=</strong>, <strong>&lt;=</strong>, <strong>!=</strong></li>
+<li>There are too &quot;special&quot; operators:<ul>
+<li><strong>&lt;&gt;</strong>   : &quot;Contains&quot; operator. Valid for strings.<pre class="prettyprint source lang-javascript"><code>name &lt;> ul // The property name contains the substring &quot;ul&quot;. (quotes are optional)</code></pre></li>
+<li><strong>^</strong>    : &quot;Starts with&quot; operator. Valid for strings. Is case sensitive.<pre class="prettyprint source lang-javascript"><code>name ^ Pe // Means the property name starts with the substring &quot;Pe&quot; (quotes are optional).</code></pre></li>
+</ul>
+</li>
 <li>The valid logical operators are: <strong>&amp;</strong>, <strong>&amp;&amp;</strong>, <strong>|</strong>, <strong>||</strong></li>
 <li><strong>&amp;</strong> (&quot;and&quot;) has same effect than <strong>&amp;&amp;</strong>, and the same to <strong>|</strong> (&quot;or&quot;) and <strong>||</strong>.</li>
 <li>Only one type of logical operator can be used in a group of conditions. <pre class="prettyprint source lang-javascript"><code>salary > 1000 & name != 'Peter' & age > 34      // This is correct
 salary > 1000 & name != 'Peter' | age > 34      // This is wrong</code></pre></li>
 <li>Groups of conditions within other groups are not allowed.<pre class="prettyprint source lang-javascript"><code>(salary > 1000 & name != 'Peter') | (name = 'Adam' & salary &lt; 900)            // This is correct
 ((salary > 1000 & name != 'Peter') | ID = 5) | (name = 'Adam' & salary &lt; 900) // This is wrong</code></pre></li>
-<li>Outside of a conditions Outside group there can't be another without parentheses.<pre class="prettyprint source lang-javascript"><code>(salary > 1000 & name != 'Peter') | (name = 'Adam')   // This is correct
+<li>Outside of a conditions group there can't be another without parentheses.<pre class="prettyprint source lang-javascript"><code>(salary > 1000 & name != 'Peter') | (name = 'Adam')   // This is correct
 (salary > 1000 & name != 'Peter') | name = 'Adam'     // This is wrong</code></pre></li>
 <li>Only one type of logical operator can be used between groups of conditions<pre class="prettyprint source lang-javascript"><code>(a = 2 & c &lt; 10) | (d != 1) | (d = 10 & e >= 12)  // This is correct
 (a = 2 & c &lt; 10) | (d != 1) & (d = 10 & e >= 12)  // This is wrong</code></pre></li>
-<li>We can use a single value as a query when the value refers to the keypath of an existing index<pre class="prettyprint source lang-javascript"><code>mydb.del.records(
+<li>Some functions accepts a single value as a query when the value refers to the keypath of an existing index<pre class="prettyprint source lang-javascript"><code>mydb.del.records(
   'southFactory',     // Object store name
   'IDs',              // Index name. Contains all objects with ID property in the object store &quot;southFactory&quot;
   5,                  // Query. A single value refers to the index keypath.
@@ -527,7 +532,7 @@ mydb.execTasks();</code></pre><h2><a name="Error-handling"></a><strong>The SIXDB
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 14 2018 13:29:49 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 14 2018 23:04:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

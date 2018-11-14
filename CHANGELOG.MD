@@ -1,4 +1,13 @@
-### v1.6.0 2018-11-13
+## v1.7.0
+### New features
+* Added string comparison operator **<>** ("contains") to use in queries.
+* Added string comparison operator **^** ("starts with") to use in queries.
+### Minor improvements and fixes
+* DOMexceptions triggered by indexedDB method createdObjectStore now are correctly managed by a trycatch.
+* Some refactoring that saves 5Kb to the file.
+## v1.6.0
+### New features
 * Added an improved error handling system. Now detects and hanle more possible errors.
+### Minor improvements and fixes
 * Error notifications are not affected by the flag consoleOff.
 * All undefined error callbacks are transformed in empty functions. This prevents a problem in the try catch helpers.

@@ -51,13 +51,13 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.6.0/src/sixdb.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js"></script>
 ``` 
 
 
@@ -392,7 +392,7 @@ There are some rules:
 * There are too "special" operators:
   * **<>**   : "Contains" operator. Valid for strings.
   ```javascript
-  name <> ul // Means the property name contains the substring "ul".
+  name <> ul // The property name contains the substring "ul". (quotes are optional)
   ```
   * **^**    : "Starts with" operator. Valid for strings. Is case sensitive.
   ```javascript
@@ -410,7 +410,7 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong
 (salary > 1000 & name != 'Peter') | (name = 'Adam' & salary < 900)            // This is correct
 ((salary > 1000 & name != 'Peter') | ID = 5) | (name = 'Adam' & salary < 900) // This is wrong
 ```
-* Outside of a conditions Outside group there can't be another without parentheses.
+* Outside of a conditions group there can't be another without parentheses.
 ```javascript
 (salary > 1000 & name != 'Peter') | (name = 'Adam')   // This is correct
 (salary > 1000 & name != 'Peter') | name = 'Adam'     // This is wrong
@@ -420,7 +420,7 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong
 (a = 2 & c < 10) | (d != 1) | (d = 10 & e >= 12)  // This is correct
 (a = 2 & c < 10) | (d != 1) & (d = 10 & e >= 12)  // This is wrong
 ```
-* We can use a single value as a query when the value refers to the keypath of an existing index
+* Some functions accepts a single value as a query when the value refers to the keypath of an existing index
 ```javascript
 mydb.del.records(
     'southFactory',     // Object store name

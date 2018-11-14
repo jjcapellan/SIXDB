@@ -119,13 +119,7 @@ var sixdb = function(_dbName) {
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
-      taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if (errorCallback) {
-        errorCallback(lastErrorObj);
-      }
-      logger(logEnum.error, [lastErrorObj]);
-      checkTasks();
+      invalidArgsAcction(errorCallback);
       return;
     }
 
@@ -165,13 +159,7 @@ var sixdb = function(_dbName) {
     };
 
     var onerrorFunction = function(event) {
-      db.close();
-      logger(logEnum.close);
-      errorSys.makeErrorObject(origin, 20, request.error);
-      logger(logEnum.error, [lastErrorObj]);
-      taskQueue.shift();
-      errorCallback(lastErrorObj);
-      checkTasks();
+      requestErrorAction(origin,request.error, errorCallback);
     };
 
     //// Gets the correct request
@@ -236,16 +224,9 @@ var sixdb = function(_dbName) {
         return;
       };
 
-    // If test failed testArgs return true
+    // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
-      taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      logger(logEnum.close);
-      if (errorCallback) {
-        errorCallback(lastErrorObj);
-      }
-      logger(logEnum.error, [lastErrorObj]);
-      checkTasks();
+      invalidArgsAcction(errorCallback);
       return;
     }
 
@@ -318,13 +299,7 @@ var sixdb = function(_dbName) {
     }; // end onsuccesCursor
 
     var onerrorFunction = function(event) {
-      db.close();
-      logger(logEnum.close);
-      errorSys.makeErrorObject(origin, 20, request.error);
-      logger(logEnum.error, [lastErrorObj]);
-      taskQueue.shift();
-      if (errorCallback) errorCallback(lastErrorObj);
-      checkTasks();
+      requestErrorAction(origin,request.error, errorCallback);
     };
 
     //// Gets correct request
@@ -393,6 +368,10 @@ var sixdb = function(_dbName) {
     var origin='add -> newDB(...)';
     logger(logEnum.begin,[origin]);
 
+    if(!errorCallback){
+      errorCallback=function(){return;};
+    };
+
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
 
@@ -413,11 +392,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onerror = function(event) {
-      if (errorCallback) {
-        errorCallback(event);
-      } else {
-        logger(logEnum.error,[origin,event.target.error]);
-      }
+      requestErrorAction(origin,request.error, errorCallback);
     };
   }
 
@@ -433,17 +408,16 @@ var sixdb = function(_dbName) {
     var version;
     var origin='add -> newStore(...)';
     logger(logEnum.begin,[origin]);
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
-      return;
+
+    if(!errorCallback){
+      errorCallback=function(){return;};
     };
+
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
+      return;
+    }
 
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
@@ -464,18 +438,18 @@ var sixdb = function(_dbName) {
       request.onupgradeneeded = function(event) {
         db = event.target.result;
 
-        store = db.createObjectStore(storeName, {
-          keyPath: "nId",
-          autoIncrement: true
-        });
+        try {
+          store = db.createObjectStore(storeName, {
+            keyPath: "nId",
+            autoIncrement: true
+          });
+        } catch (e) {
+          requestErrorAction(origin, e, errorCallback);
+          return;
+        }
 
         store.onerror = function(event) {
-          logger(logEnum.error,[origin,event.target.result]);
-          if (errorCallback) {
-            errorCallback(event, origin);
-          } else {
-            logger(logEnum.error,[origin,event.target.result]);
-          }
+          requestErrorAction(origin,event.target.error, errorCallback);
         };
       };
 
@@ -504,17 +478,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets store
     var store = getStore(origin,storeName,'readwrite',errorCallback);//db.transaction(storeName, "readonly").objectStore(storeName);
@@ -522,21 +490,6 @@ var sixdb = function(_dbName) {
       checkTasks();
       return;
     };
-
-    //// Gets store
-    /*try{
-    var store = db.transaction(storeName, 'readwrite').objectStore(storeName);
-    } catch(e){
-      errorSys.makeErrorObject(origin,20,e);
-      taskQueue.shift();
-      db.close();
-      if(errorCallback){
-      errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
-      return;
-    };*/
 
     var counter = 0;
     if (Array.isArray(obj)) {
@@ -559,11 +512,7 @@ var sixdb = function(_dbName) {
         };
 
         request.onerror = function(event) {
-          if (errorCallback) {
-            errorCallback(event, origin);
-          } else {
-            logger(logEnum.error, [origin, event.target.error]);
-          }
+          requestErrorAction(origin,request.error, errorCallback);
         };
       }
     } else {
@@ -579,13 +528,9 @@ var sixdb = function(_dbName) {
       };
 
       request.onerror = function(event) {
-        if (errorCallback) {
-          errorCallback(event, origin);
-        } else {
-          logger(logEnum.error, [origin, event.target.error]);
-        }
+        requestErrorAction(origin,event.target.error, errorCallback);
       };
-    }
+    };
   }
 
   /**
@@ -605,17 +550,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets the new version
     //
@@ -635,17 +574,11 @@ var sixdb = function(_dbName) {
       var upgradeTransaction = event.target.transaction;
 
       //// Gets store
-      try{
-      var store = upgradeTransaction.objectStore(storeName);
-      } catch(e) {
-        errorSys.makeErrorObject(origin,20,e);
-      taskQueue.shift();
-      db.close();
-      if(errorCallback)
-      errorCallback(lastErrorObj);
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
-      return;        
+      try {
+        var store = upgradeTransaction.objectStore(storeName);
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
+        return;
       };
 
       if (!store.indexNames.contains(indexName)) {
@@ -668,11 +601,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onerror = function (event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      } else {
-        logger(logEnum.error, [origin, event.target.error]);
-      }
+      requestErrorAction(origin,request.error, errorCallback);
     };
   }
 
@@ -698,17 +627,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets store
     var store = getStore(origin,storeName, 'readonly', errorCallback);
@@ -736,25 +659,6 @@ var sixdb = function(_dbName) {
       else
         query = store.keyPath + '!= -1';
     }
-
-    var onSuccessNoQuery = function (event) {
-      var cursor = event.target.result;
-      var message;
-      if (cursor) {
-        counter++;
-        cursor.continue();
-      } else {
-        if (indexName) {
-          message = 'There are ' + counter + 'records in the index "' + indexName + '" from store "' + storeName + "'";
-        } else {
-          message = 'There are ' + counter + 'records in the store "' + storeName;
-        }
-        if (successCallback)
-          successCallback(event.target.result, origin);
-        logger(logEnum.custom, [message]);
-        done();
-      }
-    };
 
     var onSuccessQuery = function (event) {
       var cursor = event.target.result;
@@ -796,11 +700,7 @@ var sixdb = function(_dbName) {
     };
 
     var onError = function (event) {
-      if (errorCallback)
-        errorCallback(event.target.error);
-      db.close();
-      logger(logEnum.error, [event.target.error]);
-      done();
+      requestErrorAction(origin,request.error,errorCallback);
     };
 
     if (indexName) {
@@ -835,17 +735,15 @@ var sixdb = function(_dbName) {
     var version;
     var origin = 'del -> delStore(...)';
     logger(logEnum.begin,[origin]);
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    
+    if(!errorCallback){
+      errorCallback=function(){return;};
+    }
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets the new version
     //
@@ -874,11 +772,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onerror = function (event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      } else {
-        logger(logEnum.error, [origin, event.target.error]);
-      }
+      requestErrorAction(origin,request.error,errorCallback);
     };
   }
 
@@ -891,24 +785,20 @@ var sixdb = function(_dbName) {
   function delDB( successCallback, errorCallback) {    
     var origin='del -> delDB(...)';
     logger(logEnum.begin,[origin]);
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+
+    if(!errorCallback){
+      errorCallback=function(){return;};
+    };
+
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
     };
     var request = window.indexedDB.deleteDatabase(dbName);
 
     request.onerror = function(event) {
-      if (errorCallback) {
-        errorCallback(event,origin);
-      } else {
-        logger(logEnum.error,[origin,event.target.error]);
-      };
+      requestErrorAction(origin,request.error,errorCallback);
     };
 
     request.onsuccess = function(event) {
@@ -941,17 +831,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets store
     var store = getStore(origin,storeName, 'readwrite', errorCallback);
@@ -1028,13 +912,7 @@ var sixdb = function(_dbName) {
     } // end onsuccesCursor
 
     var onerrorFunction = function (event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      };
-      db.close();
-      logger(logEnum.close);
-      logger(logEnum.error, [origin, event.target.error]);
-      done();
+      requestErrorAction(origin,request.error, errorCallback);
     }
 
     if (indexName != null) {
@@ -1077,17 +955,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // If test failed testArgs return true
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets the new version
     //
@@ -1107,17 +979,11 @@ var sixdb = function(_dbName) {
       var upgradeTransaction = event.target.transaction;
 
       //// Gets store
-      try{
-      var store = upgradeTransaction.objectStore(storeName);
-      } catch(e){
-        errorSys.makeErrorObject(origin,20,e);
-      taskQueue.shift();
-      db.close();
-      if(errorCallback)
-      errorCallback(lastErrorObj);
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
-      return; 
+      try {
+        var store = upgradeTransaction.objectStore(storeName);
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
+        return;
       };
 
       store.deleteIndex(indexName);
@@ -1133,11 +999,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onerror = function (event) {
-      if (errorCallback) {
-        errorCallback(event, origin);
-      } else {
-        logger(logEnum.error, [origin, event.target.error]);
-      }
+      requestErrorAction(origin, request.error, errorCallback);
     };
   }
 
@@ -1164,17 +1026,11 @@ var sixdb = function(_dbName) {
     if(!errorCallback)
       errorCallback=function(){return;};
 
-    // Tests arguments
-    if(errorSys.testArgs(origin, arguments)){
-      taskQueue.shift();              // Delete actual task prevent problem if custom errorCallback creates a new task
-      db.close();
-      if(errorCallback){
-        errorCallback(lastErrorObj);
-      };
-      logger(logEnum.error,[lastErrorObj]);
-      checkTasks();
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
       return;
-    };
+    }
 
     //// Gets store
     var store = getStore(origin,storeName, 'readwrite', errorCallback);
@@ -1261,12 +1117,7 @@ var sixdb = function(_dbName) {
     }
 
     var onerrorFunction = function (event) {
-      if (errorCallback)
-        errorCallback(event, origin);
-      db.close();
-      logger(logEnum.close);
-      logger(logEnum.error, [origin, event.target.error]);
-      done();
+      requestErrorAction(origin,request.error, errorCallback);
     }
 
     if (indexName != null) {
@@ -1344,6 +1195,24 @@ var sixdb = function(_dbName) {
     db.close();
     errorCallback(lastErrorObj);
     logger(logEnum.error, [lastErrorObj]);
+  };
+
+  function invalidArgsAcction(errorCallback) {
+    taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
+    db.close();
+    errorCallback(lastErrorObj);
+    logger(logEnum.error, [lastErrorObj]);
+    checkTasks();
+  };
+
+  function requestErrorAction(origin,error,errorCallback) {
+    db.close();
+    logger(logEnum.close);
+    errorSys.makeErrorObject(origin, 20, error);
+    logger(logEnum.error, [lastErrorObj]);
+    taskQueue.shift();
+    errorCallback(lastErrorObj);
+    checkTasks();
   };
 
   //#endregion helper functions
@@ -2851,6 +2720,14 @@ var sixdb = function(_dbName) {
       }
     },
 
+    /**
+     * Makes an error object, stores it in lastErrorObj variable. 
+     * @private
+     * @param  {string} origin Name of the origin function
+     * @param  {number} errorCode Id number.
+     * @param  {object} domException DOMexception triggered by the error
+     * @return {boolean}
+     */
     makeErrorObject: function(origin,errorCode, domException){
       var errorObj = {};
       if(!domException){
@@ -2895,11 +2772,7 @@ var sixdb = function(_dbName) {
       return pageArray;
     }
   };
-  
 
-  
-
-  
 
   //// Initialization /////////////////////////////
   qrySys.init();

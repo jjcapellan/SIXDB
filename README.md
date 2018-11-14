@@ -388,7 +388,12 @@ Some SIXDB methods receive as parameter to select records a string with an expre
 Write a query is very intuitive. Is similar to write the condition in an "if" sentence.  
 A simple query would be: `recordProperty = value` 
 There are some rules:
-* You can use these comparisson operators:  **=** , **>**, **\<**, **>=**, **<=**, **!=**
+* You can use these normal comparisson operators:  **=** , **>**, **\<**, **>=**, **<=**, **!=**
+* There are too "special" operators:
+  * **<>**   :
+  ```javascript
+  name <> ul // Means the property name contains the substring "ul".  
+  ```
 * The valid logical operators are: **&**, **&&**, **|**, **||**
 * **&** ("and") has same effect than **&&**, and the same to **|** ("or") and **||**.
 * Only one type of logical operator can be used in a group of conditions. 

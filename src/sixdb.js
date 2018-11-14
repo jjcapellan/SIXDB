@@ -344,7 +344,7 @@ var sixdb = function(_dbName) {
    * @private
    * @typedef {Object} conditionObject
    * @property {string} keyPath Indicates a key path to test.
-   * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=" ).
+   * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=", "<>" ).
    * @property {any} value Indicates the value to test.
    * @example
    *
@@ -1238,7 +1238,7 @@ var sixdb = function(_dbName) {
     init: function () {
       this.blockRgx = /\(.*?(?=\))/g;
       this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
-      this.operatorRgx = /(=|>|<|>=|<=|!=)+/g;
+      this.operatorRgx = /(=|>|<|>=|<=|!=|<>)+/g;
       this.rightOperandRgx = /(?:([=><]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><])\s*["']?[^"']+["']?(?=$)/g;
       this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!])/g;
     },
@@ -1459,6 +1459,13 @@ var sixdb = function(_dbName) {
           result = value1 != value2 ? true : false;
           return result;
           break;
+
+        case "<>":
+        if(typeof(value1)!='string'){
+          return false;
+        }
+        result=(value1.indexOf(value2)!=-1)?true:false;
+        return result;
 
         default:
           break;

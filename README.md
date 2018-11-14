@@ -390,9 +390,13 @@ A simple query would be: `recordProperty = value`
 There are some rules:
 * You can use these normal comparisson operators:  **=** , **>**, **\<**, **>=**, **<=**, **!=**
 * There are too "special" operators:
-  * **<>**   :
+  * **<>**   : "Contains" operator. Valid for strings.
   ```javascript
-  name <> ul // Means the property name contains the substring "ul".  
+  name <> ul // Means the property name contains the substring "ul".
+  ```
+  * **^**    : "Starts with" operator. Valid for strings. Is case sensitive.
+  ```javascript
+  name ^ Pe // Means the property name starts with the substring "Pe" (quotes are optional).
   ```
 * The valid logical operators are: **&**, **&&**, **|**, **||**
 * **&** ("and") has same effect than **&&**, and the same to **|** ("or") and **||**.

@@ -134,6 +134,9 @@ mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 // Gets records wich name starts with "al"
 mydb.get.records(store, null, 'name ^ Al', successCallback, errorCallback);
 
+// Gets records wich name ends with "e"
+mydb.get.records(store, null, 'name $ e', successCallback, errorCallback);
+
 // Gets records using a query of 2 conditions and logical operator &
 mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);
 

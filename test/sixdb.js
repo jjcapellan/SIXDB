@@ -75,6 +75,44 @@ var sixdb = function(_dbName) {
       consoleOff = off;
     };
   }
+
+  /**
+   * Function to compare a property value with a test value
+   * @private
+   * @param  {string | number} value1 Property value
+   * @param  {string | number} value2 Value to test
+   * @return {boolean}
+   */
+  var customOperator = function (value1, value2) {
+    return (value1 == value2);
+  };
+
+  /**
+   * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
+   * @param  {any} compareFunction Function to compare a property value with a test value.<br>
+   * @return {void}
+   * @example 
+   * var mydb = new sixdb('myDatabase');
+   * 
+   * //
+   * // The compare function must have two arguments, property value and test value. If this function triggers
+   * // an error exception, then the query system returns the condition as false.
+   * //
+   * mydb.setCustomOperator(
+   *     function(propertyValue, testValue){
+   *         return (propertyValue.length == testValue.length); 
+   *     });
+   * 
+   */
+  this.setCustomOperator = function (compareFunction){
+    if(compareFunction){
+      if(typeof(compareFunction)=='function'){
+        if(compareFunction.length == 2){
+        customOperator = compareFunction;
+        };
+      };
+    }
+  }
   
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
@@ -1238,9 +1276,9 @@ var sixdb = function(_dbName) {
     init: function () {
       this.blockRgx = /\(.*?(?=\))/g;
       this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
-      this.operatorRgx = /(=|>|<|>=|<=|!=|<>|\^|\$)+/g;
-      this.rightOperandRgx = /(?:([=><\^\$]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><\^\$])\s*["']?[^"']+["']?(?=$)/g;
-      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!|\^|\$])/g;
+      this.operatorRgx = /(=|>|<|>=|<=|!=|<>|\^|\$|~~)+/g;
+      this.rightOperandRgx = /(?:([=><\^\$~]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><\^\$~])\s*["']?[^"']+["']?(?=$)/g;
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!|\^|\$~])/g;
     },
 
     /**
@@ -1285,7 +1323,7 @@ var sixdb = function(_dbName) {
         var i=0;
         for(i=0;i<rightOperands.length;i++){
           // Delete the operator
-          while(rightOperands[i][0].match(/[=><!\^\$]/g)){
+          while(rightOperands[i][0].match(/[=><!\^\$~]/g)){
             rightOperands[i]=rightOperands[i].substr(1);
           };
           // Delete quotes and trim white spaces
@@ -1473,6 +1511,14 @@ var sixdb = function(_dbName) {
           return false;
         };
         result=(value1.indexOf(value2)==value1.length-value2.length);
+        return result;
+
+        case "~~":
+        try{
+        result = customOperator(value1,value2);
+        } catch(e){
+          result = false;
+        };
         return result;
 
         default:

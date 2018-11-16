@@ -99,10 +99,17 @@ var failed = false;
 
 
 
+
+
 //
 // First step is instantiate a sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //   
 var mydb = new sixdb('companyDB');
+
+// Example of custom comparison operator (represented in querys by "~~")
+mydb.setCustomOperator(function(value1,value2){
+    return (value1.length == value2.length);
+});
 
 // Activate this line to turn off the console output
 // mydb.setConsoleOff(true);
@@ -136,6 +143,9 @@ mydb.get.records(store, null, 'name ^ Al', successCallback, errorCallback);
 
 // Gets records wich name ends with "e"
 mydb.get.records(store, null, 'name $ e', successCallback, errorCallback);
+
+// Gets records wich name have same number of characters than "Mary" (custom operator)
+mydb.get.records(store,null,'name ~~ Mary',successCallback,errorCallback);
 
 // Gets records using a query of 2 conditions and logical operator &
 mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);

@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -66,6 +66,7 @@
 </ul>
 </li>
 <li><a href="#Query-system">Query language</a></li>
+<li><a href="#Custom-operator">Custom comparison operator</a></li>
 <li><a href="#Using-functions">Using functions as values</a></li>
 <li><a href="#Task-queue">The task queue</a></li>
 <li><a href="#Error-handling">The SIXDB error handling</a></li>
@@ -85,8 +86,8 @@
 <h2><a name="Installation"></a>Installation</h2><hr>
 <p>There are two alternatives:</p>
 <ul>
-<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
-<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js&quot;>&lt;/script></code></pre></li>
 </ul>
 <h2><a name="Tutorial"></a>Tutorial</h2><hr>
 <p>For the tutorial we will use an employees list from a supposed factory:</p>
@@ -455,7 +456,21 @@ equation = e = v / t    // This is very wrong. The query system can't parse that
 message = 'This is my &quot;message&quot;'    // This is wrong.
 message = 'This (is) my message'    // This is wrong.</code></pre></li>
 </ul>
-<h2><a name="Using-functions"></a><strong>Using functions as values</strong></h2><hr>
+<h2><a name="Custom-operator"></a><strong>Custom comparison operator</strong></h2><hr>
+<p>We can create our own operator to use in the queries.<br>The custom operator is represented in the query system with &quot;~~&quot;.<br>To get it we must make a compare function and set the customOperator variable.<br>By default &quot;~~&quot; acts like &quot;=&quot;.</p>
+<pre class="prettyprint source lang-javascript"><code>//
+// The compare function must have two arguments, property value and test value. If this function triggers
+// an error exception then the query system returns the condition result as false.
+// In this example the function returns true when the length of property and test value is equal.
+//
+var compareFunction = function(propValue, testValue){
+    return propValue.length == testValue.length;
+    };
+
+//
+// Assigns compareFunction to the customOperator variable
+//
+mydb.setCustomOperator(compareFunction);</code></pre><h2><a name="Using-functions"></a><strong>Using functions as values</strong></h2><hr>
 <p>SIXDB allows send a function in a query to modify records value.<br>To do this, we will consider the function as if it were the new value in the update.records() method.<br>This function will receive the current record value as a parameter and return the new value.</p>
 <pre class="prettyprint source lang-javascript"><code>//
 // The object values parameter accepts functions as value whose receives the old value an returns the new value.
@@ -532,7 +547,7 @@ mydb.execTasks();</code></pre><h2><a name="Error-handling"></a><strong>The SIXDB
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 14 2018 23:04:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 16 2018 21:54:52 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

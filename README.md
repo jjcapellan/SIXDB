@@ -30,6 +30,7 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
     * [Update records](#Update-records)
     * [Delete records](#Delete-records)
 * [Query language](#Query-system)
+* [Custom comparison operator](#Custom-operator)
 * [Using functions as values](#Using-functions)
 * [The task queue](#Task-queue)
 * [The SIXDB error handling](#Error-handling)
@@ -51,13 +52,13 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.7.0/dist/sixdb.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js"></script>
 ``` 
 
 
@@ -438,6 +439,27 @@ message = 'This is my "message"'    // This is wrong.
 message = 'This (is) my message'    // This is wrong.
 ```
 
+## <a name="Custom-operator"></a>**Custom comparison operator**
+***
+We can create our own operator to use in the queries.  
+The custom operator is represented in the query system with "\~\~".   
+To get it we must make a compare function and set the customOperator variable.  
+By default "\~\~" acts like "=".
+```javascript
+//
+// The compare function must have two arguments, property value and test value. If this function triggers
+// an error exception then the query system returns the condition result as false.
+// In this example the function returns true when the length of property and test value is equal.
+//
+var compareFunction = function(propValue, testValue){
+    return propValue.length == testValue.length;
+    };
+
+//
+// Assigns compareFunction to the customOperator variable
+//
+mydb.setCustomOperator(compareFunction);
+``` 
 
 
 ## <a name="Using-functions"></a>**Using functions as values**

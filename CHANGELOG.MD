@@ -1,3 +1,6 @@
+## v1.8.0
+* Added string comparison operator **$** ("ends with") to use in queries.
+* Added custom comparison operator **\~\~** wich works with a custom compare function.
 ## v1.7.0
 ### New features
 * Added string comparison operator **<>** ("contains") to use in queries.

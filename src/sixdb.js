@@ -89,7 +89,7 @@ var sixdb = function(_dbName) {
 
   /**
    * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
-   * @param  {any} compareFunction Function to compare a property value with a test value.<br>
+   * @param  {function} compareFunction Function to compare a property value with a test value.<br>
    * @return {void}
    * @example 
    * var mydb = new sixdb('myDatabase');

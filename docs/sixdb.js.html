@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -114,6 +114,44 @@ var sixdb = function(_dbName) {
     if (typeof (off) == 'boolean') {
       consoleOff = off;
     };
+  }
+
+  /**
+   * Function to compare a property value with a test value
+   * @private
+   * @param  {string | number} value1 Property value
+   * @param  {string | number} value2 Value to test
+   * @return {boolean}
+   */
+  var customOperator = function (value1, value2) {
+    return (value1 == value2);
+  };
+
+  /**
+   * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
+   * @param  {function} compareFunction Function to compare a property value with a test value.&lt;br>
+   * @return {void}
+   * @example 
+   * var mydb = new sixdb('myDatabase');
+   * 
+   * //
+   * // The compare function must have two arguments, property value and test value. If this function triggers
+   * // an error exception, then the query system returns the condition as false.
+   * //
+   * mydb.setCustomOperator(
+   *     function(propertyValue, testValue){
+   *         return (propertyValue.length == testValue.length); 
+   *     });
+   * 
+   */
+  this.setCustomOperator = function (compareFunction){
+    if(compareFunction){
+      if(typeof(compareFunction)=='function'){
+        if(compareFunction.length == 2){
+        customOperator = compareFunction;
+        };
+      };
+    }
   }
   
   //#region Private functions
@@ -1278,9 +1316,9 @@ var sixdb = function(_dbName) {
     init: function () {
       this.blockRgx = /\(.*?(?=\))/g;
       this.blockOperatorRgx = /[\&amp;\|]+(?=(\s*\())/g;
-      this.operatorRgx = /(=|>|&lt;|>=|&lt;=|!=|&lt;>|\^)+/g;
-      this.rightOperandRgx = /(?:([=>&lt;\^]))\s*["']?[^"']+["']?\s*(?=[&amp;\|])|(?:[=>&lt;\^])\s*["']?[^"']+["']?(?=$)/g;
-      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|&lt;|!|^])/g;
+      this.operatorRgx = /(=|>|&lt;|>=|&lt;=|!=|&lt;>|\^|\$|~~)+/g;
+      this.rightOperandRgx = /(?:([=>&lt;\^\$~]))\s*["']?[^"']+["']?\s*(?=[&amp;\|])|(?:[=>&lt;\^\$~])\s*["']?[^"']+["']?(?=$)/g;
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|&lt;|!|\^|\$~])/g;
     },
 
     /**
@@ -1325,7 +1363,7 @@ var sixdb = function(_dbName) {
         var i=0;
         for(i=0;i&lt;rightOperands.length;i++){
           // Delete the operator
-          while(rightOperands[i][0].match(/[=>&lt;!\^]/g)){
+          while(rightOperands[i][0].match(/[=>&lt;!\^\$~]/g)){
             rightOperands[i]=rightOperands[i].substr(1);
           };
           // Delete quotes and trim white spaces
@@ -1498,14 +1536,29 @@ var sixdb = function(_dbName) {
         if(typeof(value1)!='string'){
           return false;
         };
-        result=(value1.indexOf(value2)!=-1)?true:false;
+        result=(value1.indexOf(value2)!=-1);
         return result;
 
         case "^":
+          if (typeof (value1) != 'string') {
+            return false;
+          };
+          result = (value1.indexOf(value2) == 0);
+          return result;
+
+        case "$":
         if(typeof(value1)!='string'){
           return false;
         };
-        result=(value1.indexOf(value2)==0)?true:false;
+        result=(value1.indexOf(value2)==value1.length-value2.length);
+        return result;
+
+        case "~~":
+        try{
+        result = customOperator(value1,value2);
+        } catch(e){
+          result = false;
+        };
         return result;
 
         default:
@@ -2436,6 +2489,7 @@ var sixdb = function(_dbName) {
 
 
   //#region Error handler
+  ///////////////////////////////////////////////////////////////////////////////////////////
 
   var lastErrorObj;
   
@@ -2839,7 +2893,7 @@ var sixdb = function(_dbName) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Nov 14 2018 23:04:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 16 2018 21:54:52 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

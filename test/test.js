@@ -135,6 +135,9 @@ mydb.add.customTask(showInfo, this, 'Custom task executed');
 // Gets all records
 mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
+// Gets all records
+mydb.get.records(store, null, null, successCallback, errorCallback);
+
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 

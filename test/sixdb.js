@@ -239,7 +239,7 @@ var sixdb = function(_dbName) {
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} query Example of valid queries:<br>
+   * @param {string | number} [query] Example of valid queries:<br>
    * property = value                           // Simple query<br>
    * c > 10 & name='peter'                      // Query with 2 conditions<br>
    * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
@@ -254,7 +254,7 @@ var sixdb = function(_dbName) {
     var index;
     var counter = 0;
     var resultFiltered = [];
-    var isIndexKeyValue;
+    var isIndexKeyValue = false;
 
     logger(logEnum.begin, [origin]);
 
@@ -285,13 +285,15 @@ var sixdb = function(_dbName) {
     }
 
     //// Gets isIndexKeyValue
-    if (typeof query == "number") {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-    }
+    if (query) {
+      if (typeof query == "number") {
+        isIndexKeyValue = true;
+      } else {
+        isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
+      };
+    };
 
-    var conditionsBlocksArray = !isIndexKeyValue ? qrySys.makeConditionsBlocksArray(query) : null;
+    var conditionsBlocksArray = (!isIndexKeyValue && query) ? qrySys.makeConditionsBlocksArray(query) : null;
 
     var onsuccesIndexGetKey = function(event) {
       successCallback(event.target.result, origin, query);
@@ -300,6 +302,14 @@ var sixdb = function(_dbName) {
       logger(logEnum.getByIndexKey, [query, indexName, storeName]);
       done();
     };
+
+    var onsuccesGetAll = function(event){
+      successCallback(event.target.result, origin, query);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getByIndexKey, [query, indexName, storeName]);
+      done();
+    }
 
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
@@ -341,7 +351,7 @@ var sixdb = function(_dbName) {
     };
 
     //// Gets correct request
-    if (indexName != null) {
+    /*if (indexName != null) {
       if (!isIndexKeyValue) {
         var request = tryOpenCursor(origin,index,errorCallback); //index.openCursor();
         if(!request){
@@ -374,7 +384,69 @@ var sixdb = function(_dbName) {
       }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
-    }
+    }*/
+    if (indexName != null) {
+
+      if (!isIndexKeyValue) {
+        if (query) {
+
+
+          var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+          if (!request) {
+            checkTasks();
+            return;
+          }
+          request.onsuccess = onsuccesCursor;
+        } else {
+
+
+          var request = tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+          if (!request) {
+            checkTasks();
+            return;
+          };
+          request.onsuccess = onsuccesGetAll;
+
+        }
+
+      } else {
+
+        try {
+          var request = index.get(query);
+        } catch (e) {
+          db.close();
+          logger(logEnum.close);
+          errorSys.makeErrorObject(origin, 20, e);
+          logger(logEnum.error, [lastErrorObj]);
+          taskQueue.shift();
+          if (errorCallback) errorCallback(lastErrorObj);
+          checkTasks();
+        }
+
+        request.onsuccess = onsuccesIndexGetKey;
+
+      };
+      request.onerror = onerrorFunction;
+    } else {
+
+      if (query) {
+        var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+        if (!request) {
+          checkTasks();
+          return;
+        }
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
+      } else {
+        var request = tryStoreGetAll(origin, store, errorCallback); //store.getAll();
+        if (!request) {
+          checkTasks();
+          return;
+        };
+        request.onsuccess = onsuccesGetAll;
+      };
+      request.onerror = onerrorFunction;
+    };
   }
 
   /**
@@ -1211,6 +1283,16 @@ var sixdb = function(_dbName) {
     try{
       var request = store.getAll();
     } catch(e){
+      reportCatch(origin, e, errorCallback);
+      return null;
+    };
+    return request;
+  };
+
+  function tryIndexGetAll(origin, index, errorCallback) {
+    try {
+      var request = store.getAll();
+    } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
     };
@@ -2170,7 +2252,7 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid queries:<br>
+     * @param {string} [query] String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
@@ -2525,8 +2607,6 @@ var sixdb = function(_dbName) {
             var qtype = typeof (args[2]);
             if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);
-          } else {
-            return this.makeErrorObject(origin, 8);
           };
 
           // succesCallback

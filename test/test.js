@@ -123,6 +123,12 @@ mydb.add.index(store, index, 'id', successCallback, errorCallback);
 // Insert one object
 mydb.add.records(store, employee, successCallback, errorCallback);
 
+//Insert a totally different object
+mydb.add.records(store, {
+    model: 'large',
+    power: 500
+}, successCallback, errorCallback);
+
 // Gets the record with id = 1
 mydb.get.records(store, index, 1, successCallback, errorCallback);
 

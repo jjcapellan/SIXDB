@@ -484,8 +484,10 @@ var sixdb = function(_dbName) {
       var cursor = event.target.result;
 
       if(cursor){
+        if(cursor.value[property]){
         counter++;
         actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+        };
         cursor.continue();
 
       } else {
@@ -520,8 +522,10 @@ var sixdb = function(_dbName) {
         }
 
         if (test) {
+          if(cursor.value[property]){
           counter++;
           actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+          };
         }
         cursor.continue();
       } else {
@@ -565,7 +569,6 @@ var sixdb = function(_dbName) {
         
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-        console.log(query);
         var request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
         if (!request) {
           checkTasks();

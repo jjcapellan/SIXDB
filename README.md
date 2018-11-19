@@ -52,13 +52,13 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.8.0/dist/sixdb.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js"></script>
 ``` 
 
 

@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.avg">avg</a></li><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#.sum">sum</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -271,15 +271,12 @@ var sixdb = function(_dbName) {
     };
   } //end lastRecords()
 
-
-
-
   /**
    * Gets a record/s from an object store using a key value from an index.
    * @private
    * @param {string} storeName Store name.
    * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} query Example of valid queries:&lt;br>
+   * @param {string | number} [query] Example of valid queries:&lt;br>
    * property = value                           // Simple query&lt;br>
    * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
    * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
@@ -294,7 +291,7 @@ var sixdb = function(_dbName) {
     var index;
     var counter = 0;
     var resultFiltered = [];
-    var isIndexKeyValue;
+    var isIndexKeyValue = false;
 
     logger(logEnum.begin, [origin]);
 
@@ -325,13 +322,15 @@ var sixdb = function(_dbName) {
     }
 
     //// Gets isIndexKeyValue
-    if (typeof query == "number") {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-    }
+    if (query) {
+      if (typeof query == "number") {
+        isIndexKeyValue = true;
+      } else {
+        isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
+      };
+    };
 
-    var conditionsBlocksArray = !isIndexKeyValue ? qrySys.makeConditionsBlocksArray(query) : null;
+    var conditionsBlocksArray = (!isIndexKeyValue &amp;&amp; query) ? qrySys.makeConditionsBlocksArray(query) : null;
 
     var onsuccesIndexGetKey = function(event) {
       successCallback(event.target.result, origin, query);
@@ -340,6 +339,14 @@ var sixdb = function(_dbName) {
       logger(logEnum.getByIndexKey, [query, indexName, storeName]);
       done();
     };
+
+    var onsuccesGetAll = function(event){
+      successCallback(event.target.result, origin, query);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getByIndexKey, [query, indexName, storeName]);
+      done();
+    }
 
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
@@ -380,17 +387,32 @@ var sixdb = function(_dbName) {
       requestErrorAction(origin,request.error, errorCallback);
     };
 
-    //// Gets correct request
     if (indexName != null) {
+
       if (!isIndexKeyValue) {
-        var request = tryOpenCursor(origin,index,errorCallback); //index.openCursor();
-        if(!request){
-          checkTasks();
-          return;
+        if (query) {
+
+
+          var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+          if (!request) {
+            checkTasks();
+            return;
+          }
+          request.onsuccess = onsuccesCursor;
+        } else {
+
+
+          var request = tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+          if (!request) {
+            checkTasks();
+            return;
+          };
+          request.onsuccess = onsuccesGetAll;
+
         }
-        request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
+
       } else {
+
         try {
           var request = index.get(query);
         } catch (e) {
@@ -404,17 +426,218 @@ var sixdb = function(_dbName) {
         }
 
         request.onsuccess = onsuccesIndexGetKey;
-        request.onerror = onerrorFunction;
-      }
+
+      };
+      request.onerror = onerrorFunction;
     } else {
-      var request = tryOpenCursor(origin,store,errorCallback); //store.openCursor();
-      if(!request){
+
+      if (query) {
+        var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+        if (!request) {
+          checkTasks();
+          return;
+        }
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
+      } else {
+        var request = tryStoreGetAll(origin, store, errorCallback); //store.getAll();
+        if (!request) {
+          checkTasks();
+          return;
+        };
+        request.onsuccess = onsuccesGetAll;
+      };
+      request.onerror = onerrorFunction;
+    };
+  }
+
+  /**
+   * This thing goes through the registers and applies an aggregate function in one property.
+   * @private
+   * @param {string} storeName Store name.
+   * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+   * @param {string | number} [query] Example of valid queries:&lt;br>
+   * property = value                           // Simple query&lt;br>
+   * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
+   * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
+   * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+   * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+   * @param  {string} property Represents the column to apply the aggregate function.
+   * @param  {function} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.&lt;br>
+   * Example:&lt;br>
+   * var myaggregateFunction = function(actualValue, selectedValue){
+   *     return actualValue + selectedValue;
+   *     };
+   * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+   * @param  {function} errorCallback Optional function to handle errors. Receives an error object as argument.
+   */
+  function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback){
+    
+    var origin = "get -> getaggregateFunction(...)";
+    var index;
+    var isIndexKeyValue=false;
+    var actualValue = null;
+    var counter=0;
+
+    logger(logEnum.begin, [origin]);
+
+    if (!errorCallback) errorCallback = function() {
+        return;
+      };
+
+    // Test arguments
+    if (errorSys.testArgs(origin, arguments)) {
+      invalidArgsAcction(errorCallback);
+      return;
+    }
+
+    //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    }
+
+    //// Gets index
+    if (indexName != null) {
+      index = getIndex(origin, store, indexName, errorCallback);
+      if (!index) {
         checkTasks();
         return;
       }
-      request.onsuccess = onsuccesCursor;
-      request.onerror = onerrorFunction;
     }
+
+    //// Gets isIndexKeyValue
+    if (query) {
+      if (typeof query == "number") {
+        isIndexKeyValue = true;
+      } else {
+        isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
+      };
+    };
+
+    var conditionsBlocksArray = (!isIndexKeyValue &amp;&amp; query) ? qrySys.makeConditionsBlocksArray(query) : null;    
+
+
+    var onsuccesGetAll = function(event){
+      var cursor = event.target.result;
+
+      if(cursor){
+        if(cursor.value[property]){
+        counter++;
+        actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+        };
+        cursor.continue();
+
+      } else {
+        successCallback(actualValue, origin, query);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.custom, ['Result of aggregate function on property "'+property+'": '+actualValue]);
+        done();
+
+      };
+    };
+
+    var onsuccesCursor = function(event) {
+      var cursor = event.target.result;
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var test = false;
+
+      // If operator between condition blocks is "&amp;" then all blocks must be true: (true) &amp; (true) &amp; (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
+      if (cursor) {
+        var i = 0;
+        var test = false;
+        for (i = 0; i &lt; conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
+        }
+
+        if (test) {
+          if(cursor.value[property]){
+          counter++;
+          actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+          };
+        }
+        cursor.continue();
+      } else {
+        successCallback(actualValue, origin, query);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.custom, ['Result of aggregate function on property "'+property+'": '+actualValue]);
+        done();
+      }
+    }; // end onsuccesCursor
+
+    var onerrorFunction = function(event) {
+      requestErrorAction(origin,request.error, errorCallback);
+    };
+    
+    if (indexName != null) {
+
+      if (!isIndexKeyValue) {
+        if (query) {
+
+
+          var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+          if (!request) {
+            checkTasks();
+            return;
+          }
+          request.onsuccess = onsuccesCursor;
+        } else {
+
+
+          var request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+          if (!request) {
+            checkTasks();
+            return;
+          };
+          request.onsuccess = onsuccesGetAll;
+
+        }
+
+      } else {
+        
+        query = index.keyPath + '=' + query;
+        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+        var request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
+        if (!request) {
+          checkTasks();
+          return;
+        }
+        request.onsuccess = onsuccesCursor;
+
+      };
+      request.onerror = onerrorFunction;
+    } else {
+
+      if (query) {
+        var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+        if (!request) {
+          checkTasks();
+          return;
+        }
+        request.onsuccess = onsuccesCursor;
+        request.onerror = onerrorFunction;
+      } else {
+        var request = tryOpenCursor(origin, store, errorCallback) //store.openCursor();
+        if (!request) {
+          checkTasks();
+          return;
+        };
+        request.onsuccess = onsuccesGetAll;
+      };
+      request.onerror = onerrorFunction;
+    };
+
   }
 
   /**
@@ -1257,6 +1480,16 @@ var sixdb = function(_dbName) {
     return request;
   };
 
+  function tryIndexGetAll(origin, index, errorCallback) {
+    try {
+      var request = store.getAll();
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    };
+    return request;
+  };
+
   function tryOpenCursor(origin, openerObj, errorCallback){
     try{
       var request = openerObj.openCursor();
@@ -1682,6 +1915,15 @@ var sixdb = function(_dbName) {
       case "getRecords":
         getRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
+
+      case "getSum":
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
+        break;
+
+      case "getAvg":
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
+        break;
+
 
       default:
         break;
@@ -2210,7 +2452,7 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-     * @param {string} query String that contains a query. Example of valid queries:&lt;br>
+     * @param {string} [query] String that contains a query. Example of valid queries:&lt;br>
      * property = value                           // Simple query&lt;br>
      * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
      * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
@@ -2283,6 +2525,130 @@ var sixdb = function(_dbName) {
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
+    },
+
+
+    /**
+     * Returns the sum of a property.
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:&lt;br>
+     * property = value                           // Simple query&lt;br>
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+     * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+     * @param  {string} property Represents the column to apply the sum function.
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     * @return {number}
+     * @example 
+     * // Object store "southFactory":
+     * // ID    name    salary
+     * // 1     Adam    1500
+     * // 2     Paul    1200
+     * // 3     Peter   1000
+     * 
+     * var mydb = new sixdb('myDatabase');
+     * 
+     * //
+     * // Sums all values of salary.
+     * // Sends the number 3700 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
+     * 
+     * //
+     * // Sums all values of salary where name starts with "P".
+     * // Sends the number 2200 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
+     * 
+     * // Execs all pending tasks
+     * //
+     * mydb.execTasks();
+     */
+    sum: function (storeName, indexName, query, property, successCallback, errorCallback) {
+      var aggregatefn = function (actual, selected) {
+        return actual + selected;
+      };
+
+      var task = {
+        type: "getSum",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+
+    },
+
+
+
+    /**
+     * Returns the average value of a property.
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:&lt;br>
+     * property = value                           // Simple query&lt;br>
+     * c > 10 &amp; name='peter'                      // Query with 2 conditions&lt;br>
+     * (c > 10 &amp;&amp; name = 'peter')                 // Same effect that prev query (&amp;=&amp;&amp; and |=||)&lt;br>
+     * (a > 30 &amp; c &lt;= 10) || (b = 100 || d &lt; 50)  // 2 conditions blocks&lt;br>
+     * 'Peter'                                    // Single value always refers to the index keypath&lt;br>
+     * @param  {string} property Represents the column to apply the average function.
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     * @return {number}
+     * @example
+     * // Object store "southFactory":
+     * // ID    name    salary
+     * // 1     Adam    1500
+     * // 2     Paul    1200
+     * // 3     Peter   1000
+     * 
+     * var mydb = new sixdb('myDatabase');
+     * 
+     * //
+     * // Calculates the average of all the values of salary.
+     * // Sends the number 1233.333333333333 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
+     * 
+     * //
+     * // Calculates the average of all the values of salary where name starts with "P".
+     * // Sends the number 1100 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
+     * 
+     * // Execs all pending tasks
+     * //
+     * mydb.execTasks();
+     */
+    avg: function(storeName, indexName, query, property, successCallback, errorCallback){
+
+      var aggregatefn=function(actual,selected,counter){
+        return (actual*(counter-1)+selected)/counter;
+      };
+
+      var task = {
+        type: "getAvg",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+
     },
 
     /**
@@ -2565,8 +2931,6 @@ var sixdb = function(_dbName) {
             var qtype = typeof (args[2]);
             if (qtype != 'string' &amp;&amp; qtype != 'number')
               return this.makeErrorObject(origin, 9);
-          } else {
-            return this.makeErrorObject(origin, 8);
           };
 
           // succesCallback
@@ -2893,7 +3257,7 @@ var sixdb = function(_dbName) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Nov 16 2018 21:54:52 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Nov 19 2018 19:46:02 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

@@ -1,3 +1,7 @@
+## v1.9.0
+* Added function get.sum(). Sums the values of a property.
+* Added function get.avg(). Calculates the average of a property.
+* Query is optional in get.records() function.
 ## v1.8.0
 * Added string comparison operator **$** ("ends with") to use in queries.
 * Added custom comparison operator **\~\~** wich works with a custom compare function.

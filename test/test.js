@@ -121,7 +121,7 @@ mydb.add.store(store, successCallback, errorCallback);
 mydb.add.index(store, index, 'id', successCallback, errorCallback);
 
 // Insert one object
-mydb.add.records(store, employee, successCallback,errorCallback);
+mydb.add.records(store, employee, successCallback, errorCallback);
 
 // Gets the record with id = 1
 mydb.get.records(store, index, 1, successCallback, errorCallback);
@@ -138,6 +138,18 @@ mydb.get.lastRecords(store, null, successCallback, errorCallback);
 // Gets all records
 mydb.get.records(store, null, null, successCallback, errorCallback);
 
+// Sum of salaries
+mydb.get.sum(store, null, null, 'salary', successCallback, errorCallback);
+
+// Sum of salaries with index
+mydb.get.sum(store, index, null, 'salary', successCallback, errorCallback);
+
+// Sum of salaries with index and query
+mydb.get.sum(store, index, 'name ^ Al', 'salary', successCallback, errorCallback);
+
+// Sum of salaries with index and indexKey
+mydb.get.sum(store, index, 3, 'salary', successCallback, errorCallback);
+
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 
@@ -148,7 +160,7 @@ mydb.get.records(store, null, 'name ^ Al', successCallback, errorCallback);
 mydb.get.records(store, null, 'name $ e', successCallback, errorCallback);
 
 // Gets records wich name have same number of characters than "Mary" (custom operator)
-mydb.get.records(store,null,'name ~~ Mary',successCallback,errorCallback);
+mydb.get.records(store, null, 'name ~~ Mary', successCallback, errorCallback);
 
 // Gets records using a query of 2 conditions and logical operator &
 mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);
@@ -221,7 +233,7 @@ function successCallback(result, origin, query) {
   if (query) message += " with query: " + query;
   showInfo(message);
 
-  if (origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)") {
+  if (origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)" || origin=="get -> getaggregateFunction(...)") {
     showResults(result);
   }
 }
@@ -247,6 +259,8 @@ function showResults(results) {
         showInfo('No results');
         return;
     };
+
+    console.log(typeof(results));
 
     if (Array.isArray(results)) {
         if (!results[0]) {
@@ -278,25 +292,35 @@ function showResults(results) {
         }
 
     } else {
-        var keys = Object.keys(results);
-        // Headers
-        var headerRow = document.createElement('tr');
-        var i = 0;
-        for (i = 0; i < keys.length; i++) {
-            var cell = document.createElement('th');
-            cell.textContent = keys[i];
-            headerRow.appendChild(cell);
-        };
-        tableResults.appendChild(headerRow);
-        //Data row
-        var row = document.createElement('tr');
-        for (i = 0; i < keys.length; i++) {
+        if(typeof(results)=='object'){
+                
+            var keys = Object.keys(results);
+            // Headers
+            var headerRow = document.createElement('tr');
+            var i = 0;
+            for (i = 0; i < keys.length; i++) {
+                var cell = document.createElement('th');
+                cell.textContent = keys[i];
+                headerRow.appendChild(cell);
+            };
+            tableResults.appendChild(headerRow);
+            //Data row
+            var row = document.createElement('tr');
+            for (i = 0; i < keys.length; i++) {
+                var cell = document.createElement('td');
+                cell.textContent = results[keys[i]];
+                row.appendChild(cell);
+            };
+            tableResults.appendChild(row);
+        } else {
+            var row = document.createElement('tr');
             var cell = document.createElement('td');
-            cell.textContent = results[keys[i]];
+            cell.textContent = results;
             row.appendChild(cell);
-        };
-        tableResults.appendChild(row);
-    }
+            tableResults.appendChild(row);
+        }
+        
+    }//end else
 }
 
 function showInfo(message,error) {

@@ -423,7 +423,7 @@ var sixdb = function(_dbName) {
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
    * 'Peter'                                    // Single value always refers to the index keypath<br>
    * @param  {string} property Represents the column to apply the aggregate function.
-   * @param  {any} aggregatefn Function of type aggregate. Receives as arguments: actualValue and selectedValue.<br>
+   * @param  {any} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.<br>
    * Example:<br>
    * var myaggregateFunction = function(actualValue, selectedValue){
    *     return actualValue + selectedValue;
@@ -438,6 +438,7 @@ var sixdb = function(_dbName) {
     var index;
     var isIndexKeyValue=false;
     var actualValue = null;
+    var counter=0;
 
     logger(logEnum.begin, [origin]);
 
@@ -483,8 +484,8 @@ var sixdb = function(_dbName) {
       var cursor = event.target.result;
 
       if(cursor){
-
-        actualValue = aggregatefn(actualValue, cursor.value[property]);
+        counter++;
+        actualValue = aggregatefn(actualValue, cursor.value[property],counter);
         cursor.continue();
 
       } else {
@@ -519,7 +520,8 @@ var sixdb = function(_dbName) {
         }
 
         if (test) {
-          actualValue = aggregatefn(actualValue, cursor.value[property]);
+          counter++;
+          actualValue = aggregatefn(actualValue, cursor.value[property],counter);
         }
         cursor.continue();
       } else {
@@ -1876,6 +1878,11 @@ var sixdb = function(_dbName) {
         getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
         break;
 
+      case "getAvg":
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
+        break;
+
+
       default:
         break;
     }
@@ -2480,27 +2487,66 @@ var sixdb = function(_dbName) {
 
 
     /**
-   * Returns the sum of a property.
-   * @param {string} storeName Store name.
-   * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} [query] Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * @param  {string} property Represents the column to apply the aggregate function.
-   * @param  {any} successCallback Receives as parameters the result (a number) and origin.
-   * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
-   * @return 
-   */
-    sum: function(storeName, indexName, query, property, successCallback, errorCallback){
-      var aggregatefn=function(actual,selected){
-        return actual+selected;
+     * Returns the sum of a property.
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
+     * @param  {string} property Represents the column to apply the sum function.
+     * @param  {any} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
+     * @return {number}
+     */
+    sum: function (storeName, indexName, query, property, successCallback, errorCallback) {
+      var aggregatefn = function (actual, selected) {
+        return actual + selected;
       };
 
       var task = {
         type: "getSum",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+
+    },
+
+
+
+    /**
+     * Returns the average value of a property.
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
+     * @param  {string} property Represents the column to apply the average function.
+     * @param  {any} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
+     * @return {number}
+     */
+    avg: function(storeName, indexName, query, property, successCallback, errorCallback){
+
+      var aggregatefn=function(actual,selected,counter){
+        return (actual*(counter-1)+selected)/counter;
+      };
+
+      var task = {
+        type: "getAvg",
         storeName: storeName,
         indexName: indexName,
         query: query,

@@ -150,6 +150,12 @@ mydb.get.sum(store, index, 'name ^ Al', 'salary', successCallback, errorCallback
 // Sum of salaries with index and indexKey
 mydb.get.sum(store, index, 3, 'salary', successCallback, errorCallback);
 
+// Average of salaries
+mydb.get.avg(store, null, null, 'salary', successCallback, errorCallback);
+
+// Average of salaries with index and query
+mydb.get.avg(store, index, 'name ^ Al', 'salary', successCallback, errorCallback);
+
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 
@@ -259,8 +265,6 @@ function showResults(results) {
         showInfo('No results');
         return;
     };
-
-    console.log(typeof(results));
 
     if (Array.isArray(results)) {
         if (!results[0]) {

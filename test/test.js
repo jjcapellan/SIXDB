@@ -162,6 +162,9 @@ mydb.get.avg(store, null, null, 'salary', successCallback, errorCallback);
 // Average of salaries with index and query
 mydb.get.avg(store, index, 'name ^ Al', 'salary', successCallback, errorCallback);
 
+// Max of salaries
+mydb.get.max(store, null, null, 'salary', successCallback, errorCallback);
+
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 
@@ -245,7 +248,7 @@ function successCallback(result, origin, query) {
   if (query) message += " with query: " + query;
   showInfo(message);
 
-  if (origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)" || origin=="get -> getaggregateFunction(...)") {
+  if (/*origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)" || */ origin.indexOf('get')==0) {
     showResults(result);
   }
 }

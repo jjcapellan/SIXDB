@@ -411,9 +411,9 @@ var sixdb = function(_dbName) {
     };
   }
 
-
   /**
    * This thing goes through the registers and applies an aggregate function in one property.
+   * @private
    * @param {string} storeName Store name.
    * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
    * @param {string | number} [query] Example of valid queries:<br>
@@ -423,18 +423,16 @@ var sixdb = function(_dbName) {
    * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
    * 'Peter'                                    // Single value always refers to the index keypath<br>
    * @param  {string} property Represents the column to apply the aggregate function.
-   * @param  {any} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.<br>
+   * @param  {function} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.<br>
    * Example:<br>
    * var myaggregateFunction = function(actualValue, selectedValue){
    *     return actualValue + selectedValue;
    *     };
-   * @param  {any} successCallback Receives as parameters the result (a number) and origin.
-   * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
-   * @return 
+   * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+   * @param  {function} errorCallback Optional function to handle errors. Receives an error object as argument.
    */
-  function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback){
+  function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback, origin){
     
-    var origin = "get -> getaggregateFunction(...)";
     var index;
     var isIndexKeyValue=false;
     var actualValue = null;
@@ -494,7 +492,7 @@ var sixdb = function(_dbName) {
         successCallback(actualValue, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.custom, ['Result of aggregate function on property "'+property+'": '+actualValue]);
+        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
         done();
 
       };
@@ -532,7 +530,7 @@ var sixdb = function(_dbName) {
         successCallback(actualValue, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.custom, ['Result of aggregate function on property "'+property+'": '+actualValue]);
+        logger(logEnum.custom, ['Result of '+origin+' on property "'+property+'": '+actualValue]);
         done();
       }
     }; // end onsuccesCursor
@@ -1878,11 +1876,15 @@ var sixdb = function(_dbName) {
         break;
 
       case "getSum":
-        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
         break;
 
       case "getAvg":
-        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback);
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
+        break;
+
+      case "getMax":
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback, task.origin);
         break;
 
 
@@ -2490,7 +2492,7 @@ var sixdb = function(_dbName) {
 
 
     /**
-     * Returns the sum of a property.
+     * Returns the sum of a property to the success callback.
      * @param {string} storeName Store name.
      * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
      * @param {string | number} [query] Example of valid queries:<br>
@@ -2500,9 +2502,32 @@ var sixdb = function(_dbName) {
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param  {string} property Represents the column to apply the sum function.
-     * @param  {any} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
-     * @return {number}
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     * @example 
+     * // Object store "southFactory":
+     * // ID    name    salary
+     * // 1     Adam    1500
+     * // 2     Paul    1200
+     * // 3     Peter   1000
+     * 
+     * var mydb = new sixdb('myDatabase');
+     * 
+     * //
+     * // Sums all values of salary.
+     * // Sends the number 3700 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
+     * 
+     * //
+     * // Sums all values of salary where name starts with "P".
+     * // Sends the number 2200 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
+     * 
+     * // Execs all pending tasks
+     * //
+     * mydb.execTasks();
      */
     sum: function (storeName, indexName, query, property, successCallback, errorCallback) {
       var aggregatefn = function (actual, selected) {
@@ -2517,7 +2542,8 @@ var sixdb = function(_dbName) {
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback
+        errorCallback: errorCallback,
+        origin: "get -> Sum -> getaggregateFunction(...)"
       };
 
       taskQueue.push(tkOpen);
@@ -2528,7 +2554,7 @@ var sixdb = function(_dbName) {
 
 
     /**
-     * Returns the average value of a property.
+     * Returns the average value of a property to the success callback.
      * @param {string} storeName Store name.
      * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
      * @param {string | number} [query] Example of valid queries:<br>
@@ -2538,9 +2564,32 @@ var sixdb = function(_dbName) {
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'Peter'                                    // Single value always refers to the index keypath<br>
      * @param  {string} property Represents the column to apply the average function.
-     * @param  {any} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {any} errorCallback Optional function to handle errors. Receives an error object as argument.
-     * @return {number}
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     * @example
+     * // Object store "southFactory":
+     * // ID    name    salary
+     * // 1     Adam    1500
+     * // 2     Paul    1200
+     * // 3     Peter   1000
+     * 
+     * var mydb = new sixdb('myDatabase');
+     * 
+     * //
+     * // Calculates the average of all the values of salary.
+     * // Sends the number 1233.333333333333 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
+     * 
+     * //
+     * // Calculates the average of all the values of salary where name starts with "P".
+     * // Sends the number 1100 to mySuccesCallback.
+     * //
+     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
+     * 
+     * // Execs all pending tasks
+     * //
+     * mydb.execTasks();
      */
     avg: function(storeName, indexName, query, property, successCallback, errorCallback){
 
@@ -2556,12 +2605,50 @@ var sixdb = function(_dbName) {
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback
+        errorCallback: errorCallback,
+        origin: "get -> Average -> getaggregateFunction(...)"
       };
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
 
+    },
+
+
+    /**
+     * Returns to the succes callback the max value of a property
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
+     * @param  {string} property Represents the column to apply the max function.
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     */
+    max: function(storeName,indexName,query,property,successCallback,errorCallback){
+
+      var aggregatefn = function (actual, selected) {
+        return (selected > actual) ? selected : actual;
+      };
+
+      var task = {
+        type: "getMax",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback,
+        origin: "get -> Max -> getaggregateFunction(...)"
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
     },
 
     /**

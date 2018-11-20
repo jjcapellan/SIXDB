@@ -1875,7 +1875,7 @@ var sixdb = function(_dbName) {
         getRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
         break;
 
-      case "getSum":
+      case "getAggregateFunction":
         getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
         break;
 
@@ -1886,6 +1886,11 @@ var sixdb = function(_dbName) {
       case "getMax":
         getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback, task.origin);
         break;
+
+      case "getMin":
+        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback, task.origin);
+        break;
+
 
 
       default:
@@ -2535,7 +2540,7 @@ var sixdb = function(_dbName) {
       };
 
       var task = {
-        type: "getSum",
+        type: "getAggregateFunction",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -2598,7 +2603,7 @@ var sixdb = function(_dbName) {
       };
 
       var task = {
-        type: "getAvg",
+        type: "getAggregateFunction",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -2616,7 +2621,7 @@ var sixdb = function(_dbName) {
 
 
     /**
-     * Returns to the succes callback the max value of a property
+     * Returns to the succes callback the maximum value of a property
      * @param {string} storeName Store name.
      * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
      * @param {string | number} [query] Example of valid queries:<br>
@@ -2636,7 +2641,7 @@ var sixdb = function(_dbName) {
       };
 
       var task = {
-        type: "getMax",
+        type: "getAggregateFunction",
         storeName: storeName,
         indexName: indexName,
         query: query,
@@ -2645,6 +2650,45 @@ var sixdb = function(_dbName) {
         successCallback: successCallback,
         errorCallback: errorCallback,
         origin: "get -> Max -> getaggregateFunction(...)"
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+    },
+
+    /**
+     * Returns to the succes callback the minimum value of a property
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
+     * @param  {string} property Represents the column to apply the min function.
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     */
+    min: function(storeName,indexName,query,property,successCallback,errorCallback){
+
+      var aggregatefn = function (actual, selected, counter) {
+        if (counter == 1) {  // First value of actual is null. Without this, min is allways null
+          actual = selected;
+        };
+        return ((selected < actual) && (counter > 1)) ? selected : actual;
+      };
+
+      var task = {
+        type: "getAggregateFunction",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback,
+        origin: "get -> Min -> getaggregateFunction(...)"
       };
 
       taskQueue.push(tkOpen);

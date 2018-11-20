@@ -165,6 +165,9 @@ mydb.get.avg(store, index, 'name ^ Al', 'salary', successCallback, errorCallback
 // Max of salaries
 mydb.get.max(store, null, null, 'salary', successCallback, errorCallback);
 
+// Min of salaries
+mydb.get.min(store, null, null, 'salary', successCallback, errorCallback);
+
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
 

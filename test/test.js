@@ -13,7 +13,7 @@
 | 6 | Kathy | manufacturing | 28 | 1150
 | 7 | David | accounting | 32 | 1380
 | 8 | Mike | accounting | 61 | 1500
-| 9 | Julia | manufacturing | 44 | 1100
+| 9 | Juliana | manufacturing | 44 | 1100
  */
 
  // An object to save in the database
@@ -78,7 +78,7 @@ var employeesArray = [
     },
     {
         id:9,
-        name: 'Julia',
+        name: 'Juliana',
         department: 'manufacturing',
         age: 44,
         salary: 1600
@@ -96,8 +96,6 @@ var index = 'IDs';
 
 // True if there are not errors
 var failed = false;
-
-
 
 
 
@@ -167,6 +165,14 @@ mydb.get.max(store, null, null, 'salary', successCallback, errorCallback);
 
 // Min of salaries
 mydb.get.min(store, null, null, 'salary', successCallback, errorCallback);
+
+// Longest name with custom aggregate function
+mydb.get.customAggregateFn(store, null, 'salary > 900', 'name', 
+function (actual, selected, counter){
+    if(counter == 1)
+    actual = selected;
+    return actual.length < selected.length ? selected : actual;
+}, successCallback, errorCallback);
 
 // Gets records wich name contains "ul"
 mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);

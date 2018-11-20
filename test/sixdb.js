@@ -1879,20 +1879,6 @@ var sixdb = function(_dbName) {
         getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
         break;
 
-      case "getAvg":
-        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
-        break;
-
-      case "getMax":
-        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback, task.origin);
-        break;
-
-      case "getMin":
-        getaggregateFunction(task.storeName, task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback, task.origin);
-        break;
-
-
-
       default:
         break;
     }
@@ -2495,7 +2481,6 @@ var sixdb = function(_dbName) {
       taskQueue.push(task);
     },
 
-
     /**
      * Returns the sum of a property to the success callback.
      * @param {string} storeName Store name.
@@ -2555,8 +2540,6 @@ var sixdb = function(_dbName) {
       taskQueue.push(task);
 
     },
-
-
 
     /**
      * Returns the average value of a property to the success callback.
@@ -2618,7 +2601,6 @@ var sixdb = function(_dbName) {
       taskQueue.push(task);
 
     },
-
 
     /**
      * Returns to the succes callback the maximum value of a property
@@ -2689,6 +2671,66 @@ var sixdb = function(_dbName) {
         successCallback: successCallback,
         errorCallback: errorCallback,
         origin: "get -> Min -> getaggregateFunction(...)"
+      };
+
+      taskQueue.push(tkOpen);
+      taskQueue.push(task);
+    },
+
+    /**
+     * Returns to the succes callback the value of a property calculated by a custom aggregate function
+     * @param {string} storeName Store name.
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+     * @param {string | number} [query] Example of valid queries:<br>
+     * property = value                           // Simple query<br>
+     * c > 10 & name='peter'                      // Query with 2 conditions<br>
+     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+     * 'Peter'                                    // Single value always refers to the index keypath<br>
+     * @param  {string} property Represents the column to apply the min function.
+     * @param  {function} aggregatefn Aggregate function wich receives each one of the property values and the number of iteration.
+     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+     * @example
+     * var mydb = new sixdb('myDatabase');
+     *
+     * // The aggregate function is applied to each one of the property values of queried records in a loop.
+     * // The aggregate function receives 3 parameters:
+     * // selectedValue --> The property value of the selected record.
+     * // actualValue --> The actual value calculated by our custom function. In the first iteration this value is null.
+     * // counter --> The number of iteration. First iteration is 1. 
+     * //
+     * // This simple function returns the longest string of all values.(not valid with numbers)
+     * //
+     * var myCustomFunction = function(actualValue, selectedValue, Counter){
+     *     if(counter == 1)
+     *         actualValue = selectedValue;
+     *     return actualValue.length < selectedValue.length ? selectedValue : actualValue;
+     *     };
+     *
+     * //
+     * // Gets one of the longest names of employees with salary > 1600
+     * //
+     * mydb.get.customAggregateFn('storeName', null, 'salary > 1600', 'name', myCustomFunction, successCallback, errorCallback);
+     * 
+     * 
+     * //
+     * //Execs all pending tasks
+     * //
+     * mydb.execTasks();
+     */
+    customAggregateFn: function(storeName,indexName,query,property, aggregatefn, successCallback,errorCallback){
+
+      var task = {
+        type: "getAggregateFunction",
+        storeName: storeName,
+        indexName: indexName,
+        query: query,
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        errorCallback: errorCallback,
+        origin: "get -> Custom -> getaggregateFunction(...)"
       };
 
       taskQueue.push(tkOpen);

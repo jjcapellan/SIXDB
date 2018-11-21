@@ -1,3 +1,5 @@
 doctemplate
 *.cmd
 notas.txt
+node_modules
+*.json

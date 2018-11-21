@@ -73,8 +73,8 @@ var sixdb = function(_dbName) {
   this.setConsoleOff = function (off) {
     if (typeof (off) == 'boolean') {
       consoleOff = off;
-    };
-  }
+    }
+  };
 
   /**
    * Function to compare a property value with a test value
@@ -109,10 +109,10 @@ var sixdb = function(_dbName) {
       if(typeof(compareFunction)=='function'){
         if(compareFunction.length == 2){
         customOperator = compareFunction;
-        };
-      };
+        }
+      }
     }
-  }
+  };
   
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +133,7 @@ var sixdb = function(_dbName) {
       db = event.target.result;
       logger(logEnum.open);
       done();
-    }
+    };
   }
 
   /**
@@ -148,6 +148,7 @@ var sixdb = function(_dbName) {
     var origin = "get -> lastRecords(...)";
     var resultFiltered = [];
     var counter = 0;
+    var request = null;
 
     logger(logEnum.begin, [origin]);
 
@@ -166,7 +167,7 @@ var sixdb = function(_dbName) {
     if (!store) {
       checkTasks();
       return;
-    };
+    }
 
     //// Executed if maxResults is not null. Opens a cursor to count the results.
     //
@@ -186,7 +187,7 @@ var sixdb = function(_dbName) {
       }
     };
 
-    //// Executed if maxResults is null. Is faster. Don't needs cursor. (It's faster)
+    //// Executed if maxResults is null. Don't needs cursor. (It's faster)
     //
     var onsuccesGetAllFunction = function(event) {
       successCallback(event.target.result, origin);
@@ -202,10 +203,9 @@ var sixdb = function(_dbName) {
 
     //// Gets the correct request
     if (maxResults != null) {
-
       /// Opens a cursor from last record in reverse direction
       try{
-      var request = (store.openCursor(null, "prev").onsuccess = onsuccesCursorFunction);
+      request = (store.openCursor(null, "prev").onsuccess = onsuccesCursorFunction);
       } catch(e){
         db.close();
       logger(logEnum.close);
@@ -214,21 +214,21 @@ var sixdb = function(_dbName) {
       taskQueue.shift();
       errorCallback(lastErrorObj);
       checkTasks();
-      };
+      }
       request.onsuccess = onsuccesCursorFunction;
       request.onerror = onerrorFunction;
 
 
     } else {
       /// Gets all records. It is faster than openCursor.
-      var request = tryStoreGetAll(origin,store,errorCallback); //store.getAll();
+      request = tryStoreGetAll(origin,store,errorCallback); //store.getAll();
       if(!request){
         checkTasks();
         return;
       }
       request.onsuccess = onsuccesGetAllFunction;
       request.onerror = onerrorFunction;
-    };
+    }
   } //end lastRecords()
 
   /**
@@ -252,6 +252,7 @@ var sixdb = function(_dbName) {
     var counter = 0;
     var resultFiltered = [];
     var isIndexKeyValue = false;
+    var request = null;
 
     logger(logEnum.begin, [origin]);
 
@@ -287,8 +288,8 @@ var sixdb = function(_dbName) {
         isIndexKeyValue = true;
       } else {
         isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-      };
-    };
+      }
+    }
 
     var conditionsBlocksArray = (!isIndexKeyValue && query) ? qrySys.makeConditionsBlocksArray(query) : null;
 
@@ -306,7 +307,7 @@ var sixdb = function(_dbName) {
       logger(logEnum.close);
       logger(logEnum.getByIndexKey, [query, indexName, storeName]);
       done();
-    }
+    };
 
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
@@ -319,7 +320,7 @@ var sixdb = function(_dbName) {
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
         var i = 0;
-        var test = false;
+        test = false;
         for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
@@ -352,8 +353,7 @@ var sixdb = function(_dbName) {
       if (!isIndexKeyValue) {
         if (query) {
 
-
-          var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+          request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
           if (!request) {
             checkTasks();
             return;
@@ -362,11 +362,11 @@ var sixdb = function(_dbName) {
         } else {
 
 
-          var request = tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+          request = tryIndexGetAll(origin, index, errorCallback); //index.getAll();
           if (!request) {
             checkTasks();
             return;
-          };
+          }
           request.onsuccess = onsuccesGetAll;
 
         }
@@ -374,7 +374,7 @@ var sixdb = function(_dbName) {
       } else {
 
         try {
-          var request = index.get(query);
+          request = index.get(query);
         } catch (e) {
           db.close();
           logger(logEnum.close);
@@ -387,7 +387,7 @@ var sixdb = function(_dbName) {
 
         request.onsuccess = onsuccesIndexGetKey;
 
-      };
+      }
       request.onerror = onerrorFunction;
     } else {
 
@@ -400,15 +400,15 @@ var sixdb = function(_dbName) {
         request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
       } else {
-        var request = tryStoreGetAll(origin, store, errorCallback); //store.getAll();
+        request = tryStoreGetAll(origin, store, errorCallback); //store.getAll();
         if (!request) {
           checkTasks();
           return;
-        };
+        }
         request.onsuccess = onsuccesGetAll;
-      };
+      }
       request.onerror = onerrorFunction;
-    };
+    }
   }
 
   /**
@@ -434,6 +434,7 @@ var sixdb = function(_dbName) {
   function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback, origin){
     
     var index;
+    var request = null;
     var isIndexKeyValue=false;
     var actualValue = null;
     var counter=0;
@@ -472,8 +473,8 @@ var sixdb = function(_dbName) {
         isIndexKeyValue = true;
       } else {
         isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-      };
-    };
+      }
+    }
 
     var conditionsBlocksArray = (!isIndexKeyValue && query) ? qrySys.makeConditionsBlocksArray(query) : null;    
 
@@ -485,7 +486,7 @@ var sixdb = function(_dbName) {
         if(cursor.value[property]){
         counter++;
         actualValue = aggregatefn(actualValue, cursor.value[property],counter);
-        };
+        }
         cursor.continue();
 
       } else {
@@ -495,7 +496,7 @@ var sixdb = function(_dbName) {
         logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
         done();
 
-      };
+      }
     };
 
     var onsuccesCursor = function(event) {
@@ -509,7 +510,7 @@ var sixdb = function(_dbName) {
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
         var i = 0;
-        var test = false;
+        test = false;
         for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
@@ -523,7 +524,7 @@ var sixdb = function(_dbName) {
           if(cursor.value[property]){
           counter++;
           actualValue = aggregatefn(actualValue, cursor.value[property],counter);
-          };
+          }
         }
         cursor.continue();
       } else {
@@ -545,7 +546,7 @@ var sixdb = function(_dbName) {
         if (query) {
 
 
-          var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+          request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
           if (!request) {
             checkTasks();
             return;
@@ -554,11 +555,11 @@ var sixdb = function(_dbName) {
         } else {
 
 
-          var request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+          request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
           if (!request) {
             checkTasks();
             return;
-          };
+          }
           request.onsuccess = onsuccesGetAll;
 
         }
@@ -567,19 +568,19 @@ var sixdb = function(_dbName) {
         
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-        var request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
+        request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
         if (!request) {
           checkTasks();
           return;
         }
         request.onsuccess = onsuccesCursor;
 
-      };
+      }
       request.onerror = onerrorFunction;
     } else {
 
       if (query) {
-        var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+        request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
         if (!request) {
           checkTasks();
           return;
@@ -587,15 +588,15 @@ var sixdb = function(_dbName) {
         request.onsuccess = onsuccesCursor;
         request.onerror = onerrorFunction;
       } else {
-        var request = tryOpenCursor(origin, store, errorCallback) //store.openCursor();
+        request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
         if (!request) {
           checkTasks();
           return;
-        };
+        }
         request.onsuccess = onsuccesGetAll;
-      };
+      }
       request.onerror = onerrorFunction;
-    };
+    }
 
   }
 
@@ -630,7 +631,7 @@ var sixdb = function(_dbName) {
 
     if(!errorCallback){
       errorCallback=function(){return;};
-    };
+    }
 
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
@@ -671,7 +672,7 @@ var sixdb = function(_dbName) {
 
     if(!errorCallback){
       errorCallback=function(){return;};
-    };
+    }
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -716,7 +717,7 @@ var sixdb = function(_dbName) {
       request.onsuccess = function(event) {
         if(successCallback){
           successCallback(event,origin);
-        };
+        }
         db.close();
         logger(logEnum.newStore,[storeName]);
         done();
@@ -733,6 +734,7 @@ var sixdb = function(_dbName) {
    */
   function newRecord(storeName, obj, successCallback, errorCallback) {
     var origin = "add -> newRecord(...)";
+    var request;
     logger(logEnum.begin,[origin]);
 
     if(!errorCallback)
@@ -749,7 +751,7 @@ var sixdb = function(_dbName) {
     if(!store){
       checkTasks();
       return;
-    };
+    }
 
     var counter = 0;
     if (Array.isArray(obj)) {
@@ -757,7 +759,7 @@ var sixdb = function(_dbName) {
       objSize = obj.length;
 
       for (i = 0; i < objSize; i++) {
-        var request = store.add(obj[i]);
+        request = store.add(obj[i]);
         request.onsuccess = function(event) {
           counter++;
           if (counter == objSize) {
@@ -776,7 +778,7 @@ var sixdb = function(_dbName) {
         };
       }
     } else {
-      var request = store.add(obj);
+      request = store.add(obj);
       request.onsuccess = function(event) {
         logger(logEnum.newRecord, [storeName]);
         if (successCallback) {
@@ -790,7 +792,7 @@ var sixdb = function(_dbName) {
       request.onerror = function(event) {
         requestErrorAction(origin,event.target.error, errorCallback);
       };
-    };
+    }
   }
 
   /**
@@ -839,7 +841,7 @@ var sixdb = function(_dbName) {
       } catch (e) {
         requestErrorAction(origin, e, errorCallback);
         return;
-      };
+      }
 
       if (!store.indexNames.contains(indexName)) {
         store.createIndex(indexName, keyPath);
@@ -854,7 +856,7 @@ var sixdb = function(_dbName) {
     request.onsuccess = function (event) {
       if (successCallback) {
         successCallback(event, origin);
-      };
+      }
       db.close();
       logger(logEnum.newIndex, [indexName, storeName]);
       done();
@@ -881,8 +883,9 @@ var sixdb = function(_dbName) {
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
   function count(storeName, indexName, query, successCallback, errorCallback) {
-    var origin = 'get -> count(...)'
+    var origin = 'get -> count(...)';
     logger(logEnum.begin,[origin]);
+    var request = null;
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -898,7 +901,7 @@ var sixdb = function(_dbName) {
     if(!store){
       checkTasks();
       return;
-    };
+    }
 
     // Gets index
     var index;
@@ -907,8 +910,8 @@ var sixdb = function(_dbName) {
       if(!index){
         checkTasks();
         return;
-      };
-    };
+      }
+    }
 
 
     var counter = 0;
@@ -940,22 +943,22 @@ var sixdb = function(_dbName) {
           if (test == exitsInFirstTrue) {
             break;
           }
-        };
+        }
 
         if (test) {
           counter++;
-        };
+        }
         cursor.continue();
 
       } else {
         if (successCallback) {
           successCallback(counter, origin, query);
-        };
+        }
         db.close();
         logger(logEnum.close);
         logger(logEnum.countQuery, [query, counter, storeName]);
         done();
-      };
+      }
 
     };
 
@@ -964,7 +967,7 @@ var sixdb = function(_dbName) {
     };
 
     if (indexName) {
-      var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+      request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
       if (!request) {
         checkTasks();
         return;
@@ -972,14 +975,14 @@ var sixdb = function(_dbName) {
       request.onsuccess = onSuccessQuery;
       request.onerror = onError;
     } else {
-      var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+      request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
       if (!request) {
         checkTasks();
         return;
       }
       request.onsuccess = onSuccessQuery;
       request.onerror = onError;
-    }; //end if else block
+    } //end if else block
 
 
   }
@@ -1025,7 +1028,7 @@ var sixdb = function(_dbName) {
     request.onsuccess = function (event) {
       if (successCallback) {
         successCallback(event, origin);
-      };
+      }
       db.close();
       logger(logEnum.delStore, [storeName]);
       done();
@@ -1048,13 +1051,13 @@ var sixdb = function(_dbName) {
 
     if(!errorCallback){
       errorCallback=function(){return;};
-    };
+    }
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
       invalidArgsAcction(errorCallback);
       return;
-    };
+    }
     var request = window.indexedDB.deleteDatabase(dbName);
 
     request.onerror = function(event) {
@@ -1064,7 +1067,7 @@ var sixdb = function(_dbName) {
     request.onsuccess = function(event) {
       if(successCallback){
         successCallback(event, origin);
-      };
+      }
       logger(logEnum.delDb);
       done();
     };
@@ -1087,6 +1090,7 @@ var sixdb = function(_dbName) {
   function delRecords(storeName, indexName, query, successCallback, errorCallback) {
     var origin = 'del -> delRecords(...)';
     logger(logEnum.begin,[origin]);
+    var request = null;
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -1102,7 +1106,7 @@ var sixdb = function(_dbName) {
     if(!store){
       checkTasks();
       return;
-    };
+    }
 
     // Gets index
     var index;
@@ -1111,8 +1115,8 @@ var sixdb = function(_dbName) {
       if(!index){
         checkTasks();
         return;
-      };
-    };
+      }
+    }
 
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
@@ -1122,7 +1126,7 @@ var sixdb = function(_dbName) {
       isIndexKeyValue = true;
     } else {
       isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    };
+    }
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
@@ -1141,7 +1145,7 @@ var sixdb = function(_dbName) {
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
         var i = 0;
-        var test = false;
+        test = false;
         for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
           var intMode = conditionsBlocksArray[i].internalLogOperator;
@@ -1149,54 +1153,54 @@ var sixdb = function(_dbName) {
           if (test == exitsInFirstTrue) {
             break;
           }
-        };
+        }
 
         if (test) {
           var request = cursor.delete();
           request.onsuccess = function () {
             counter++;
           };
-        };
+        }
         cursor.continue();
 
       } else {
         if (successCallback) {
           successCallback(event, origin, query);
-        };
+        }
         db.close();
         logger(logEnum.close);
         logger(logEnum.query, [query, counter, storeName]);
         done();
-      };
+      }
 
-    } // end onsuccesCursor
+    }; // end onsuccesCursor
 
     var onerrorFunction = function (event) {
       requestErrorAction(origin,request.error, errorCallback);
-    }
+    };
 
     if (indexName != null) {
       if (isIndexKeyValue) {
         // if is a number here is converted to string
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      };
-      var request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
+      }
+      request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
       if (!request) {
         checkTasks();
         return;
-      };
+      }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     } else {
-      var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+      request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
       if (!request) {
         checkTasks();
         return;
-      };
+      }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
-    };
+    }
   }
 
   /**
@@ -1244,7 +1248,7 @@ var sixdb = function(_dbName) {
       } catch (e) {
         requestErrorAction(origin, e, errorCallback);
         return;
-      };
+      }
 
       store.deleteIndex(indexName);
     };
@@ -1252,7 +1256,7 @@ var sixdb = function(_dbName) {
     request.onsuccess = function (event) {
       if (successCallback) {
         successCallback(event, origin);
-      };
+      }
       db.close();
       logger(logEnum.delIndex, [indexName, storeName]);
       done();
@@ -1282,6 +1286,7 @@ var sixdb = function(_dbName) {
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
     var origin = 'update -> updateRecords(...)';
     logger(logEnum.begin,[origin]);
+    var i=0;
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -1297,7 +1302,7 @@ var sixdb = function(_dbName) {
     if(!store){
       checkTasks();
       return;
-    };
+    }
 
     //// Gets index
     var index;
@@ -1306,8 +1311,8 @@ var sixdb = function(_dbName) {
       if(!index){
         checkTasks();
         return;
-      };
-    };
+      }
+    }
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
@@ -1316,7 +1321,7 @@ var sixdb = function(_dbName) {
       isIndexKeyValue = true;
     } else {
       isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    };
+    }
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
@@ -1335,7 +1340,6 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
-        var i = 0;
         var test = false;
         for (i = 0; i < conditionsBlocksArray.length; i++) {
           var conditions = conditionsBlocksArray[i].conditionsArray;
@@ -1344,53 +1348,50 @@ var sixdb = function(_dbName) {
           if (test == exitsInFirstTrue) {
             break;
           }
-        };
+        }
 
         if (test) {
           var updateData = cursor.value;
-          var i = 0;
           for (i = 0; i < newObjectValuesSize; i++) {
             // If the new value for the property keys[i] is a function then the new value is function(oldValue)
             updateData[keys[i]] =
-              typeof objectValues[keys[i]] == "function"
-                ? objectValues[keys[i]](updateData[keys[i]])
-                : objectValues[keys[i]];
+              typeof objectValues[keys[i]] == "function" ? objectValues[keys[i]](updateData[keys[i]]) : objectValues[keys[i]];
           }
 
           var request = cursor.update(updateData);
           request.onsuccess = function () {
             counter++;
           };
-        };
+        }
         cursor.continue();
 
       } else {
         if (successCallback) {
           successCallback(event, origin, query);
-        };
+        }
         db.close();
         logger(logEnum.close);
         logger(logEnum.query, [query, counter, storeName]);
         done();
-      };
+      }
 
-    }
+    };
 
     var onerrorFunction = function (event) {
       requestErrorAction(origin,request.error, errorCallback);
-    }
+    };
 
     if (indexName != null) {
       if (isIndexKeyValue) {
         // If query is a single number value then is mofied to be valid to the query system
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      };
+      }
       var request = tryOpenCursor(origin, index, errorCallback);// index.openCursor();
       if (!request) {
         checkTasks();
         return;
-      };
+      }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     } else {
@@ -1398,10 +1399,10 @@ var sixdb = function(_dbName) {
       if (!request) {
         checkTasks();
         return;
-      };
+      }
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
-    };
+    }
   }
 
   //#endregion Private functions
@@ -1415,7 +1416,7 @@ var sixdb = function(_dbName) {
     catch(e){
       reportCatch(origin, e, errorCallback);
       return null;    
-    };
+    }
     return store;
   }
 
@@ -1425,9 +1426,9 @@ var sixdb = function(_dbName) {
     } catch(e){
       reportCatch(origin, e, errorCallback);
       return null;
-    };
+    }
     return index;
-  };
+  }
 
   function tryStoreGetAll(origin, store, errorCallback){
     try{
@@ -1435,19 +1436,19 @@ var sixdb = function(_dbName) {
     } catch(e){
       reportCatch(origin, e, errorCallback);
       return null;
-    };
+    }
     return request;
-  };
+  }
 
   function tryIndexGetAll(origin, index, errorCallback) {
     try {
-      var request = store.getAll();
+      var request = index.getAll();
     } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
-    };
+    }
     return request;
-  };
+  }
 
   function tryOpenCursor(origin, openerObj, errorCallback){
     try{
@@ -1455,9 +1456,9 @@ var sixdb = function(_dbName) {
     } catch(e){
       reportCatch(origin, e, errorCallback);
       return null;
-    };
+    }
     return request;
-  };
+  }
 
   function reportCatch(origin, e, errorCallback) {
     errorSys.makeErrorObject(origin, 20, e);
@@ -1465,7 +1466,7 @@ var sixdb = function(_dbName) {
     db.close();
     errorCallback(lastErrorObj);
     logger(logEnum.error, [lastErrorObj]);
-  };
+  }
 
   function invalidArgsAcction(errorCallback) {
     taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
@@ -1473,7 +1474,7 @@ var sixdb = function(_dbName) {
     errorCallback(lastErrorObj);
     logger(logEnum.error, [lastErrorObj]);
     checkTasks();
-  };
+  }
 
   function requestErrorAction(origin,error,errorCallback) {
     db.close();
@@ -1483,7 +1484,7 @@ var sixdb = function(_dbName) {
     taskQueue.shift();
     errorCallback(lastErrorObj);
     checkTasks();
-  };
+  }
 
   //#endregion helper functions
 
@@ -1526,17 +1527,17 @@ var sixdb = function(_dbName) {
 
       var t = this;
       var conditionsBlocksArray = [];
+      var i = 0;
 
       //// Gets blocks
       //
       var blocks = query.match(t.blockRgx);
       // Delete left parentheses
       if(blocks){
-        var i=0;
         for(i=0;i<blocks.length;i++){
           blocks[i]=blocks[i].substr(1);
-        };
-      };
+        }
+      }
 
       // Logical operators between blocks, all must be the same type
       var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
@@ -1557,10 +1558,10 @@ var sixdb = function(_dbName) {
           // Delete the operator
           while(rightOperands[i][0].match(/[=><!\^\$~]/g)){
             rightOperands[i]=rightOperands[i].substr(1);
-          };
+          }
           // Delete quotes and trim white spaces
           rightOperands[i] = rightOperands[i].replace(/["']/g, '').trim();
-        };
+        }
 
         //// Gets operators
         //// Removing righ operands (values) before extract comparison operators avoids 
@@ -1568,7 +1569,7 @@ var sixdb = function(_dbName) {
         //
         for(i=0;i<rightOperands.length;i++){
           qry=qry.replace(rightOperands[i],'');
-        };
+        }
         var operators = qry.match(t.operatorRgx);
 
         
@@ -1604,9 +1605,9 @@ var sixdb = function(_dbName) {
             logOperatorsType = 'and';
           } else {
             logOperatorsType = 'or';
-          };
+          }
 
-          var i = 0;
+          
           for (i = 0; i < operators.length; i++) {
             conditionsArray.push(
               {
@@ -1615,7 +1616,7 @@ var sixdb = function(_dbName) {
                 value: rightOperands[i]
               }
             );
-          };
+          }
 
           conditionsBlocksArray.push(
             {
@@ -1625,7 +1626,7 @@ var sixdb = function(_dbName) {
             }
           );
           conditionsArray = null;
-        }; // end if else
+        } // end if else
       };
 
 
@@ -1640,17 +1641,17 @@ var sixdb = function(_dbName) {
             extLogOperator = 'and';
           } else {
             extLogOperator = 'or';
-          };
-        };
+          }
+        }
 
-        var i = 0;
+        
         for (i = 0; i < blocks.length; i++) {
 
           pushConditionBlockToArray(blocks[i], extLogOperator);
 
         }
         return conditionsBlocksArray;
-      };
+      }
     },
 
     /**
@@ -1727,21 +1728,21 @@ var sixdb = function(_dbName) {
         case "<>":                        // string value1 contains substring value2
         if(typeof(value1)!='string'){
           return false;
-        };
+        }
         result=(value1.indexOf(value2)!=-1);
         return result;
 
         case "^":
           if (typeof (value1) != 'string') {
             return false;
-          };
+          }
           result = (value1.indexOf(value2) == 0);
           return result;
 
         case "$":
         if(typeof(value1)!='string'){
           return false;
-        };
+        }
         result=(value1.indexOf(value2)==value1.length-value2.length);
         return result;
 
@@ -1750,14 +1751,14 @@ var sixdb = function(_dbName) {
         result = customOperator(value1,value2);
         } catch(e){
           result = false;
-        };
+        }
         return result;
 
         default:
           break;
       }
     }
-  } // end qrySys
+  }; // end qrySys
 
 
 
@@ -2657,7 +2658,7 @@ var sixdb = function(_dbName) {
       var aggregatefn = function (actual, selected, counter) {
         if (counter == 1) {  // First value of actual is null. Without this, min is allways null
           actual = selected;
-        };
+        }
         return ((selected < actual) && (counter > 1)) ? selected : actual;
       };
 
@@ -2868,7 +2869,7 @@ var sixdb = function(_dbName) {
         break;
 
       case 5:
-        console.log('Records with key "' + args[0] + '" returned from index "' + args[1] + '" on object store "' + args[2] + '"')
+        console.log('Records with key "' + args[0] + '" returned from index "' + args[1] + '" on object store "' + args[2] + '"');
         break;
 
       case 6:
@@ -2977,6 +2978,7 @@ var sixdb = function(_dbName) {
     },
 
     testArgs: function (origin, args) {
+      var qtype = null;
 
       switch (origin) {
 
@@ -2999,8 +3001,6 @@ var sixdb = function(_dbName) {
 
           return false;
 
-          break;
-
         case 'get -> getRecords(...)':
           // storeName
           if (this.testStr(args[0]))
@@ -3010,14 +3010,14 @@ var sixdb = function(_dbName) {
           if (this.testStr(args[1])){
             if(this.test==1)
             return this.makeErrorObject(origin, 5);
-          };
+          }
 
           //query
           if (args[2]) {
-            var qtype = typeof (args[2]);
+            qtype = typeof (args[2]);
             if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);
-          };
+          }
 
           // succesCallback
           if (!this.testCallback(args[3]))
@@ -3028,7 +3028,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'add -> newStore(...)':
           // storeName
@@ -3044,7 +3043,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'add -> newRecord(...)':
           // storeName
@@ -3057,7 +3055,7 @@ var sixdb = function(_dbName) {
               return this.makeErrorObject(origin, 15);     // obj is not an object
           } else {
             return this.makeErrorObject(origin, 3);
-          };
+          }
 
           // succesCallback
           if (!this.testCallback(args[2]))
@@ -3068,7 +3066,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'add -> newIndex(...)':
           // storeName
@@ -3092,7 +3089,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'get -> count(...)':
           // storeName
@@ -3103,13 +3099,13 @@ var sixdb = function(_dbName) {
           if (args[1]) {
             if (typeof (args[1]) != 'string')
               return this.makeErrorObject(origin, 5);
-          };
+          }
 
           // query
           if (args[2]) {
             if (typeof (args[2]) != 'string')
               return this.makeErrorObject(origin, 16); // query must be a string
-          };
+          }
 
           // succesCallback
           if (!this.testCallback(args[3]))
@@ -3120,7 +3116,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'del -> delStore(...)':
           // storeName
@@ -3136,7 +3131,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'del -> delDB(...)':
           // succesCallback
@@ -3148,7 +3142,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'del -> delRecords(...)':
           // storeName
@@ -3159,16 +3152,16 @@ var sixdb = function(_dbName) {
           if (args[1]) {
             if (typeof (args[1]) != 'string')
               return this.makeErrorObject(origin, 5);
-          };
+          }
 
           //query
           if (args[2]) {
-            var qtype = typeof (args[2]);
+            qtype = typeof (args[2]);
             if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);   // not valid type 
           } else {
             return this.makeErrorObject(origin, 8);     // is null
-          };
+          }
 
           // succesCallback
           if (!this.testCallback(args[3]))
@@ -3179,7 +3172,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'del -> delIndex(...)':
 
@@ -3200,7 +3192,6 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
         case 'update -> updateRecords(...)':
           // storeName
@@ -3211,16 +3202,16 @@ var sixdb = function(_dbName) {
           if (args[1]) {
             if (typeof (args[1]) != 'string')
               return this.makeErrorObject(origin, 5);
-          };
+          }
 
           //query
           if (args[2]) {
-            var qtype = typeof (args[2]);
+            qtype = typeof (args[2]);
             if (qtype != 'string' && qtype != 'number')
               return this.makeErrorObject(origin, 9);   // not valid type 
           } else {
             return this.makeErrorObject(origin, 8);     // is null
-          };
+          }
 
           // objectValues
           if (args[3]) {
@@ -3228,7 +3219,7 @@ var sixdb = function(_dbName) {
               return this.makeErrorObject(origin, 11);
           } else {
             return this.makeErrorObject(origin, 10);
-          };
+          }
 
           // succesCallback
           if (!this.testCallback(args[4]))
@@ -3239,13 +3230,10 @@ var sixdb = function(_dbName) {
             return this.makeErrorObject(origin, 14);
 
           return false;
-          break;
 
 
         default:
           return false;
-
-          break;
 
       }
     },
@@ -3255,11 +3243,11 @@ var sixdb = function(_dbName) {
         if (typeof (str) != 'string') {
           this.test = 1;
           return 1;
-        };                   // str isn't string
+        }                  // str isn't string
       } else {
         this.test = 2;
         return 2;                   // str is null
-      };
+      }
       return false;                  // str exist and is a string
     },
 
@@ -3292,13 +3280,13 @@ var sixdb = function(_dbName) {
       errorObj.type = domException.name;
       errorObj.origin = origin;
       errorObj.description = domException.message;
-      };
+      }
 
       lastErrorObj = errorObj;
 
       return true;
     }
-  }
+  };
 
   //#endregion Error handler
 

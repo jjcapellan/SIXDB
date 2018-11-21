@@ -245,26 +245,139 @@ var sixdb = function(_dbName) {
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
+   */  
   function getRecords(storeName, indexName, query, successCallback, errorCallback) {
     var origin = "get -> getRecords(...)";
-    var index;
-    var counter = 0;
-    var resultFiltered = [];
-    var isIndexKeyValue = false;
-    var request = null;
-
     logger(logEnum.begin, [origin]);
 
-    if (!errorCallback) errorCallback = function() {
-        return;
-      };
+    if (!errorCallback) 
+    errorCallback = function () {
+      return;
+    };
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
       invalidArgsAcction(errorCallback);
       return;
     }
+
+    if (!indexName && !query)
+      getRecordsA(storeName, origin, successCallback, errorCallback);
+
+    if (!indexName && query)
+      getRecordsB(storeName, origin, query, successCallback, errorCallback);
+
+    if (indexName && !query)
+      getRecordsC(storeName, origin, indexName, successCallback, errorCallback);
+
+    if (indexName && query)
+      getRecordsD(storeName, origin, indexName, query, successCallback, errorCallback);
+
+  }
+
+  function getRecordsA(storeName, origin, successCallback, errorCallback) {
+
+    var request = null;
+
+    //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    }
+
+
+    /// Callbacks of request
+    var onsuccess = function (event) {
+      successCallback(event.target.result, origin);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getAll, [storeName]);
+      done();
+    };
+    var onerror = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+
+    /// request definition
+    request = tryStoreGetAll(origin, store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccess;
+    request.onerror = onerror;
+
+  }
+
+  function getRecordsB(storeName, origin, query, successCallback, errorCallback) {
+    var counter = 0;
+    var resultFiltered = [];
+    var request = null;
+
+    //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    }
+
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+
+    /// request callbacks
+    var onsucces = function (event) {
+      var cursor = event.target.result;
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var test = false;
+
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
+      if (cursor) {
+        var i = 0;
+        test = false;
+        for (i = 0; i < conditionsBlocksArray.length; i++) {
+          var conditions = conditionsBlocksArray[i].conditionsArray;
+          var intMode = conditionsBlocksArray[i].internalLogOperator;
+          test = qrySys.testConditionBlock(cursor, conditions, intMode);
+          if (test == exitsInFirstTrue) {
+            break;
+          }
+        }
+
+        if (test) {
+          resultFiltered.push(cursor.value);
+          counter++;
+        }
+        cursor.continue();
+      } else {
+        successCallback(resultFiltered, origin, query);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.query, [query, counter, storeName]);
+        done();
+      }
+    };
+    var onerror = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+
+    /// request definition
+    request = tryOpenCursor(origin, store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsucces;
+    request.onerror = onerror;
+  }
+
+  function getRecordsC(storeName, origin, indexName, successCallback, errorCallback) {
+    var request = null;
 
     //// Gets store
     var store = getStore(origin, storeName, "readonly", errorCallback);
@@ -274,13 +387,55 @@ var sixdb = function(_dbName) {
     }
 
     //// Gets index
-    if (indexName != null) {
-      index = getIndex(origin, store, indexName, errorCallback);
+    var index = getIndex(origin, store, indexName, errorCallback);
+    if (!index) {
+      checkTasks();
+      return;
+    }
+
+
+    /// request callbacks
+    var onsuccesGetAll = function (event) {
+      successCallback(event.target.result, origin);
+      db.close();
+      logger(logEnum.close);
+      logger(logEnum.getAll, [storeName]);
+      done();
+    };
+    var onerrorFunction = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+
+    /// request definition
+    request = tryIndexGetAll(origin, index, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesGetAll;
+    request.onerror = onerrorFunction;
+  }
+
+  function getRecordsD(storeName, origin, indexName, query, successCallback, errorCallback) {
+    var counter = 0;
+    var resultFiltered = [];
+    var isIndexKeyValue = false;
+    var request = null;
+
+    //// Gets store
+    var store = getStore(origin, storeName, "readonly", errorCallback);
+    if (!store) {
+      checkTasks();
+      return;
+    }
+
+    //// Gets index
+    var index = getIndex(origin, store, indexName, errorCallback);
       if (!index) {
         checkTasks();
         return;
       }
-    }
 
     //// Gets isIndexKeyValue
     if (query) {
@@ -291,8 +446,9 @@ var sixdb = function(_dbName) {
       }
     }
 
-    var conditionsBlocksArray = (!isIndexKeyValue && query) ? qrySys.makeConditionsBlocksArray(query) : null;
+    var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
 
+    /// request callbacks
     var onsuccesIndexGetKey = function(event) {
       successCallback(event.target.result, origin, query);
       db.close();
@@ -300,15 +456,6 @@ var sixdb = function(_dbName) {
       logger(logEnum.getByIndexKey, [query, indexName, storeName]);
       done();
     };
-
-    var onsuccesGetAll = function(event){
-      successCallback(event.target.result, origin, query);
-      db.close();
-      logger(logEnum.close);
-      logger(logEnum.getByIndexKey, [query, indexName, storeName]);
-      done();
-    };
-
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       var extMode = conditionsBlocksArray[0].externalLogOperator;
@@ -342,74 +489,34 @@ var sixdb = function(_dbName) {
         logger(logEnum.query, [query, counter, storeName]);
         done();
       }
-    }; // end onsuccesCursor
-
-    var onerrorFunction = function(event) {
+    };
+    var onerror = function(event) {
       requestErrorAction(origin,request.error, errorCallback);
     };
 
-    if (indexName != null) {
-
-      if (!isIndexKeyValue) {
-        if (query) {
-
-          request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
-          if (!request) {
-            checkTasks();
-            return;
-          }
-          request.onsuccess = onsuccesCursor;
-        } else {
-
-
-          request = tryIndexGetAll(origin, index, errorCallback); //index.getAll();
-          if (!request) {
-            checkTasks();
-            return;
-          }
-          request.onsuccess = onsuccesGetAll;
-
-        }
-
-      } else {
-
-        try {
-          request = index.get(query);
-        } catch (e) {
-          db.close();
-          logger(logEnum.close);
-          errorSys.makeErrorObject(origin, 20, e);
-          logger(logEnum.error, [lastErrorObj]);
-          taskQueue.shift();
-          if (errorCallback) errorCallback(lastErrorObj);
-          checkTasks();
-        }
-
-        request.onsuccess = onsuccesIndexGetKey;
-
-      }
-      request.onerror = onerrorFunction;
-    } else {
-
-      if (query) {
-        var request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+    /// request definition
+    if(!isIndexKeyValue){
+      request = tryOpenCursor(origin, index, errorCallback);
         if (!request) {
           checkTasks();
           return;
         }
         request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
-      } else {
-        request = tryStoreGetAll(origin, store, errorCallback); //store.getAll();
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesGetAll;
+    } else {
+      request = tryIndexGetKey(origin, index, query, errorCallback);
+      if (!request) {
+        checkTasks();
+        return;
       }
-      request.onerror = onerrorFunction;
-    }
+      request.onsuccess = onsuccesIndexGetKey;
+    } // end if
+    if(request){
+      request.onerror = onerror;
+    } // end if
+
   }
+
+
 
   /**
    * This thing goes through the registers and applies an aggregate function in one property.
@@ -538,47 +645,39 @@ var sixdb = function(_dbName) {
 
     var onerrorFunction = function(event) {
       requestErrorAction(origin,request.error, errorCallback);
-    };
-    
-    if (indexName != null) {
-
-      if (!isIndexKeyValue) {
-        if (query) {
+    };   
 
 
-          request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
-          if (!request) {
-            checkTasks();
-            return;
-          }
-          request.onsuccess = onsuccesCursor;
-        } else {
-
-
-          request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
-          if (!request) {
-            checkTasks();
-            return;
-          }
-          request.onsuccess = onsuccesGetAll;
-
-        }
-
-      } else {
-        
-        query = index.keyPath + '=' + query;
-        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-        request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
+    if (indexName && !isIndexKeyValue) {
+      if (query) {
+        request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
         if (!request) {
           checkTasks();
           return;
         }
         request.onsuccess = onsuccesCursor;
-
+      } else {
+        request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
+        if (!request) {
+          checkTasks();
+          return;
+        }
+        request.onsuccess = onsuccesGetAll;
       }
-      request.onerror = onerrorFunction;
-    } else {
+    }// end if
 
+    if (indexName && isIndexKeyValue) {
+      query = index.keyPath + '=' + query;
+      conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
+      if (!request) {
+        checkTasks();
+        return;
+      }
+      request.onsuccess = onsuccesCursor;
+    }// end if
+
+    if (!indexName) {
       if (query) {
         request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
         if (!request) {
@@ -586,7 +685,6 @@ var sixdb = function(_dbName) {
           return;
         }
         request.onsuccess = onsuccesCursor;
-        request.onerror = onerrorFunction;
       } else {
         request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
         if (!request) {
@@ -595,8 +693,11 @@ var sixdb = function(_dbName) {
         }
         request.onsuccess = onsuccesGetAll;
       }
+    }// end if
+
+    if (request) {
       request.onerror = onerrorFunction;
-    }
+    }// end if
 
   }
 
@@ -1191,7 +1292,6 @@ var sixdb = function(_dbName) {
         return;
       }
       request.onsuccess = onsuccesCursor;
-      request.onerror = onerrorFunction;
     } else {
       request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
       if (!request) {
@@ -1199,8 +1299,8 @@ var sixdb = function(_dbName) {
         return;
       }
       request.onsuccess = onsuccesCursor;
-      request.onerror = onerrorFunction;
     }
+    request.onerror = onerrorFunction;
   }
 
   /**
@@ -1443,6 +1543,16 @@ var sixdb = function(_dbName) {
   function tryIndexGetAll(origin, index, errorCallback) {
     try {
       var request = index.getAll();
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    }
+    return request;
+  }
+
+  function tryIndexGetKey(origin, index, key, errorCallback) {
+    try {
+      var request = index.getAll(key);
     } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;

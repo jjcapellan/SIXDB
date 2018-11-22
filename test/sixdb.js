@@ -47,6 +47,7 @@ var sixdb = function(_dbName) {
    */
   var dbName = _dbName;
 
+  
   /**
    * Database name getter
    * @public
@@ -456,7 +457,6 @@ var sixdb = function(_dbName) {
   }
 
 
-
   /**
    * This thing goes through the registers and applies an aggregate function in one property.
    * @private
@@ -516,7 +516,7 @@ var sixdb = function(_dbName) {
     else if (indexName && !query)
       getaggregateFunctionC(index, origin, property, aggregatefn, successCallback, errorCallback);
     else if (indexName && query)
-      getaggregateFunctionD(index, origin, query, property, aggregatefn, successCallback, errorCallback);
+      getAggregateFunctionB(index, origin, query, property, aggregatefn, successCallback, errorCallback);
 
   }
 
@@ -564,6 +564,9 @@ var sixdb = function(_dbName) {
 
     var request = null;
     var actualValue = null;
+    var isIndexKeyValue = isKey(query);
+    if (isIndexKeyValue)
+      query = store.keyPath + '=' + query;
     var counter = 0;
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
@@ -650,62 +653,6 @@ var sixdb = function(_dbName) {
     request.onsuccess = onsuccesGetAll;
     request.onerror = onerrorFunction;
   }
-
-  function getaggregateFunctionD(index, origin, query, property, aggregatefn, successCallback, errorCallback) {
-    var request = null;
-    var isIndexKeyValue = isKey(query);
-    var actualValue = null;
-    var counter = 0;
-
-    if (isIndexKeyValue)
-      query = index.keyPath + '=' + query;
-
-    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
-    /// request callbacks definition
-    var onsuccesCursor = function (event) {
-      var cursor = event.target.result;
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var test = false;
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          if (cursor.value[property]) {
-            counter++;
-            actualValue = aggregatefn(actualValue, cursor.value[property], counter);
-          }
-        }
-        cursor.continue();
-      } else {
-        successCallback(actualValue, origin, query);
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
-        done();
-      }
-    };
-    var onerrorFunction = function (event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccesCursor;
-    request.onerror = onerrorFunction;
-
-  }
-
 
 
   /**

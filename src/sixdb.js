@@ -248,6 +248,7 @@ var sixdb = function(_dbName) {
    */  
   function getRecords(storeName, indexName, query, successCallback, errorCallback) {
     var origin = "get -> getRecords(...)";
+    var index = null;
     logger(logEnum.begin, [origin]);
 
     if (!errorCallback) 
@@ -261,24 +262,6 @@ var sixdb = function(_dbName) {
       return;
     }
 
-    if (!indexName && !query)
-      getRecordsA(storeName, origin, successCallback, errorCallback);
-
-    if (!indexName && query)
-      getRecordsB(storeName, origin, query, successCallback, errorCallback);
-
-    if (indexName && !query)
-      getRecordsC(storeName, origin, indexName, successCallback, errorCallback);
-
-    if (indexName && query)
-      getRecordsD(storeName, origin, indexName, query, successCallback, errorCallback);
-
-  }
-
-  function getRecordsA(storeName, origin, successCallback, errorCallback) {
-
-    var request = null;
-
     //// Gets store
     var store = getStore(origin, storeName, "readonly", errorCallback);
     if (!store) {
@@ -286,13 +269,40 @@ var sixdb = function(_dbName) {
       return;
     }
 
+    //// Gets index
+    if (indexName) {
+      index = getIndex(origin, store, indexName, errorCallback);
+      if (!index) {
+        checkTasks();
+        return;
+      }
+    }
+
+    if (!indexName && !query)
+      getRecordsA(store, origin, successCallback, errorCallback);
+    else
+      if (!indexName && query)
+        getRecordsB(store, origin, query, successCallback, errorCallback);
+      else
+        if (indexName && !query)
+          getRecordsC(index, origin, successCallback, errorCallback);
+        else
+          if (indexName && query)
+            getRecordsD(index, origin, query, successCallback, errorCallback);
+
+  }
+
+  function getRecordsA(store, origin, successCallback, errorCallback) {
+
+    var request = null;
+
 
     /// Callbacks of request
     var onsuccess = function (event) {
       successCallback(event.target.result, origin);
       db.close();
       logger(logEnum.close);
-      logger(logEnum.getAll, [storeName]);
+      logger(logEnum.getAll, [store.name]);
       done();
     };
     var onerror = function (event) {
@@ -311,17 +321,10 @@ var sixdb = function(_dbName) {
 
   }
 
-  function getRecordsB(storeName, origin, query, successCallback, errorCallback) {
+  function getRecordsB(store, origin, query, successCallback, errorCallback) {
     var counter = 0;
     var resultFiltered = [];
     var request = null;
-
-    //// Gets store
-    var store = getStore(origin, storeName, "readonly", errorCallback);
-    if (!store) {
-      checkTasks();
-      return;
-    }
 
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
@@ -337,16 +340,8 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
-        var i = 0;
-        test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
           resultFiltered.push(cursor.value);
@@ -357,7 +352,7 @@ var sixdb = function(_dbName) {
         successCallback(resultFiltered, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.query, [query, counter, storeName]);
+        logger(logEnum.query, [query, counter, store.name]);
         done();
       }
     };
@@ -376,36 +371,21 @@ var sixdb = function(_dbName) {
     request.onerror = onerror;
   }
 
-  function getRecordsC(storeName, origin, indexName, successCallback, errorCallback) {
+  function getRecordsC(index, origin, successCallback, errorCallback) {
+
     var request = null;
-
-    //// Gets store
-    var store = getStore(origin, storeName, "readonly", errorCallback);
-    if (!store) {
-      checkTasks();
-      return;
-    }
-
-    //// Gets index
-    var index = getIndex(origin, store, indexName, errorCallback);
-    if (!index) {
-      checkTasks();
-      return;
-    }
-
 
     /// request callbacks
     var onsuccesGetAll = function (event) {
       successCallback(event.target.result, origin);
       db.close();
       logger(logEnum.close);
-      logger(logEnum.getAll, [storeName]);
+      logger(logEnum.getAll, [index.objectStore.name]);
       done();
     };
     var onerrorFunction = function (event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
-
 
     /// request definition
     request = tryIndexGetAll(origin, index, errorCallback);
@@ -417,46 +397,24 @@ var sixdb = function(_dbName) {
     request.onerror = onerrorFunction;
   }
 
-  function getRecordsD(storeName, origin, indexName, query, successCallback, errorCallback) {
+  function getRecordsD(index, origin, query, successCallback, errorCallback) {
     var counter = 0;
     var resultFiltered = [];
-    var isIndexKeyValue = false;
+    var isIndexKeyValue = isKey(query);
     var request = null;
 
-    //// Gets store
-    var store = getStore(origin, storeName, "readonly", errorCallback);
-    if (!store) {
-      checkTasks();
-      return;
-    }
-
-    //// Gets index
-    var index = getIndex(origin, store, indexName, errorCallback);
-      if (!index) {
-        checkTasks();
-        return;
-      }
-
-    //// Gets isIndexKeyValue
-    if (query) {
-      if (typeof query == "number") {
-        isIndexKeyValue = true;
-      } else {
-        isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-      }
-    }
 
     var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
 
     /// request callbacks
-    var onsuccesIndexGetKey = function(event) {
+    var onsuccesIndexGetKey = function (event) {
       successCallback(event.target.result, origin, query);
       db.close();
       logger(logEnum.close);
-      logger(logEnum.getByIndexKey, [query, indexName, storeName]);
+      logger(logEnum.getByIndexKey, [query, index.name, index.objectStore.name]);
       done();
     };
-    var onsuccesCursor = function(event) {
+    var onsuccesCursor = function (event) {
       var cursor = event.target.result;
       var extMode = conditionsBlocksArray[0].externalLogOperator;
       var test = false;
@@ -466,16 +424,8 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
-        var i = 0;
-        test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
           resultFiltered.push(cursor.value);
@@ -486,33 +436,22 @@ var sixdb = function(_dbName) {
         successCallback(resultFiltered, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.query, [query, counter, storeName]);
+        logger(logEnum.query, [query, counter, index.objectStore.name]);
         done();
       }
     };
-    var onerror = function(event) {
-      requestErrorAction(origin,request.error, errorCallback);
+    var onerror = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
     /// request definition
-    if(!isIndexKeyValue){
-      request = tryOpenCursor(origin, index, errorCallback);
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesCursor;
-    } else {
-      request = tryIndexGetKey(origin, index, query, errorCallback);
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onsuccesIndexGetKey;
-    } // end if
-    if(request){
-      request.onerror = onerror;
-    } // end if
+    request = (!isIndexKeyValue) ? tryOpenCursor(origin, index, errorCallback) : tryIndexGetKey(origin, index, query, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = (isIndexKeyValue) ? onsuccesIndexGetKey : onsuccesCursor;
+    request.onerror = onerror;
 
   }
 
@@ -538,19 +477,15 @@ var sixdb = function(_dbName) {
    * @param  {function} successCallback Receives as parameters the result (a number) and origin.
    * @param  {function} errorCallback Optional function to handle errors. Receives an error object as argument.
    */
-  function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback, origin){
-    
-    var index;
-    var request = null;
-    var isIndexKeyValue=false;
-    var actualValue = null;
-    var counter=0;
+  function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback, origin) {
+
+    var index = null;
 
     logger(logEnum.begin, [origin]);
 
-    if (!errorCallback) errorCallback = function() {
-        return;
-      };
+    if (!errorCallback) errorCallback = function () {
+      return;
+    };
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -574,30 +509,35 @@ var sixdb = function(_dbName) {
       }
     }
 
-    //// Gets isIndexKeyValue
-    if (query) {
-      if (typeof query == "number") {
-        isIndexKeyValue = true;
-      } else {
-        isIndexKeyValue = query.match(qrySys.operatorRgx) ? false : true;
-      }
-    }
+    if (!indexName && !query)
+      getaggregateFunctionA(store, origin, property, aggregatefn, successCallback, errorCallback);
+    else if (!indexName && query)
+      getAggregateFunctionB(store, origin, query, property, aggregatefn, successCallback, errorCallback);
+    else if (indexName && !query)
+      getaggregateFunctionC(index, origin, property, aggregatefn, successCallback, errorCallback);
+    else if (indexName && query)
+      getaggregateFunctionD(index, origin, query, property, aggregatefn, successCallback, errorCallback);
 
-    var conditionsBlocksArray = (!isIndexKeyValue && query) ? qrySys.makeConditionsBlocksArray(query) : null;    
+  }
 
+  function getaggregateFunctionA(store, origin, property, aggregatefn, successCallback, errorCallback) {
+    var request = null;
+    var actualValue = null;
+    var counter = 0;
 
-    var onsuccesGetAll = function(event){
+    /// request callbacks
+    var onsuccess = function (event) {
       var cursor = event.target.result;
 
-      if(cursor){
-        if(cursor.value[property]){
-        counter++;
-        actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+      if (cursor) {
+        if (cursor.value[property]) {
+          counter++;
+          actualValue = aggregatefn(actualValue, cursor.value[property], counter);
         }
         cursor.continue();
 
       } else {
-        successCallback(actualValue, origin, query);
+        successCallback(actualValue, origin);
         db.close();
         logger(logEnum.close);
         logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
@@ -605,8 +545,30 @@ var sixdb = function(_dbName) {
 
       }
     };
+    var onerrorFunction = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
 
-    var onsuccesCursor = function(event) {
+    /// request definition
+    request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccess;
+    request.onerror = onerrorFunction;
+
+  }
+
+  function getAggregateFunctionB(store, origin, query, property, aggregatefn, successCallback, errorCallback) {
+
+    var request = null;
+    var actualValue = null;
+    var counter = 0;
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    /// request callbacks
+    var onsuccesCursor = function (event) {
       var cursor = event.target.result;
       var extMode = conditionsBlocksArray[0].externalLogOperator;
       var test = false;
@@ -616,21 +578,13 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
       if (cursor) {
-        var i = 0;
-        test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
-          if(cursor.value[property]){
-          counter++;
-          actualValue = aggregatefn(actualValue, cursor.value[property],counter);
+          if (cursor.value[property]) {
+            counter++;
+            actualValue = aggregatefn(actualValue, cursor.value[property], counter);
           }
         }
         cursor.continue();
@@ -638,68 +592,121 @@ var sixdb = function(_dbName) {
         successCallback(actualValue, origin, query);
         db.close();
         logger(logEnum.close);
-        logger(logEnum.custom, ['Result of '+origin+' on property "'+property+'": '+actualValue]);
+        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
         done();
       }
-    }; // end onsuccesCursor
+    };
+    var onerrorFunction = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
 
-    var onerrorFunction = function(event) {
-      requestErrorAction(origin,request.error, errorCallback);
-    };   
-
-
-    if (indexName && !isIndexKeyValue) {
-      if (query) {
-        request = tryOpenCursor(origin, index, errorCallback); //index.openCursor();
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesCursor;
-      } else {
-        request = tryOpenCursor(origin, index, errorCallback);//tryIndexGetAll(origin, index, errorCallback); //index.getAll();
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesGetAll;
-      }
-    }// end if
-
-    if (indexName && isIndexKeyValue) {
-      query = index.keyPath + '=' + query;
-      conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onsuccesCursor;
-    }// end if
-
-    if (!indexName) {
-      if (query) {
-        request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesCursor;
-      } else {
-        request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
-        if (!request) {
-          checkTasks();
-          return;
-        }
-        request.onsuccess = onsuccesGetAll;
-      }
-    }// end if
-
-    if (request) {
-      request.onerror = onerrorFunction;
-    }// end if
+    /// request definition
+    request = tryOpenCursor(origin, store, errorCallback); //store.openCursor();
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesCursor;
+    request.onerror = onerrorFunction;
 
   }
+
+  function getaggregateFunctionC(index, origin, property, aggregatefn, successCallback, errorCallback) {
+    var request = null;
+    var actualValue = null;
+    var counter = 0;
+
+
+    /// request callbacks
+    var onsuccesGetAll = function (event) {
+      var cursor = event.target.result;
+
+      if (cursor) {
+        if (cursor.value[property]) {
+          counter++;
+          actualValue = aggregatefn(actualValue, cursor.value[property], counter);
+        }
+        cursor.continue();
+
+      } else {
+        successCallback(actualValue, origin);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
+        done();
+
+      }
+    };
+    var onerrorFunction = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryOpenCursor(origin, index, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesGetAll;
+    request.onerror = onerrorFunction;
+  }
+
+  function getaggregateFunctionD(index, origin, query, property, aggregatefn, successCallback, errorCallback) {
+    var request = null;
+    var isIndexKeyValue = isKey(query);
+    var actualValue = null;
+    var counter = 0;
+
+    if (isIndexKeyValue)
+      query = index.keyPath + '=' + query;
+
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    /// request callbacks definition
+    var onsuccesCursor = function (event) {
+      var cursor = event.target.result;
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var test = false;
+
+      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
+      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
+      //
+      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
+      if (cursor) {
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
+
+        if (test) {
+          if (cursor.value[property]) {
+            counter++;
+            actualValue = aggregatefn(actualValue, cursor.value[property], counter);
+          }
+        }
+        cursor.continue();
+      } else {
+        successCallback(actualValue, origin, query);
+        db.close();
+        logger(logEnum.close);
+        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
+        done();
+      }
+    };
+    var onerrorFunction = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryOpenCursor(origin, index, errorCallback); //store.openCursor();
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesCursor;
+    request.onerror = onerrorFunction;
+
+  }
+
+
 
   /**
    * The conditionObject contains the three elements to test a condition.
@@ -968,7 +975,6 @@ var sixdb = function(_dbName) {
     };
   }
 
-
   /**
      * Count the records
      * @private
@@ -1035,16 +1041,8 @@ var sixdb = function(_dbName) {
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
 
       if (cursor) {
-        var i = 0;
-        var test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
           counter++;
@@ -1192,6 +1190,7 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delRecords(...)';
     logger(logEnum.begin,[origin]);
     var request = null;
+    var isIndexKeyValue = false;
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -1222,12 +1221,8 @@ var sixdb = function(_dbName) {
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
     // 
-    var isIndexKeyValue;
-    if (typeof (query) == 'number') {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    }
+    isIndexKeyValue = isKey(query);
+
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
@@ -1245,16 +1240,8 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
-        var i = 0;
-        test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
           var request = cursor.delete();
@@ -1386,7 +1373,8 @@ var sixdb = function(_dbName) {
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
     var origin = 'update -> updateRecords(...)';
     logger(logEnum.begin,[origin]);
-    var i=0;
+    var isIndexKeyValue = false;
+    var i = 0;
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -1416,12 +1404,7 @@ var sixdb = function(_dbName) {
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
-    var isIndexKeyValue;
-    if (typeof (query) == 'number') {
-      isIndexKeyValue = true;
-    } else {
-      isIndexKeyValue = (query.match(qrySys.operatorRgx)) ? false : true;
-    }
+    isIndexKeyValue = isKey(query);
 
     var conditionsBlocksArray;
     conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
@@ -1440,15 +1423,8 @@ var sixdb = function(_dbName) {
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
       if (cursor) {
-        var test = false;
-        for (i = 0; i < conditionsBlocksArray.length; i++) {
-          var conditions = conditionsBlocksArray[i].conditionsArray;
-          var intMode = conditionsBlocksArray[i].internalLogOperator;
-          test = qrySys.testConditionBlock(cursor, conditions, intMode);
-          if (test == exitsInFirstTrue) {
-            break;
-          }
-        }
+
+        var test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
 
         if (test) {
           var updateData = cursor.value;
@@ -1594,6 +1570,33 @@ var sixdb = function(_dbName) {
     taskQueue.shift();
     errorCallback(lastErrorObj);
     checkTasks();
+  }
+
+  function testCursor(conditionsBlocksArray, exitsInFirst, cursor) {
+    var test = false;
+    var i = 0;
+    var size = conditionsBlocksArray.length;
+    for (i = 0; i < size; i++) {
+      var conditions = conditionsBlocksArray[i].conditionsArray;
+      var intMode = conditionsBlocksArray[i].internalLogOperator;
+      test = qrySys.testConditionBlock(cursor, conditions, intMode);
+      if (test == exitsInFirst) {
+        break;
+      }
+    }
+    return test;
+  }
+
+  function isKey(query) {
+    var isKey = false;
+    if (query) {
+      if (typeof query == "number") {
+        isKey = true;
+      } else {
+        isKey = query.match(qrySys.operatorRgx) ? false : true;
+      }
+    }
+    return isKey;
   }
 
   //#endregion helper functions
@@ -3089,263 +3092,365 @@ var sixdb = function(_dbName) {
 
     testArgs: function (origin, args) {
       var qtype = null;
+      var errorId = 0;
 
       switch (origin) {
 
         case 'get -> lastRecords(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // maxResults
-          if (typeof (args[1]) != 'number' && args[1] != null)
-            return this.makeErrorObject(origin, 12);
+          if (typeof (args[1]) != 'number' && args[1] != null) {
+            errorId = 12;
+            break;
+          }
 
           // succesCallback
-          if (!this.testCallback(args[2]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[2])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[3])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'get -> getRecords(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // indexName
-          if (this.testStr(args[1])){
-            if(this.test==1)
-            return this.makeErrorObject(origin, 5);
+          if (this.testStr(args[1])) {
+            if (this.test == 1) {
+              errorId = 5;
+              break;
+            }
           }
 
           //query
           if (args[2]) {
             qtype = typeof (args[2]);
-            if (qtype != 'string' && qtype != 'number')
-              return this.makeErrorObject(origin, 9);
+            if (qtype != 'string' && qtype != 'number') {
+              errorId = 9;
+              break;
+            }
           }
 
           // succesCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[3])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[4]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[4])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'add -> newStore(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
-
-          // succesCallback
-          if (!this.testCallback(args[1]))
-            return this.makeErrorObject(origin, 13);
-
-          // errorCallback
-          if (!this.testCallback(args[2]))
-            return this.makeErrorObject(origin, 14);
-
-          return false;
-
-        case 'add -> newRecord(...)':
-          // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
-
-          // obj
-          if (args[1]) {
-            if (typeof (args[1]) != 'object')
-              return this.makeErrorObject(origin, 15);     // obj is not an object
-          } else {
-            return this.makeErrorObject(origin, 3);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
           }
 
           // succesCallback
-          if (!this.testCallback(args[2]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[1])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[2])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
+
+        case 'add -> newRecord(...)':
+          // storeName
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
+
+          // obj
+          if (args[1]) {
+            if (typeof (args[1]) != 'object') {
+              errorId = 15;
+              break;
+            }
+          } else {
+            errorId = 3;
+            break;
+          }
+
+          // succesCallback
+          if (!this.testCallback(args[2])) {
+            errorId = 13;
+            break;
+          }
+
+          // errorCallback
+          if (!this.testCallback(args[3])) {
+            errorId = 14;
+            break;
+          }
+
+          break;
 
         case 'add -> newIndex(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           //indexName
-          if (this.testStr(args[1]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 5) : this.makeErrorObject(origin, 4);
+          if (this.testStr(args[1])) {
+            errorId = (this.test == 1) ? 5 : 4;
+            break;
+          }
 
           // keyPath
-          if (this.testStr(args[2]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 7) : this.makeErrorObject(origin, 6);
+          if (this.testStr(args[2])) {
+            errorId = (this.test == 1) ? 7 : 6;
+            break;
+          }
 
           // succesCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[3])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[4]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[4])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'get -> count(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // indexName
           if (args[1]) {
-            if (typeof (args[1]) != 'string')
-              return this.makeErrorObject(origin, 5);
+            if (typeof (args[1]) != 'string') {
+              errorId = 5;
+              break;
+            }
           }
 
           // query
           if (args[2]) {
-            if (typeof (args[2]) != 'string')
-              return this.makeErrorObject(origin, 16); // query must be a string
+            if (typeof (args[2]) != 'string') {
+              errorId = 16;
+              break;
+            }
           }
 
           // succesCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[3])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[4]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[4])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'del -> delStore(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // succesCallback
-          if (!this.testCallback(args[1]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[1])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[2]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[2])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'del -> delDB(...)':
           // succesCallback
-          if (!this.testCallback(args[0]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[0])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[1]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[1])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'del -> delRecords(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // indexName
           if (args[1]) {
-            if (typeof (args[1]) != 'string')
-              return this.makeErrorObject(origin, 5);
+            if (typeof (args[1]) != 'string') {
+              errorId = 5;
+              break;
+            }
           }
 
           //query
           if (args[2]) {
             qtype = typeof (args[2]);
-            if (qtype != 'string' && qtype != 'number')
-              return this.makeErrorObject(origin, 9);   // not valid type 
+            if (qtype != 'string' && qtype != 'number') {
+              errorId = 9;
+              break;
+            }
           } else {
-            return this.makeErrorObject(origin, 8);     // is null
+            errorId = 8;
+            break;
           }
 
           // succesCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[3])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[4]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[4])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'del -> delIndex(...)':
 
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           //indexName
-          if (this.testStr(args[1]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 5) : this.makeErrorObject(origin, 4);
+          if (this.testStr(args[1])) {
+            errorId = (this.test == 1) ? 5 : 4;
+            break;
+          }
 
           // succesCallback
-          if (!this.testCallback(args[2]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[2])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[3]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[3])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
         case 'update -> updateRecords(...)':
           // storeName
-          if (this.testStr(args[0]))
-            return (this.test == 1) ? this.makeErrorObject(origin, 1) : this.makeErrorObject(origin, 2);
+          if (this.testStr(args[0])) {
+            errorId = (this.test == 1) ? 1 : 2;
+            break;
+          }
 
           // indexName
           if (args[1]) {
-            if (typeof (args[1]) != 'string')
-              return this.makeErrorObject(origin, 5);
+            if (typeof (args[1]) != 'string') {
+              errorId = 5;
+              break;
+            }
           }
 
           //query
           if (args[2]) {
             qtype = typeof (args[2]);
-            if (qtype != 'string' && qtype != 'number')
-              return this.makeErrorObject(origin, 9);   // not valid type 
+            if (qtype != 'string' && qtype != 'number') {
+              errorId = 9;
+              break;
+            }
           } else {
-            return this.makeErrorObject(origin, 8);     // is null
+            errorId = 8;
+            break;
           }
 
           // objectValues
           if (args[3]) {
-            if (typeof (args[3]) != 'object')
-              return this.makeErrorObject(origin, 11);
+            if (typeof (args[3]) != 'object') {
+              errorId = 11;
+              break;
+            }
           } else {
-            return this.makeErrorObject(origin, 10);
+            errorId = 10;
+            break;
           }
 
           // succesCallback
-          if (!this.testCallback(args[4]))
-            return this.makeErrorObject(origin, 13);
+          if (!this.testCallback(args[4])) {
+            errorId = 13;
+            break;
+          }
 
           // errorCallback
-          if (!this.testCallback(args[5]))
-            return this.makeErrorObject(origin, 14);
+          if (!this.testCallback(args[5])) {
+            errorId = 14;
+            break;
+          }
 
-          return false;
+          break;
 
 
         default:
           return false;
-
       }
+
+      if (errorId != 0)
+        return this.makeErrorObject(origin, errorId);
+      else
+        return false;
+
     },
 
     testStr: function (str) {

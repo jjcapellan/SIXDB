@@ -514,7 +514,7 @@ var sixdb = function(_dbName) {
     else if (!indexName && query)
       getAggregateFunctionB(store, origin, query, property, aggregatefn, successCallback, errorCallback);
     else if (indexName && !query)
-      getaggregateFunctionC(index, origin, property, aggregatefn, successCallback, errorCallback);
+      getaggregateFunctionA(index, origin, property, aggregatefn, successCallback, errorCallback);
     else if (indexName && query)
       getAggregateFunctionB(index, origin, query, property, aggregatefn, successCallback, errorCallback);
 

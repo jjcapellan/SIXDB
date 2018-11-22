@@ -1594,9 +1594,7 @@ var sixdb = function(_dbName) {
       var blocks = query.match(t.blockRgx);
       // Delete left parentheses
       if(blocks){
-        for(i=0;i<blocks.length;i++){
-          blocks[i]=blocks[i].substr(1);
-        }
+        t.deleteLeftParentheses(blocks);
       }
 
       // Logical operators between blocks, all must be the same type
@@ -1604,7 +1602,7 @@ var sixdb = function(_dbName) {
 
       
 
-      var pushConditionBlockToArray = function (qry, extLogOperator) {
+      /*var pushConditionBlockToArray = function (qry, extLogOperator) {
 
         //// Gets left operands
         //
@@ -1687,12 +1685,12 @@ var sixdb = function(_dbName) {
           );
           conditionsArray = null;
         } // end if else
-      };
+      };*/
 
 
       // If condition is a single sentence like: " a = 10 & b > 5 "
       if (!blocks) {
-        pushConditionBlockToArray(query, null);
+        t.pushConditionBlockToArray(query, null, conditionsBlocksArray);
         return conditionsBlocksArray;
       } else {
         // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "        
@@ -1707,11 +1705,107 @@ var sixdb = function(_dbName) {
         
         for (i = 0; i < blocks.length; i++) {
 
-          pushConditionBlockToArray(blocks[i], extLogOperator);
+          t.pushConditionBlockToArray(blocks[i], extLogOperator, conditionsBlocksArray);
 
         }
         return conditionsBlocksArray;
       }
+    },
+
+    deleteLeftParentheses: function (blocks) {
+      var i = 0;
+      var size = blocks.length;
+      for (i = 0; i < size; i++) {
+        blocks[i] = blocks[i].substr(1);
+      }
+    },
+
+    pushConditionBlockToArray: function (qry, extLogOperator, conditionsBlocksArray) {
+
+      var i = 0;
+      var t = this;
+
+      //// Gets left operands
+      //
+      var leftOperands = qry.match(t.leftOperandRgx);
+
+      //// Gets right operands
+      //
+      var rightOperands = qry.match(t.rightOperandRgx);
+      for (i = 0; i < rightOperands.length; i++) {
+        // Delete the operator
+        while (rightOperands[i][0].match(/[=><!\^\$~]/g)) {
+          rightOperands[i] = rightOperands[i].substr(1);
+        }
+        // Delete quotes and trim white spaces
+        rightOperands[i] = rightOperands[i].replace(/["']/g, '').trim();
+      }
+
+      //// Gets operators
+      //// Removing righ operands (values) before extract comparison operators avoids 
+      //// problems with literal values that include comparisson symbols(= , >,...) quoted.
+      //
+      for (i = 0; i < rightOperands.length; i++) {
+        qry = qry.replace(rightOperands[i], '');
+      }
+      var operators = qry.match(t.operatorRgx);
+
+
+      var conditionsArray = [];
+
+      // If query is like: " c = 15 "
+      if (leftOperands.length == 1) {
+
+        conditionsArray.push(
+          {
+            keyPath: leftOperands[0],   // property
+            cond: operators[0],         // =, >, <, ...
+            value: rightOperands[0]     // value
+          }
+        );
+
+        conditionsBlocksArray.push(
+          {
+            conditionsArray: conditionsArray,
+            internalLogOperator: null,
+            externalLogOperator: extLogOperator
+          }
+        );
+
+        conditionsArray = null;
+
+      } else {
+
+        // if query is like: " c = 15 & a > 30 "
+        var logOperatorsType = qry.match(/[\&\|]+/g)[0];
+
+        if (logOperatorsType == '&' || logOperatorsType == '&&') {
+          logOperatorsType = 'and';
+        } else {
+          logOperatorsType = 'or';
+        }
+
+
+        for (i = 0; i < operators.length; i++) {
+          conditionsArray.push(
+            {
+              keyPath: leftOperands[i],
+              cond: operators[i],
+              value: rightOperands[i]
+            }
+          );
+        }
+
+        conditionsBlocksArray.push(
+          {
+            conditionsArray: conditionsArray,
+            internalLogOperator: logOperatorsType,
+            externalLogOperator: extLogOperator
+          }
+        );
+        conditionsArray = null;
+      } // end if else
+
     },
 
     /**

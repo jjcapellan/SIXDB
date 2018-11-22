@@ -614,46 +614,6 @@ var sixdb = function(_dbName) {
 
   }
 
-  function getaggregateFunctionC(index, origin, property, aggregatefn, successCallback, errorCallback) {
-    var request = null;
-    var actualValue = null;
-    var counter = 0;
-
-
-    /// request callbacks
-    var onsuccesGetAll = function (event) {
-      var cursor = event.target.result;
-
-      if (cursor) {
-        if (cursor.value[property]) {
-          counter++;
-          actualValue = aggregatefn(actualValue, cursor.value[property], counter);
-        }
-        cursor.continue();
-
-      } else {
-        successCallback(actualValue, origin);
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
-        done();
-
-      }
-    };
-    var onerrorFunction = function (event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryOpenCursor(origin, index, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccesGetAll;
-    request.onerror = onerrorFunction;
-  }
-
 
   /**
    * The conditionObject contains the three elements to test a condition.

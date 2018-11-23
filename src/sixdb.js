@@ -66,6 +66,10 @@ var sixdb = function(_dbName) {
  */
   var consoleOff = false;
 
+  var origins ={
+    updateRecords: 'update -> updateRecords(...)'
+  }
+
   /**
    * Sets the consoleOff value
    * @param {boolean} off True turn off the console output.
@@ -475,7 +479,7 @@ var sixdb = function(_dbName) {
    *     return actualValue + selectedValue;
    *     };
    * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-   * @param  {function} errorCallback Optional function to handle errors. Receives an error object as argument.
+   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function getaggregateFunction(storeName, indexName, query, property, aggregatefn, successCallback, errorCallback, origin) {
 
@@ -851,12 +855,13 @@ var sixdb = function(_dbName) {
 
     request.onupgradeneeded = function (event) {
       db = event.target.result;
+      var store = null;
 
       var upgradeTransaction = event.target.transaction;
 
       //// Gets store
       try {
-        var store = upgradeTransaction.objectStore(storeName);
+        store = upgradeTransaction.objectStore(storeName);
       } catch (e) {
         requestErrorAction(origin, e, errorCallback);
         return;
@@ -1237,12 +1242,13 @@ var sixdb = function(_dbName) {
 
     request.onupgradeneeded = function (event) {
       db = event.target.result;
+      var store = null;
 
       var upgradeTransaction = event.target.transaction;
 
       //// Gets store
       try {
-        var store = upgradeTransaction.objectStore(storeName);
+        store = upgradeTransaction.objectStore(storeName);
       } catch (e) {
         requestErrorAction(origin, e, errorCallback);
         return;
@@ -1282,14 +1288,11 @@ var sixdb = function(_dbName) {
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
-    var origin = 'update -> updateRecords(...)';
+    var origin = origins.updateRecords;
     logger(logEnum.begin,[origin]);
     var isIndexKeyValue = false;
     var request = null;
     var i = 0;
-
-    if(!errorCallback)
-      errorCallback=function(){return;};
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -1397,21 +1400,23 @@ var sixdb = function(_dbName) {
 
   //#region helper functions
   /////////////////////////////////////////////////////////////////////////////////////////////////////
-  function getStore(origin, storeName, rwMode, errorCallback){
-    try{
-    var store = db.transaction(storeName, rwMode).objectStore(storeName);
-    } 
-    catch(e){
+  function getStore(origin, storeName, rwMode, errorCallback) {
+    var store = null;
+    try {
+      store = db.transaction(storeName, rwMode).objectStore(storeName);
+    }
+    catch (e) {
       reportCatch(origin, e, errorCallback);
-      return null;    
+      return null;
     }
     return store;
   }
 
-  function getIndex(origin,store,indexName,errorCallback){
-    try{
-      var index = store.index(indexName);
-    } catch(e){
+  function getIndex(origin, store, indexName, errorCallback) {
+    var index = null;
+    try {
+      index = store.index(indexName);
+    } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
     }
@@ -1419,8 +1424,9 @@ var sixdb = function(_dbName) {
   }
 
   function tryStoreGetAll(origin, store, errorCallback){
+    var request = null;
     try{
-      var request = store.getAll();
+      request = store.getAll();
     } catch(e){
       reportCatch(origin, e, errorCallback);
       return null;
@@ -1429,8 +1435,9 @@ var sixdb = function(_dbName) {
   }
 
   function tryIndexGetAll(origin, index, errorCallback) {
+    var request = null;
     try {
-      var request = index.getAll();
+      request = index.getAll();
     } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
@@ -1439,8 +1446,9 @@ var sixdb = function(_dbName) {
   }
 
   function tryIndexGetKey(origin, index, key, errorCallback) {
+    var request = null;
     try {
-      var request = index.getAll(key);
+      request = index.getAll(key);
     } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
@@ -1448,10 +1456,11 @@ var sixdb = function(_dbName) {
     return request;
   }
 
-  function tryOpenCursor(origin, openerObj, errorCallback){
-    try{
-      var request = openerObj.openCursor();
-    } catch(e){
+  function tryOpenCursor(origin, openerObj, errorCallback) {
+    var request = null;
+    try {
+      request = openerObj.openCursor();
+    } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
     }
@@ -2446,7 +2455,10 @@ var sixdb = function(_dbName) {
      * };
      *
      */
-    records: function(storeName, indexName, query, objectValues, successCallback, errorCallback) {
+    records: function (storeName, indexName, query, objectValues, successCallback, errorCallback) {
+      if (!errorCallback)
+        errorCallback = function () { return; };
+
       var task = {
         type: "updateRecordsByIndex",
         storeName: storeName,
@@ -3111,7 +3123,7 @@ var sixdb = function(_dbName) {
           break;
 
         case 'add -> newStore(...)':
-          errorId = this.testNewStoreArgs(args);
+          errorId = this.testStoreArgs(args);
           break;
 
         case 'add -> newRecord(...)':
@@ -3127,7 +3139,7 @@ var sixdb = function(_dbName) {
           break;
 
         case 'del -> delStore(...)':
-          errorId = this.testDelStoreArgs(args);
+          errorId = this.testStoreArgs(args);
           break;
 
         case 'del -> delDB(...)':
@@ -3283,7 +3295,7 @@ var sixdb = function(_dbName) {
 
     },
 
-    testNewStoreArgs: function(args){
+    testStoreArgs: function(args){
 
       var errorId=-1;
 
@@ -3421,33 +3433,6 @@ var sixdb = function(_dbName) {
         }
 
         errorId = 0;
-      }
-      return errorId;
-    },
-
-    testDelStoreArgs: function(args){
-      var errorId = -1;
-
-      while(errorId < 0){
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[1])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[2])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId=0;
       }
       return errorId;
     },

@@ -66,10 +66,6 @@ var sixdb = function(_dbName) {
  */
   var consoleOff = false;
 
-  var origins ={
-    updateRecords: 'update -> updateRecords(...)'
-  }
-
   /**
    * Sets the consoleOff value
    * @param {boolean} off True turn off the console output.
@@ -1288,7 +1284,7 @@ var sixdb = function(_dbName) {
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function updateRecords(storeName, indexName, query, objectValues, successCallback, errorCallback) {
-    var origin = origins.updateRecords;
+    var origin = 'update -> updateRecords(...)';
     logger(logEnum.begin,[origin]);
     var isIndexKeyValue = false;
     var request = null;
@@ -1301,17 +1297,17 @@ var sixdb = function(_dbName) {
     }
 
     //// Gets store
-    var store = getStore(origin,storeName, 'readwrite', errorCallback);
-    if(!store){
+    var store = getStore(origin, storeName, 'readwrite', errorCallback);
+    if (!store) {
       checkTasks();
       return;
     }
 
     //// Gets index
     var index;
-    if(indexName!=null){
-      index=getIndex(origin,store,indexName,errorCallback);
-      if(!index){
+    if (indexName != null) {
+      index = getIndex(origin, store, indexName, errorCallback);
+      if (!index) {
         checkTasks();
         return;
       }
@@ -1337,34 +1333,7 @@ var sixdb = function(_dbName) {
       // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
       //
       var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-      if (cursor) {
-
-        var test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          var updateData = cursor.value;
-          for (i = 0; i < newObjectValuesSize; i++) {
-            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-            updateData[keys[i]] =
-              typeof objectValues[keys[i]] == "function" ? objectValues[keys[i]](updateData[keys[i]]) : objectValues[keys[i]];
-          }
-
-          var request = cursor.update(updateData);
-          request.onsuccess = function () {
-            counter++;
-          };
-        }
-        cursor.continue();
-
-      } else {
-        if (successCallback) {
-          successCallback(event, origin, query);
-        }
-        db.close();
-        logger(logEnum.close);
-        logger(logEnum.query, [query, counter, storeName]);
-        done();
-      }
+      ({ i, counter } = cursorLoop(cursor, testCursor, conditionsBlocksArray, exitsInFirstTrue, i, newObjectValuesSize, keys, objectValues, counter, successCallback, event, origin, query, db, logger, logEnum, storeName, done));
 
     };
 
@@ -3631,3 +3600,33 @@ var sixdb = function(_dbName) {
   this.add.db();
   this.execTasks();
 };
+
+function cursorLoop(cursor, testCursor, conditionsBlocksArray, exitsInFirstTrue, i, newObjectValuesSize, keys, objectValues, counter, successCallback, event, origin, query, db, logger, logEnum, storeName, done) {
+  if (cursor) {
+    var test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
+    if (test) {
+      var updateData = cursor.value;
+      for (i = 0; i < newObjectValuesSize; i++) {
+        // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+        updateData[keys[i]] =
+          typeof objectValues[keys[i]] == "function" ? objectValues[keys[i]](updateData[keys[i]]) : objectValues[keys[i]];
+      }
+      var request = cursor.update(updateData);
+      request.onsuccess = function () {
+        counter++;
+      };
+    }
+    cursor.continue();
+  }
+  else {
+    if (successCallback) {
+      successCallback(event, origin, query);
+    }
+    db.close();
+    logger(logEnum.close);
+    logger(logEnum.query, [query, counter, storeName]);
+    done();
+  }
+  return { i, counter };
+}
+

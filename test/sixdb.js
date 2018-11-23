@@ -795,18 +795,22 @@ var sixdb = function(_dbName) {
     } else {
       request = store.add(obj);
       request.onsuccess = function(event) {
-        logger(logEnum.newRecord, [storeName]);
-        if (successCallback) {
-          successCallback(event, origin);
-        }
-        db.close();
-        logger(logEnum.close);
-        done();
+        insertFinished(event);
       };
 
       request.onerror = function(event) {
         requestErrorAction(origin,event.target.error, errorCallback);
       };
+    }
+
+    function insertFinished(event) {
+      logger(logEnum.newRecord, [storeName]);
+      if (successCallback) {
+        successCallback(event, origin);
+      }
+      db.close();
+      logger(logEnum.close);
+      done();
     }
   }
 
@@ -1281,6 +1285,7 @@ var sixdb = function(_dbName) {
     var origin = 'update -> updateRecords(...)';
     logger(logEnum.begin,[origin]);
     var isIndexKeyValue = false;
+    var request = null;
     var i = 0;
 
     if(!errorCallback)
@@ -1370,7 +1375,7 @@ var sixdb = function(_dbName) {
         query = index.keyPath + '=' + query;
         conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       }
-      var request = tryOpenCursor(origin, index, errorCallback);// index.openCursor();
+      request = tryOpenCursor(origin, index, errorCallback);// index.openCursor();
       if (!request) {
         checkTasks();
         return;
@@ -1378,7 +1383,7 @@ var sixdb = function(_dbName) {
       request.onsuccess = onsuccesCursor;
       request.onerror = onerrorFunction;
     } else {
-      var request = tryOpenCursor(origin, store, errorCallback); // store.openCursor();
+      request = tryOpenCursor(origin, store, errorCallback); // store.openCursor();
       if (!request) {
         checkTasks();
         return;
@@ -1779,6 +1784,7 @@ var sixdb = function(_dbName) {
     testConditionBlock: function (cursor, conditionsArray, operator) {
 
       var t = this;
+      var i=0;
 
       var test = (operator == 'and' || operator == null) ? true : false;
       if (operator == 'and' || operator == null) {
@@ -3245,7 +3251,7 @@ var sixdb = function(_dbName) {
         // indexName
         if (this.testStr(args[1])) {
           if (this.test == 1) {
-            errorId = errorId = 5;
+            errorId = 5;
             break;
           }
         }

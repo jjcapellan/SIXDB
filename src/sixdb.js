@@ -47,6 +47,8 @@ var sixdb = function(_dbName) {
    */
   var dbName = _dbName;
 
+  var dbVersion;
+
   
   /**
    * Database name getter
@@ -134,7 +136,6 @@ var sixdb = function(_dbName) {
 
     request.onsuccess = function (event) {
       db = event.target.result;
-      logger(logEnum.open);
       done();
     };
   }
@@ -153,7 +154,7 @@ var sixdb = function(_dbName) {
     var counter = 0;
     var request = null;
 
-    logger(logEnum.begin, [origin]);
+    logger(origin + logEnum.begin);
 
     if (!errorCallback) errorCallback = function() {
         return;
@@ -178,8 +179,7 @@ var sixdb = function(_dbName) {
       } else {
         successCallback(resultFiltered, origin);
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.lastRecords, [counter, storeName]);
+        logger(counter + ' last records returned from store "' + _store.name + '"');
         done();
       }
     };
@@ -189,8 +189,7 @@ var sixdb = function(_dbName) {
     var onsuccesGetAllFunction = function(event) {
       successCallback(event.target.result, origin);
       db.close();
-      logger(logEnum.close);
-      logger(logEnum.getAll, [_store.name]);
+      logger('All records returned from store "' + _store.name + '"');
       done();
     };
 
@@ -205,9 +204,8 @@ var sixdb = function(_dbName) {
       request = (_store.openCursor(null, "prev").onsuccess = onsuccesCursorFunction);
       } catch(e){
         db.close();
-      logger(logEnum.close);
       errorSys.makeErrorObject(origin, 20, request.error);
-      logger(logEnum.error, [lastErrorObj]);
+      logger(lastErrorObj, true);
       taskQueue.shift();
       errorCallback(lastErrorObj);
       checkTasks();
@@ -246,7 +244,7 @@ var sixdb = function(_dbName) {
   function getRecords(_storeName, indexName, query, successCallback, errorCallback) {
     var origin = "get -> getRecords(...)";
     var index = null;
-    logger(logEnum.begin, [origin]);
+    logger(origin + logEnum.begin);
 
     if (!errorCallback) 
     errorCallback = function () {
@@ -292,8 +290,7 @@ var sixdb = function(_dbName) {
     var onsuccess = function (event) {
       successCallback(event.target.result, origin);
       db.close();
-      logger(logEnum.close);
-      logger(logEnum.getAll, [_store.name]);
+      logger('All records returned from store "' + _store.name + '"');
       done();
     };
     var onerror = function (event) {
@@ -342,8 +339,7 @@ var sixdb = function(_dbName) {
       } else {
         successCallback(resultFiltered, origin, query);
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.query, [query, counter, _store.name]);
+        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
         done();
       }
     };
@@ -370,8 +366,7 @@ var sixdb = function(_dbName) {
     var onsuccesGetAll = function (event) {
       successCallback(event.target.result, origin);
       db.close();
-      logger(logEnum.close);
-      logger(logEnum.getAll, [index.objectStore.name]);
+      logger('All records returned from index "' + index.name + '" in store "'+index.objectStore.name+'"');
       done();
     };
     var onerrorFunction = function (event) {
@@ -401,8 +396,7 @@ var sixdb = function(_dbName) {
     var onsuccesIndexGetKey = function (event) {
       successCallback(event.target.result, origin, query);
       db.close();
-      logger(logEnum.close);
-      logger(logEnum.getByIndexKey, [query, index.name, index.objectStore.name]);
+      logger('Records with key "' + query + '" returned from index "' + index.name + '" on object store "' + index.objectStore.name + '"');
       done();
     };
     var onsuccesCursor = function (event) {
@@ -426,8 +420,7 @@ var sixdb = function(_dbName) {
       } else {
         successCallback(resultFiltered, origin, query);
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.query, [query, counter, index.objectStore.name]);
+        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + index.objectStore.name + '"');
         done();
       }
     };
@@ -471,7 +464,7 @@ var sixdb = function(_dbName) {
 
     var index = null;
 
-    logger(logEnum.begin, [origin]);
+    logger(origin + logEnum.begin);
 
     if (!errorCallback) errorCallback = function () {
       return;
@@ -523,8 +516,7 @@ var sixdb = function(_dbName) {
       } else {
         successCallback(actualValue, origin);
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
+        logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
         done();
 
       }
@@ -578,8 +570,7 @@ var sixdb = function(_dbName) {
       } else {
         successCallback(actualValue, origin, query);
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.custom, ['Result of ' + origin + ' on property "' + property + '": ' + actualValue]);
+        logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
         done();
       }
     };
@@ -626,7 +617,7 @@ var sixdb = function(_dbName) {
   function newDB(errorCallback) {
     var request = window.indexedDB.open(dbName);
     var origin='add -> newDB(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback){
       errorCallback=function(){return;};
@@ -642,11 +633,12 @@ var sixdb = function(_dbName) {
 
     request.onsuccess = function(event) {
       var db = event.target.result;
+      dbVersion = db.version;
       db.close();
       if (noDb) {
-        logger(logEnum.dbCreated);
+        logger('Database "' + dbName + '" created');
       } else {
-        logger(logEnum.dbExists);
+        logger('Database "' + dbName + '" already exists');
       }
       done();
     };
@@ -667,7 +659,7 @@ var sixdb = function(_dbName) {
   function newStore(storeName, successCallback, errorCallback) {
     var version;
     var origin='add -> newStore(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback){
       errorCallback=function(){return;};
@@ -682,14 +674,14 @@ var sixdb = function(_dbName) {
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
         db.close();
-        logger(logEnum.existStore,[storeName]);
+        logger('Object store "' + storeName + '" already exists');
         done();
         return;
       }
 
+      
       version = db.version;
       db.close();
-      logger(logEnum.version);
       var newVersion = version + 1;
       var store;
 
@@ -718,7 +710,7 @@ var sixdb = function(_dbName) {
           successCallback(event,origin);
         }
         db.close();
-        logger(logEnum.newStore,[storeName]);
+        logger('New object store "'+storeName+'" created');
         done();
       };
   }
@@ -734,7 +726,7 @@ var sixdb = function(_dbName) {
   function newRecord(obj, successCallback, errorCallback) {
     var origin = "add -> newRecord(...)";
     var request;
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -756,12 +748,11 @@ var sixdb = function(_dbName) {
         request.onsuccess = function(event) {
           counter++;
           if (counter == objSize) {
-            logger(logEnum.newRecord, [_store.name]);
+            logger('New record/s added to store "' + _store.name + '"');
             if (successCallback) {
               successCallback(event, origin);
             }
             db.close();
-            logger(logEnum.close);
             done();
           }
         };
@@ -782,12 +773,11 @@ var sixdb = function(_dbName) {
     }
 
     function insertFinished(event) {
-      logger(logEnum.newRecord, [_store.name]);
+      logger('New record/s added to store "' + _store.name + '"');
       if (successCallback) {
         successCallback(event, origin);
       }
       db.close();
-      logger(logEnum.close);
       done();
     }
   }
@@ -804,7 +794,7 @@ var sixdb = function(_dbName) {
   function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
     var version;
     var origin = 'add -> newIndex(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -819,7 +809,6 @@ var sixdb = function(_dbName) {
     //
     version = db.version;
     db.close();
-    logger(logEnum.version);
     var newVersion = version + 1;
 
     //// The change of the database schema only can be performed in the onupgradedneeded event
@@ -845,7 +834,7 @@ var sixdb = function(_dbName) {
         store.createIndex(indexName, keyPath);
       } else {
         db.close();
-        logger(logEnum.existIndex, [indexName, storeName]);
+        logger('The index "' + indexName + '" already exists in store "' + storeName + '"');
         done();
         return;
       }
@@ -856,7 +845,7 @@ var sixdb = function(_dbName) {
         successCallback(event, origin);
       }
       db.close();
-      logger(logEnum.newIndex, [indexName, storeName]);
+      logger('Index "' + indexName + '" created in store "' + storeName + '"');
       done();
     };
 
@@ -881,7 +870,7 @@ var sixdb = function(_dbName) {
      */
   function count(indexName, query, successCallback, errorCallback) {
     var origin = 'get -> count(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
     var request = null;
 
     if(!errorCallback)
@@ -946,8 +935,7 @@ var sixdb = function(_dbName) {
           successCallback(counter, origin, query);
         }
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.countQuery, [query, counter, _store.name]);
+        logger('Processed query finished: "' + query + '"\n'+ counter +' records counted from the query to store: "' + _store.name + '"');
         done();
       }
 
@@ -988,7 +976,7 @@ var sixdb = function(_dbName) {
   function delStore(storeName, successCallback, errorCallback) {
     var version;
     var origin = 'del -> delStore(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
     
     if(!errorCallback){
       errorCallback=function(){return;};
@@ -1003,7 +991,6 @@ var sixdb = function(_dbName) {
     //
     version = db.version;
     db.close();
-    logger(logEnum.version);
     var newVersion = version + 1;
 
     //// The change of the database schema only can be performed in the onupgradedneeded event
@@ -1021,7 +1008,7 @@ var sixdb = function(_dbName) {
         successCallback(event, origin);
       }
       db.close();
-      logger(logEnum.delStore, [storeName]);
+      logger('Object store "'+ storeName + '" deleted');
       done();
     };
 
@@ -1038,7 +1025,7 @@ var sixdb = function(_dbName) {
    */
   function delDB( successCallback, errorCallback) {    
     var origin='del -> delDB(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback){
       errorCallback=function(){return;};
@@ -1059,7 +1046,7 @@ var sixdb = function(_dbName) {
       if(successCallback){
         successCallback(event, origin);
       }
-      logger(logEnum.delDb);
+      logger('Database "' + dbName + '" deleted');
       done();
     };
   }
@@ -1080,7 +1067,7 @@ var sixdb = function(_dbName) {
    */
   function delRecords(indexName, query, successCallback, errorCallback) {
     var origin = 'del -> delRecords(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
     var request = null;
     var isIndexKeyValue = false;
     
@@ -1143,8 +1130,7 @@ var sixdb = function(_dbName) {
           successCallback(event, origin, query);
         }
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.query, [query, counter, _store.name]);
+        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
         done();
       }
 
@@ -1188,7 +1174,7 @@ var sixdb = function(_dbName) {
   function delIndex(storeName, indexName, successCallback, errorCallback) {
     var version;
     var origin = 'del -> delIndex(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
 
     if(!errorCallback)
       errorCallback=function(){return;};
@@ -1203,7 +1189,6 @@ var sixdb = function(_dbName) {
     //
     version = db.version;
     db.close();
-    logger(logEnum.version);
     var newVersion = version + 1;
 
     //// The change of the database schema only can be performed in the onupgradedneeded event
@@ -1233,7 +1218,7 @@ var sixdb = function(_dbName) {
         successCallback(event, origin);
       }
       db.close();
-      logger(logEnum.delIndex, [indexName, storeName]);
+      logger('Index "' + indexName + '" deleted from object store "' + storeName + '"');
       done();
     };
 
@@ -1260,7 +1245,7 @@ var sixdb = function(_dbName) {
    */
   function updateRecords(indexName, query, objectValues, successCallback, errorCallback) {
     var origin = 'update -> updateRecords(...)';
-    logger(logEnum.begin,[origin]);
+    logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
     var request = null;
     var i = 0;
@@ -1334,8 +1319,7 @@ var sixdb = function(_dbName) {
           successCallback(event, origin, query);
         }
         db.close();
-        logger(logEnum.close);
-        logger(logEnum.query, [query, counter, _store.name]);
+        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
         done();
       }
 
@@ -1445,22 +1429,21 @@ var sixdb = function(_dbName) {
     taskQueue.shift();
     db.close();
     errorCallback(lastErrorObj);
-    logger(logEnum.error, [lastErrorObj]);
+    logger(lastErrorObj, true);
   }
 
   function invalidArgsAcction(errorCallback) {
     taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
     db.close();
     errorCallback(lastErrorObj);
-    logger(logEnum.error, [lastErrorObj]);
+    logger(lastErrorObj, true);
     checkTasks();
   }
 
   function requestErrorAction(origin,error,errorCallback) {
     db.close();
-    logger(logEnum.close);
     errorSys.makeErrorObject(origin, 20, error);
-    logger(logEnum.error, [lastErrorObj]);
+    logger(lastErrorObj, true);
     taskQueue.shift();
     errorCallback(lastErrorObj);
     checkTasks();
@@ -1500,7 +1483,7 @@ var sixdb = function(_dbName) {
     }
     catch (e) {
       errorSys.makeErrorObject(origin, 20, e);
-      logger(logEnum.error, [lastErrorObj]);
+      logger(lastErrorObj, true);
     }
     done();
   }
@@ -1921,7 +1904,7 @@ var sixdb = function(_dbName) {
   function checkTasks() {
     if (taskQueue.length == 0) {
       idle = true;      
-      logger(logEnum.noTask);
+      logger('No pending tasks');
       return;
     }
 
@@ -1957,7 +1940,7 @@ var sixdb = function(_dbName) {
         break;
 
       case "custom":
-        logger(logEnum.begin,['custom task']);
+        logger('Custom task' + logEnum.begin);
         task.fn.apply(task.context, task.args);
         done();
         break;
@@ -2945,132 +2928,18 @@ var sixdb = function(_dbName) {
 
   
   var logEnum = {
-    open: 1,
-    close: 2,
-    lastRecords: 3,
-    getAll: 4,
-    getByIndexKey: 5,
-    error: 6,
-    dbCreated: 7,
-    dbExists: 8,
-    query: 9,
-    noTask: 10,
-    newRecord: 11,
-    version: 12,
-    newIndex: 13,
-    newStore: 14,
-    delIndex: 15,
-    delStore: 16,
-    delDb: 17,
-    existIndex: 18,
-    existStore: 19,
-    countQuery: 20,
-    custom:21,
-    begin:22,
-    finish:23
+    begin: '//--------------------------------------->'
   };
 
-  function logger(t, args) {
-    if (consoleOff && t!=6)
-      return;
+  
+  function logger(message, isError){
+    if(consoleOff && !isError)
+    return;
 
-    switch (t) {
-
-      case 21:
-        console.log(args[0]);
-        break;
-      case 22:
-      console.log('//--- ' + args[0] + ' ---------------------------->');
-      break;
-
-      case 23:
-      console.log('<--------------- ' + args[0] + ' finished -------//');
-      break;
-
-      /*case 1:
-        console.log('Database ' + dbName + ' opened');
-        break;
-
-      case 2:
-        console.log('Database ' + dbName + ' closed');
-        break;*/
-
-      case 3:
-        console.log(args[0] + ' last records returned from store "' + args[1] + '"');
-        break;
-
-      case 4:
-        console.log('All records returned from store "' + args[0] + '"');
-        break;
-
-      case 5:
-        console.log('Records with key "' + args[0] + '" returned from index "' + args[1] + '" on object store "' + args[2] + '"');
-        break;
-
-      case 6:
-        console.error(args[0]); // arrgs[0] is the errorObject
-        break;
-
-      case 7:
-        console.log('Database "' + dbName + '" created');
-        break;
-
-      case 8:
-        console.log('Database "' + dbName + '" already exists');
-        break;
-
-      case 9:
-        console.log('Processed query: "' + args[0] + '" finished\n' + args[1] + ' records returned from object store "' + args[2] + '"');
-        break;
-
-      case 10:
-        console.log("No pending tasks");
-        break;
-
-      case 11:
-        console.log('New record/s added to store "' + args[0] + '"');
-        break;
-
-      case 12:
-        console.log('Database version tested');
-        break;
-
-      case 13:
-        console.log('New index "' + args[0] + '" in store "' + args[1] + '"');
-        break;
-
-      case 14:
-        console.log('New store "' + args[0] + '" created');
-        break;
-
-      case 15:
-        console.log('Index "' + args[0] + '" deleted from store "' + args[1] + '"');
-        break;
-
-      case 16:
-        console.log('Store "' + args[0] + '" deleted');
-        break;
-
-      case 17:
-        console.log('Database "' + dbName + '" deleted');
-        break;
-
-      case 18:
-        console.log('Index "' + args[0] + '" already exists in store "' + args[1] + '"');
-        break;
-
-      case 19:
-        console.log('Store "' + args[0] + '" already exists');
-        break;
-
-        case 20:
-        console.log('Processed query finished: "'+args[0]+'"\n'+ args[1] +' records counted from the query to store: "'+args[2]+'"');
-        break;
-        
-
-      default:
-        break;
-    }
+    if(!isError)
+    console.log(message);
+    else
+    console.error(message);
   }
 
   //#endregion Logger system

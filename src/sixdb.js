@@ -1739,25 +1739,12 @@ var sixdb = function(_dbName) {
       var i=0;
 
       var test = (operator == 'and' || operator == null) ? true : false;
-      if (operator == 'and' || operator == null) {
-        for (i = 0; i < conditionsArray.length; i++) {
-          test = t.testCondition(
-            cursor.value[conditionsArray[i].keyPath],
-            conditionsArray[i].cond,
-            conditionsArray[i].value
-          );
-          if (!test) return false;
-        }
-      } else {
-        for (i = 0; i < conditionsArray.length; i++) {
-          test = t.testCondition(
-            cursor.value[conditionsArray[i].keyPath],
-            conditionsArray[i].cond,
-            conditionsArray[i].value
-          );
-          if (test) return true;
-        }
+      for (i = 0; i < conditionsArray.length; i++) {
+        test = t.testCondition(cursor.value[conditionsArray[i].keyPath], conditionsArray[i].cond, conditionsArray[i].value);
+        if ((operator == "and" || operator == null) && !test) return false;
+        else if (operator == "or" && test) return true;
       }
+      
       return test;
     },
     

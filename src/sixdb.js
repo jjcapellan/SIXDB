@@ -148,7 +148,7 @@ var sixdb = function(_dbName) {
    * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function lastRecords(/*storeName, */maxResults, successCallback, errorCallback) {
+  function lastRecords(maxResults, successCallback, errorCallback) {
     var origin = "get -> lastRecords(...)";
     var resultFiltered = [];
     var counter = 0;
@@ -241,7 +241,7 @@ var sixdb = function(_dbName) {
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */  
-  function getRecords(_storeName, indexName, query, successCallback, errorCallback) {
+  function getRecords(_storeName, successCallback, {indexName, query, errorCallback}) {
     var origin = "get -> getRecords(...)";
     var index = null;
     logger(origin + logEnum.begin);
@@ -267,21 +267,23 @@ var sixdb = function(_dbName) {
       }
     }
 
+    var commonArgs = {origin: origin, successCallback: successCallback, errorCallback: errorCallback};
+
     if (!indexName && !query)
-      getRecordsA(origin, successCallback, errorCallback);
+      getRecordsA(commonArgs);
     else
       if (!indexName && query)
-        getRecordsB( origin, query, successCallback, errorCallback);
+        getRecordsB(query, commonArgs);
       else
         if (indexName && !query)
-          getRecordsC(index, origin, successCallback, errorCallback);
+          getRecordsC(index, commonArgs);
         else
           if (indexName && query)
-            getRecordsD(index, origin, query, successCallback, errorCallback);
+            getRecordsD(index, query, commonArgs);
 
   }
 
-  function getRecordsA(origin, successCallback, errorCallback) {
+  function getRecordsA({origin, successCallback, errorCallback}) {
 
     var request = null;
 
@@ -309,7 +311,7 @@ var sixdb = function(_dbName) {
 
   }
 
-  function getRecordsB(origin, query, successCallback, errorCallback) {
+  function getRecordsB(query, {origin, successCallback, errorCallback}) {
     var counter = 0;
     var resultFiltered = [];
     var request = null;
@@ -358,7 +360,7 @@ var sixdb = function(_dbName) {
     request.onerror = onerror;
   }
 
-  function getRecordsC(index, origin, successCallback, errorCallback) {
+  function getRecordsC(index, {origin, successCallback, errorCallback}) {
 
     var request = null;
 
@@ -383,7 +385,7 @@ var sixdb = function(_dbName) {
     request.onerror = onerrorFunction;
   }
 
-  function getRecordsD(index, origin, query, successCallback, errorCallback) {
+  function getRecordsD(index, query, {origin, successCallback, errorCallback}) {
     var counter = 0;
     var resultFiltered = [];
     var isIndexKeyValue = isKey(query);
@@ -460,7 +462,7 @@ var sixdb = function(_dbName) {
    * @param  {function} successCallback Receives as parameters the result (a number) and origin.
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function getaggregateFunction( indexName, query, property, aggregatefn, successCallback, errorCallback, origin) {
+  function getaggregateFunction( property, aggregatefn, successCallback, origin,{indexName, query, errorCallback}) {
 
     var index = null;
 
@@ -486,18 +488,20 @@ var sixdb = function(_dbName) {
       }
     }
 
+    var commonArgs = {origin: origin, property: property, aggregatefn: aggregatefn, successCallback: successCallback, errorCallback: errorCallback};
+
     if (!indexName && !query)
-      getaggregateFunctionA(_store, origin, property, aggregatefn, successCallback, errorCallback);
+      getaggregateFunctionA(_store, commonArgs);
     else if (!indexName && query)
-      getAggregateFunctionB(_store, origin, query, property, aggregatefn, successCallback, errorCallback);
+      getAggregateFunctionB(_store, query, commonArgs);
     else if (indexName && !query)
-      getaggregateFunctionA(index, origin, property, aggregatefn, successCallback, errorCallback);
+      getaggregateFunctionA(index, commonArgs);
     else if (indexName && query)
-      getAggregateFunctionB(index, origin, query, property, aggregatefn, successCallback, errorCallback);
+      getAggregateFunctionB(index, query, commonArgs);
 
   }
 
-  function getaggregateFunctionA(_store, origin, property, aggregatefn, successCallback, errorCallback) {
+  function getaggregateFunctionA(_store, {origin, property, aggregatefn, successCallback, errorCallback}) {
     var request = null;
     var actualValue = null;
     var counter = 0;
@@ -536,7 +540,7 @@ var sixdb = function(_dbName) {
 
   }
 
-  function getAggregateFunctionB(_store, origin, query, property, aggregatefn, successCallback, errorCallback) {
+  function getAggregateFunctionB(_store,  query, {origin, property, aggregatefn, successCallback, errorCallback}) {
 
     var request = null;
     var actualValue = null;
@@ -1357,17 +1361,6 @@ var sixdb = function(_dbName) {
 
   //#region helper functions
   /////////////////////////////////////////////////////////////////////////////////////////////////////
-  function getStore(origin, storeName, rwMode, errorCallback) {
-    var store = null;
-    try {
-      store = db.transaction(storeName, rwMode).objectStore(storeName);
-    }
-    catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return store;
-  }
 
   function getIndex(origin, store, indexName, errorCallback) {
     var index = null;
@@ -1861,7 +1854,6 @@ var sixdb = function(_dbName) {
 
   //#endregion Query system
 
-
   //#region Task queue system
   //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1974,11 +1966,11 @@ var sixdb = function(_dbName) {
         break;
 
       case "getRecords":
-        getRecords(task.storeName, task.indexName, task.query, task.successCallback, task.errorCallback);
+        getRecords(task.storeName, task.successCallback, task.options);
         break;
 
       case "getAggregateFunction":
-        getaggregateFunction(task.indexName, task.query, task.property, task.aggregatefn, task.successCallback, task.errorCallback,task.origin);
+        getaggregateFunction(task.property, task.aggregatefn, task.successCallback, task.origin, task.options);
         break;
 
       default:
@@ -2573,13 +2565,18 @@ var sixdb = function(_dbName) {
      * mydb.execTasks();
      */
     records: function(storeName, indexName, query, successCallback, errorCallback) {
+
+      var options = {
+        indexName: indexName,
+        query: query,
+        errorCallback: errorCallback
+      }
+
       var task = {
         type: "getRecords",
         storeName: storeName,
-        indexName: indexName,
-        query: query,
         successCallback: successCallback,
-        errorCallback: errorCallback
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2630,15 +2627,19 @@ var sixdb = function(_dbName) {
         return actual + selected;
       };
 
-      var task = {
-        type: "getAggregateFunction",
+      var options = {
         indexName: indexName,
         query: query,
+        errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
         property: property,
         aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        errorCallback: errorCallback,
-        origin: "get -> Sum -> getaggregateFunction(...)"
+        successCallback: successCallback,        
+        origin: 'get -> Sum -> getaggregateFunction(...)',
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2691,15 +2692,19 @@ var sixdb = function(_dbName) {
         return (actual*(counter-1)+selected)/counter;
       };
 
-      var task = {
-        type: "getAggregateFunction",
+      var options = {
         indexName: indexName,
         query: query,
+        errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback,
-        origin: "get -> Average -> getaggregateFunction(...)"
+        origin: 'get -> Average -> getaggregateFunction(...)',
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2722,21 +2727,25 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    max: function(storeName,indexName,query,property,successCallback,errorCallback){
+    max: function (storeName, indexName, query, property, successCallback, errorCallback) {
 
       var aggregatefn = function (actual, selected) {
         return (selected > actual) ? selected : actual;
       };
 
-      var task = {
-        type: "getAggregateFunction",
+      var options = {
         indexName: indexName,
         query: query,
+        errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback,
-        origin: "get -> Max -> getaggregateFunction(...)"
+        origin: 'get -> Max -> getaggregateFunction(...)',
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2758,7 +2767,7 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    min: function(storeName,indexName,query,property,successCallback,errorCallback){
+    min: function (storeName, indexName, query, property, successCallback, errorCallback) {
 
       var aggregatefn = function (actual, selected, counter) {
         if (counter == 1) {  // First value of actual is null. Without this, min is allways null
@@ -2767,15 +2776,19 @@ var sixdb = function(_dbName) {
         return ((selected < actual) && (counter > 1)) ? selected : actual;
       };
 
-      var task = {
-        type: "getAggregateFunction",
+      var options = {
         indexName: indexName,
         query: query,
+        errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback,
-        origin: "get -> Min -> getaggregateFunction(...)"
+        origin: 'get -> Min -> getaggregateFunction(...)',
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2825,17 +2838,21 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    customAggregateFn: function(storeName,indexName,query,property, aggregatefn, successCallback,errorCallback){
+    customAggregateFn: function (storeName, indexName, query, property, aggregatefn, successCallback, errorCallback) {
 
-      var task = {
-        type: "getAggregateFunction",
+      var options = {
         indexName: indexName,
         query: query,
+        errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
         property: property,
         aggregatefn: aggregatefn,
         successCallback: successCallback,
-        errorCallback: errorCallback,
-        origin: "get -> Custom -> getaggregateFunction(...)"
+        origin: 'get -> Custom -> getaggregateFunction(...)',
+        options: options
       };
 
       taskQueue.push(tkOpen);
@@ -2922,7 +2939,6 @@ var sixdb = function(_dbName) {
 
   //#endregion Task queue system
 
-
   //#region Logger system
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2943,7 +2959,6 @@ var sixdb = function(_dbName) {
   }
 
   //#endregion Logger system
-
 
   //#region Error handler
   ///////////////////////////////////////////////////////////////////////////////////////////

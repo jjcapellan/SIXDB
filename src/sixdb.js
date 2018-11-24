@@ -47,8 +47,6 @@ var sixdb = function(_dbName) {
    */
   var dbName = _dbName;
 
-  var dbVersion;
-
   
   /**
    * Database name getter
@@ -878,7 +876,7 @@ var sixdb = function(_dbName) {
     var request = null;
 
     if(!errorCallback)
-      errorCallback=function(){return;};
+      errorCallback = function(){return;};
 
       /*
     // Test arguments
@@ -887,18 +885,10 @@ var sixdb = function(_dbName) {
       return;
     }*/
 
-    /*
-    //// Gets store
-    var _store = getStore(origin,storeName, 'readonly', errorCallback);
-    if(!_store){
-      checkTasks();
-      return;
-    }*/
-
     // Gets index
     var index;
-    if(indexName!=null){
-      index=getIndex(origin,_store,indexName,errorCallback);
+    if(indexName){
+      index = getIndex(origin,_store,indexName,errorCallback);
       if(!index){
         checkTasks();
         return;
@@ -1258,14 +1248,6 @@ var sixdb = function(_dbName) {
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
       invalidArgsAcction(errorCallback);
-      return;
-    }*/
-
-    /*
-    //// Gets store
-    var _store = getStore(origin, storeName, 'readwrite', errorCallback);
-    if (!_store) {
-      checkTasks();
       return;
     }*/
 
@@ -2038,7 +2020,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    store: function (storeName, successCallback, errorCallback) {
+    store: function (storeName, {successCallback, errorCallback}) {
       // Make the task object
       var task = {
         type: "newStore",
@@ -2088,7 +2070,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    records: function (storeName, obj, successCallback, errorCallback) {
+    records: function (storeName, obj, {successCallback, errorCallback}) {
       var task = {
         type: "newRecords",
         obj: obj,
@@ -2141,7 +2123,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    index: function (storeName, indexName, keyPath, successCallback, errorCallback) {
+    index: function (storeName, indexName, keyPath, {successCallback, errorCallback}) {
       var task = {
         type: "newIndex",
         storeName: storeName,
@@ -2237,7 +2219,7 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    db: function( successCallback, errorCallback) {
+    db: function( {successCallback, errorCallback}) {
       var task = {
         type: "delDB",
         successCallback: successCallback,
@@ -2255,7 +2237,7 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    store: function(storeName, successCallback, errorCallback) {
+    store: function(storeName, {successCallback, errorCallback}) {
       var task = {
         type: "delStore",
         storeName: storeName,
@@ -2272,7 +2254,7 @@ var sixdb = function(_dbName) {
      * @public
      * @instance
      * @param {string} storeName Object store name.
-     * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
      * @param {string | number} query Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
@@ -2308,7 +2290,7 @@ var sixdb = function(_dbName) {
      *
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query, successCallback, errorCallback) {
+    records: function(storeName, query, {indexName, successCallback, errorCallback}) {
       var task = {
         type: "delRecords",
         indexName: indexName,
@@ -2331,7 +2313,7 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    index: function(storeName, indexName, successCallback, errorCallback) {
+    index: function(storeName, indexName, {successCallback, errorCallback}) {
       var task = {
         type: "delIndex",
         storeName: storeName,
@@ -2353,7 +2335,7 @@ var sixdb = function(_dbName) {
     /**
      * Adds the task "update record/s" to the task queue.
      * @param  {string} storeName Object store name.
-     * @param  {string | null} indexName Index name. If is null then no index is used (It is usually slower).
+     * @param  {string} [indexName] Index name. If is null then no index is used (It is usually slower).
      * @param {string} query String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
@@ -2419,7 +2401,7 @@ var sixdb = function(_dbName) {
      * };
      *
      */
-    records: function (storeName, indexName, query, objectValues, successCallback, errorCallback) {
+    records: function (storeName, query, objectValues, {indexName, successCallback, errorCallback}) {
       if (!errorCallback)
         errorCallback = function () { return; };
 
@@ -2449,7 +2431,7 @@ var sixdb = function(_dbName) {
      * @instance
      * @param {string} storeName Store name.
      * @param {number} maxResults Limits the records retrieved.
-     * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+     * @param {function} successCallback Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -2502,7 +2484,7 @@ var sixdb = function(_dbName) {
      * @public
      * @instance
      * @param {string} storeName Store name.
-     * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
      * @param {string} [query] String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
@@ -2510,7 +2492,7 @@ var sixdb = function(_dbName) {
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * 'peter'                                    // Single value always refers to the index keypath.<br>
      * A single value always refers to the index keypath so the index can not be null in this case.
-     * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
+     * @param {function} successCallback Function called on success. Receives event, origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -2564,7 +2546,7 @@ var sixdb = function(_dbName) {
      * // Execs all pending tasks
      * mydb.execTasks();
      */
-    records: function(storeName, indexName, query, successCallback, errorCallback) {
+    records: function(storeName, successCallback, {errorCallback, indexName, query}) {
 
       var options = {
         indexName: indexName,
@@ -2622,7 +2604,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    sum: function (storeName, indexName, query, property, successCallback, errorCallback) {
+    sum: function (storeName, property, successCallback, {indexName, query, errorCallback}) {
       var aggregatefn = function (actual, selected) {
         return actual + selected;
       };
@@ -2686,7 +2668,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    avg: function(storeName, indexName, query, property, successCallback, errorCallback){
+    avg: function(storeName, property, successCallback, {indexName, query, errorCallback}){
 
       var aggregatefn=function(actual,selected,counter){
         return (actual*(counter-1)+selected)/counter;
@@ -2727,7 +2709,7 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    max: function (storeName, indexName, query, property, successCallback, errorCallback) {
+    max: function (storeName, property, successCallback, {indexName, query, errorCallback}) {
 
       var aggregatefn = function (actual, selected) {
         return (selected > actual) ? selected : actual;
@@ -2767,7 +2749,7 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    min: function (storeName, indexName, query, property, successCallback, errorCallback) {
+    min: function (storeName, property, successCallback, {indexName, query, errorCallback}) {
 
       var aggregatefn = function (actual, selected, counter) {
         if (counter == 1) {  // First value of actual is null. Without this, min is allways null
@@ -2838,7 +2820,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    customAggregateFn: function (storeName, indexName, query, property, aggregatefn, successCallback, errorCallback) {
+    customAggregateFn: function (storeName, property, aggregatefn, successCallback, {indexName, query, errorCallback}) {
 
       var options = {
         indexName: indexName,
@@ -2863,14 +2845,14 @@ var sixdb = function(_dbName) {
     /**
      * Adds the task "Count the records" to the task queue
      * @param  {string} storeName Store name.
-     * @param {string | null} indexName Index name. The records of the store are counted.
-     * @param {string | null} query String that contains a query. Example of valid queries:<br>
+     * @param {string} [indexName] Index name. The records of the store are counted.
+     * @param {string} [query] String that contains a query. Example of valid queries:<br>
      * property = value                           // Simple query<br>
      * c > 10 & name='peter'                      // Query with 2 conditions<br>
      * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
+     * @param {function} successCallback Function called on success. Receives the result (number), origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      * @example
      * var mydb = new sixdb('myDatabase');
@@ -2909,7 +2891,7 @@ var sixdb = function(_dbName) {
      * mydb.execTasks();
      * 
      */
-    count: function(storeName,indexName,query,successCallback,errorCallback){
+    count: function (storeName, successCallback, { indexName, query, errorCallback }) {
       var task = {
         type: "count",
         indexName: indexName,

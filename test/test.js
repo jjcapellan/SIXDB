@@ -113,25 +113,25 @@ mydb.setCustomOperator(function(value1,value2){
 // mydb.setConsoleOff(true);
 
 // Creates a store named 'southFactory'
-mydb.add.store(store, successCallback, errorCallback);
+mydb.add.store(store, {successCallback: successCallback, errorCallback: errorCallback});
 
 // Creates an index named 'IDs'
-mydb.add.index(store, index, 'id', successCallback, errorCallback);
+mydb.add.index(store, index, 'id', {successCallback: successCallback, errorCallback: errorCallback});
 
 // Insert one object
-mydb.add.records(store, employee, successCallback, errorCallback);
+mydb.add.records(store, employee, {successCallback: successCallback, errorCallback: errorCallback});
 
-//Insert a totally different object
+/*Insert a totally different object
 mydb.add.records(store, {
     model: 'large',
     power: 500
-}, successCallback, errorCallback);
+}, successCallback, errorCallback);*/
 
 // Gets the record with id = 1
-mydb.get.records(store, index, 1, successCallback, errorCallback);
+mydb.get.records(store, successCallback, { indexName: index, query: 1, errorCallback: errorCallback});
 
 // Insert an array of objects
-mydb.add.records(store, employeesArray, successCallback, errorCallback);
+mydb.add.records(store, employeesArray, {successCallback: successCallback, errorCallback: errorCallback});
 
 // Execs the custom task showInfo 
 mydb.add.customTask(showInfo, this, 'Custom task executed');
@@ -140,105 +140,116 @@ mydb.add.customTask(showInfo, this, 'Custom task executed');
 mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Gets all records
-mydb.get.records(store, null, null, successCallback, errorCallback);
+mydb.get.records(store, successCallback, {errorCallback: errorCallback});
 
 // Sum of salaries
-mydb.get.sum(store, null, null, 'salary', successCallback, errorCallback);
+mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback});
 
 // Sum of salaries with index
-mydb.get.sum(store, index, null, 'salary', successCallback, errorCallback);
+mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index});
 
 // Sum of salaries with index and query
-mydb.get.sum(store, index, 'name ^ Al', 'salary', successCallback, errorCallback);
+mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
 
 // Sum of salaries with index and indexKey
-mydb.get.sum(store, index, 3, 'salary', successCallback, errorCallback);
+mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 3});
 
 // Average of salaries
-mydb.get.avg(store, null, null, 'salary', successCallback, errorCallback);
+mydb.get.avg(store, 'salary', successCallback, {errorCallback: errorCallback});
 
 // Average of salaries with index and query
-mydb.get.avg(store, index, 'name ^ Al', 'salary', successCallback, errorCallback);
+mydb.get.avg(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
 
 // Max of salaries
-mydb.get.max(store, null, null, 'salary', successCallback, errorCallback);
+mydb.get.max(store, 'salary', successCallback, {errorCallback: errorCallback});
 
 // Min of salaries
-mydb.get.min(store, null, null, 'salary', successCallback, errorCallback);
+mydb.get.min(store, 'salary', successCallback, {errorCallback: errorCallback});
 
 // Longest name with custom aggregate function
-mydb.get.customAggregateFn(store, null, 'salary > 900', 'name', 
-function (actual, selected, counter){
-    if(counter == 1)
-    actual = selected;
-    return actual.length < selected.length ? selected : actual;
-}, successCallback, errorCallback);
+mydb.get.customAggregateFn(
+    store,
+    'name',
+    function (actual, selected, counter) {
+        if (counter == 1)
+            actual = selected;
+        return actual.length < selected.length ? selected : actual;
+    },
+    successCallback,
+    { errorCallback: errorCallback, query: 'salary > 900' }
+);
 
-// Gets records wich name contains "ul"
-mydb.get.records(store, null, 'name <> ul', successCallback, errorCallback);
+// Gets records wich name contains "ul" with index
+mydb.get.records(store, successCallback, {indexName: index, query: 'name <> ul', errorCallback: errorCallback});
 
 // Gets records wich name starts with "al"
-mydb.get.records(store, null, 'name ^ Al', successCallback, errorCallback);
+mydb.get.records(store, successCallback, {query: 'name ^ Al', errorCallback: errorCallback});
 
 // Gets records wich name ends with "e"
-mydb.get.records(store, null, 'name $ e', successCallback, errorCallback);
+mydb.get.records(store, successCallback, {query: 'name $ e', errorCallback: errorCallback});
 
 // Gets records wich name have same number of characters than "Mary" (custom operator)
-mydb.get.records(store, null, 'name ~~ Mary', successCallback, errorCallback);
+mydb.get.records(store, successCallback, {query: 'name ~~ Mary', errorCallback: errorCallback});
 
 // Gets records using a query of 2 conditions and logical operator &
-mydb.get.records(store, null, 'department = manufacturing & age > 30', successCallback, errorCallback);
+mydb.get.records(store, successCallback, {query: 'department = manufacturing & age > 30', errorCallback: errorCallback});
 
 // Gets records using a query with quotes and the logical operator ||
-mydb.get.records(store, null, 'department= "manufacturing" || salary > 1390', successCallback, errorCallback);
+mydb.get.records(store, successCallback, {query: 'department= "manufacturing" || salary > 1390', errorCallback: errorCallback});
 
 //Counts records
-mydb.get.count(store, null, 'salary>1000', successCallback);
+mydb.get.count(store, successCallback, {query: 'salary > 1000'});
 
 //Counts records
-mydb.get.count(store, index, 'id = 3', successCallback);
+mydb.get.count(store, successCallback, {indexName: index, query: 'id = 3'});
 
 //Counts all records in store
-mydb.get.count(store, null, null, successCallback);
+mydb.get.count(store, successCallback, {});
 
 //Counts all records in index
-mydb.get.count(store, index, null, successCallback);
+mydb.get.count(store, successCallback, {indexName: index});
 
 // Query with 2 sets of conditions
-mydb.get.records(store, null, '(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)', successCallback, errorCallback);
+mydb.get.records(store, successCallback, 
+{query: '(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)', errorCallback: errorCallback});
 
 // Updates salary an age of the record with id = 4
-mydb.update.records(store, index, 4, { salary: 1450, age: 42 }, successCallback, errorCallback);
+mydb.update.records(store, 4, { salary: 1450, age: 42 }, {indexName: index, successCallback: successCallback, errorCallback: errorCallback});
 
 // Gets all records
 mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Updates the salary of records with accounting department using a function
-mydb.update.records(store, null, 'department="accounting"', { salary: function (oldSalary) { return oldSalary + 200 } }, successCallback, errorCallback);
+mydb.update.records(store,
+    'department="accounting"',
+    { salary: function (oldSalary) { return oldSalary + 200 } },
+    { successCallback: successCallback, errorCallback: errorCallback });
 
 // Gets the records from the accounting department
-mydb.get.records(store, null, 'department="accounting"', successCallback, errorCallback);
+mydb.get.records(store, 
+    successCallback, 
+    { query: 'department="accounting"', errorCallback: errorCallback });
 
 // Delete the record wich id = 4
-mydb.del.records(store, index, 4, successCallback, errorCallback);
+mydb.del.records(store, 4, {indexName: index, successCallback: successCallback, errorCallback: errorCallback});
 
 // Gets all records
 mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Delete records with a query
-mydb.del.records(store, null, 'salary>1300', successCallback, errorCallback);
+mydb.del.records(store, 'salary>1300', {indexName: index, successCallback: successCallback, errorCallback: errorCallback});
 
 // Gets all records
 mydb.get.lastRecords(store, null, successCallback, errorCallback);
 
 // Deletes a index
-mydb.del.index(store, index, successCallback, errorCallback);
+mydb.del.index(store, index, {successCallback: successCallback, errorCallback: errorCallback});
 
 // Deletes a store
-mydb.del.store(store, successCallback, errorCallback);
+mydb.del.store(store, {successCallback: successCallback, errorCallback: errorCallback});
 
 // Deletes the database
-mydb.del.db(successCallback, errorCallback);
+mydb.del.db({successCallback: successCallback, errorCallback: errorCallback});
 
 // Sends a custom task
 mydb.add.customTask(checkTest, this);

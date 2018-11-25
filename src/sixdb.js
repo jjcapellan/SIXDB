@@ -2598,9 +2598,10 @@ var sixdb = function(_dbName) {
       };
 
       var origin = 'get -> Sum(...)';
-      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
+      makeAggregateTask(args);
 
     },
 
@@ -2649,9 +2650,10 @@ var sixdb = function(_dbName) {
       };
 
       var origin = 'get -> Average(...)';
-      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
+      makeAggregateTask(args);
 
     },
 
@@ -2676,9 +2678,10 @@ var sixdb = function(_dbName) {
       };
 
       var origin = 'get -> Max(...)';
-      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
+      makeAggregateTask(args);
     },
 
     /**
@@ -2705,9 +2708,10 @@ var sixdb = function(_dbName) {
       };
 
       var origin = 'get -> Min(...)';
-      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
+      makeAggregateTask(args);
     },
 
     /**
@@ -2756,9 +2760,10 @@ var sixdb = function(_dbName) {
       _index = null;
 
       var origin = 'get -> customAggregateFn(...)';
-      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
+      makeAggregateTask(args);
     },
 
     /**
@@ -2850,7 +2855,7 @@ var sixdb = function(_dbName) {
     }
   }
 
-  function makeAggregateTask(storeName, property, successCallback, aggregatefn, {origin, indexName, query, errorCallback}){
+  function makeAggregateTask({storeName, property, successCallback, aggregatefn, origin, indexName, query, errorCallback}){
     _index = null;
 
       var options = {

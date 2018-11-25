@@ -2405,6 +2405,24 @@ var sixdb = function(_dbName) {
     }
   };
 
+  this.aggregateFuncs = {
+    sum: function (actual, selected) {
+      return actual + selected;
+    },
+    avg: function (actual, selected, counter) {
+      return (actual * (counter - 1) + selected) / counter;
+    },
+    max: function (actual, selected) {
+      return (selected > actual) ? selected : actual;
+    },
+    min: function (actual, selected, counter) {
+      if (counter == 1) {  // First value of actual is null. Without this, min is allways null
+        actual = selected;
+      }
+      return ((selected < actual) && (counter > 1)) ? selected : actual;
+    }
+  }
+
   /**
    * Contains get methods
    * @namespace
@@ -2552,214 +2570,11 @@ var sixdb = function(_dbName) {
       }
       taskQueue.push(task);
     },
-
-    /**
-     * Returns the sum of a property to the success callback.
-     * @param {string} storeName Store name.
-     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} [query] Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param  {string} property Represents the column to apply the sum function.
-     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     * @example 
-     * // Object store "southFactory":
-     * // ID    name    salary
-     * // 1     Adam    1500
-     * // 2     Paul    1200
-     * // 3     Peter   1000
-     * 
-     * var mydb = new sixdb('myDatabase');
-     * 
-     * //
-     * // Sums all values of salary.
-     * // Sends the number 3700 to mySuccesCallback.
-     * //
-     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
-     * 
-     * //
-     * // Sums all values of salary where name starts with "P".
-     * // Sends the number 2200 to mySuccesCallback.
-     * //
-     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
-     * 
-     * // Execs all pending tasks
-     * //
-     * mydb.execTasks();
-     */
-    sum: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
-
-      var aggregatefn = function (actual, selected) {
-        return actual + selected;
-      };
-
-      var origin = 'get -> Sum(...)';
-      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
-
-      makeAggregateTask(args);
-
-    },
-
-    /**
-     * Returns the average value of a property to the success callback.
-     * @param {string} storeName Store name.
-     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} [query] Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param  {string} property Represents the column to apply the average function.
-     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     * @example
-     * // Object store "southFactory":
-     * // ID    name    salary
-     * // 1     Adam    1500
-     * // 2     Paul    1200
-     * // 3     Peter   1000
-     * 
-     * var mydb = new sixdb('myDatabase');
-     * 
-     * //
-     * // Calculates the average of all the values of salary.
-     * // Sends the number 1233.333333333333 to mySuccesCallback.
-     * //
-     * mydb.get.sum( 'southFactory', null, null, 'salary', mySuccessCallback, myErrorCallback); 
-     * 
-     * //
-     * // Calculates the average of all the values of salary where name starts with "P".
-     * // Sends the number 1100 to mySuccesCallback.
-     * //
-     * mydb.get.sum( 'southFactory', null, 'name ^ P', 'salary', mySuccessCallback, myErrorCallback);
-     * 
-     * // Execs all pending tasks
-     * //
-     * mydb.execTasks();
-     */
-    avg: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
-
-      var aggregatefn = function (actual, selected, counter) {
-        return (actual * (counter - 1) + selected) / counter;
-      };
-
-      var origin = 'get -> Average(...)';
-      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
-
-      makeAggregateTask(args);
-
-    },
-
-    /**
-     * Returns to the succes callback the maximum value of a property
-     * @param {string} storeName Store name.
-     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} [query] Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param  {string} property Represents the column to apply the max function.
-     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     */
-    max: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
-
-      var aggregatefn = function (actual, selected) {
-        return (selected > actual) ? selected : actual;
-      };
-
-      var origin = 'get -> Max(...)';
-      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
-
-      makeAggregateTask(args);
-    },
-
-    /**
-     * Returns to the succes callback the minimum value of a property
-     * @param {string} storeName Store name.
-     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} [query] Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param  {string} property Represents the column to apply the min function.
-     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     */
-    min: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
-
-      var aggregatefn = function (actual, selected, counter) {
-        if (counter == 1) {  // First value of actual is null. Without this, min is allways null
-          actual = selected;
-        }
-        return ((selected < actual) && (counter > 1)) ? selected : actual;
-      };
-
-      var origin = 'get -> Min(...)';
-      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
-
-      makeAggregateTask(args);
-    },
-
-    /**
-     * Returns to the succes callback the value of a property calculated by a custom aggregate function
-     * @param {string} storeName Store name.
-     * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-     * @param {string | number} [query] Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * 'Peter'                                    // Single value always refers to the index keypath<br>
-     * @param  {string} property Represents the column to apply the min function.
-     * @param  {function} aggregatefn Aggregate function wich receives each one of the property values and the number of iteration.
-     * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-     * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     * @example
-     * var mydb = new sixdb('myDatabase');
-     *
-     * // The aggregate function is applied to each one of the property values of queried records in a loop.
-     * // The aggregate function receives 3 parameters:
-     * // selectedValue --> The property value of the selected record.
-     * // actualValue --> The actual value calculated by our custom function. In the first iteration this value is null.
-     * // counter --> The number of iteration. First iteration is 1. 
-     * //
-     * // This simple function returns the longest string of all values.(not valid with numbers)
-     * //
-     * var myCustomFunction = function(actualValue, selectedValue, Counter){
-     *     if(counter == 1)
-     *         actualValue = selectedValue;
-     *     return actualValue.length < selectedValue.length ? selectedValue : actualValue;
-     *     };
-     *
-     * //
-     * // Gets one of the longest names of employees with salary > 1600
-     * //
-     * mydb.get.customAggregateFn('storeName', null, 'salary > 1600', 'name', myCustomFunction, successCallback, errorCallback);
-     * 
-     * 
-     * //
-     * //Execs all pending tasks
-     * //
-     * mydb.execTasks();
-     */
-    customAggregateFn: function (storeName, property, aggregatefn, successCallback, { indexName, query, errorCallback }) {
+    
+    aggregateFn: function (storeName, property, aggregatefn, successCallback, { indexName, query, errorCallback }) {
       _index = null;
 
-      var origin = 'get -> customAggregateFn(...)';
+      var origin = 'get -> aggregateFn(...)';
       var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
         origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 

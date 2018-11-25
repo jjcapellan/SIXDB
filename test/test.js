@@ -143,31 +143,32 @@ mydb.get.lastRecords(store, null, successCallback, errorCallback);
 mydb.get.records(store, successCallback, {errorCallback: errorCallback});
 
 // Sum of salaries
-mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback});
+//mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback});
+mydb.get.aggregateFn(store,'salary',mydb.aggregateFuncs.sum, successCallback, {errorCallback: errorCallback});
 
 // Sum of salaries with index
-mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index});
+mydb.get.aggregateFn(store, 'salary', mydb.aggregateFuncs.sum , successCallback, {errorCallback: errorCallback, indexName: index});
 
 // Sum of salaries with index and query
-mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
+mydb.get.aggregateFn(store, 'salary', mydb.aggregateFuncs.sum, successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
 
 // Sum of salaries with index and indexKey
-mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 3});
+mydb.get.aggregateFn(store, 'salary', mydb.aggregateFuncs.sum, successCallback, {errorCallback: errorCallback, indexName: index, query: 3});
 
 // Average of salaries
-mydb.get.avg(store, 'salary', successCallback, {errorCallback: errorCallback});
+mydb.get.aggregateFn(store, 'salary', mydb.aggregateFuncs.avg, successCallback ,successCallback, {errorCallback: errorCallback});
 
 // Average of salaries with index and query
-mydb.get.avg(store, 'salary', successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
+mydb.get.aggregateFn(store, 'salary',mydb.aggregateFuncs.avg, successCallback, {errorCallback: errorCallback, indexName: index, query: 'name ^ Al'});
 
 // Max of salaries
-mydb.get.max(store, 'salary', successCallback, {errorCallback: errorCallback});
+mydb.get.aggregateFn(store, 'salary',mydb.aggregateFuncs.max, successCallback, {errorCallback: errorCallback});
 
 // Min of salaries
-mydb.get.min(store, 'salary', successCallback, {errorCallback: errorCallback});
+mydb.get.aggregateFn(store, 'salary', mydb.aggregateFuncs.min, successCallback, {errorCallback: errorCallback});
 
 // Longest name with custom aggregate function
-mydb.get.customAggregateFn(
+mydb.get.aggregateFn(
     store,
     'name',
     function (actual, selected, counter) {

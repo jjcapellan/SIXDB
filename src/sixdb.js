@@ -2591,32 +2591,16 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    sum: function (storeName, property, successCallback, {indexName, query, errorCallback}) { 
-      _index = null;     
+    sum: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
+
       var aggregatefn = function (actual, selected) {
         return actual + selected;
       };
 
-      var options = {
-        query: query,
-        errorCallback
-      }
+      var origin = 'get -> Sum(...)';
+      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,        
-        origin: 'get -> Sum -> getaggregateFunction(...)',
-        options: options
-      };
-
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore('get -> Sum(...)', storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex('get -> Sum(...)', indexName);
-      }
-      taskQueue.push(task);
+      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
 
     },
 
@@ -2658,33 +2642,16 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    avg: function(storeName, property, successCallback, {indexName, query, errorCallback}){
-      _index = null;
+    avg: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
 
-      var aggregatefn=function(actual,selected,counter){
-        return (actual*(counter-1)+selected)/counter;
+      var aggregatefn = function (actual, selected, counter) {
+        return (actual * (counter - 1) + selected) / counter;
       };
 
-      var options = {
-        query: query,
-        errorCallback
-      }
+      var origin = 'get -> Average(...)';
+      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        origin: 'get -> Average -> getaggregateFunction(...)',
-        options: options
-      };
-
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore('get -> Average(...)', storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex('get -> Average(...)', indexName);
-      }
-      taskQueue.push(task);
+      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
 
     },
 
@@ -2702,33 +2669,16 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    max: function (storeName, property, successCallback, {indexName, query, errorCallback}) {
-      _index = null;
+    max: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
 
       var aggregatefn = function (actual, selected) {
         return (selected > actual) ? selected : actual;
       };
 
-      var options = {
-        query: query,
-        errorCallback
-      }
+      var origin = 'get -> Max(...)';
+      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        origin: 'get -> Max -> getaggregateFunction(...)',
-        options: options
-      };
-
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore('get -> Max(...)', storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex('get -> Average(...)', indexName);
-      }
-      taskQueue.push(task);
+      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
     },
 
     /**
@@ -2745,8 +2695,7 @@ var sixdb = function(_dbName) {
      * @param  {function} successCallback Receives as parameters the result (a number) and origin.
      * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    min: function (storeName, property, successCallback, {indexName, query, errorCallback}) {
-      _index = null;
+    min: function (storeName, property, successCallback, { indexName, query, errorCallback }) {
 
       var aggregatefn = function (actual, selected, counter) {
         if (counter == 1) {  // First value of actual is null. Without this, min is allways null
@@ -2755,26 +2704,10 @@ var sixdb = function(_dbName) {
         return ((selected < actual) && (counter > 1)) ? selected : actual;
       };
 
-      var options = {
-        query: query,
-        errorCallback
-      }
+      var origin = 'get -> Min(...)';
+      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        origin: 'get -> Min -> getaggregateFunction(...)',
-        options: options
-      };
-
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore('get -> Min(...)', storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex('get -> Min(...)', indexName);
-      }
-      taskQueue.push(task);
+      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
     },
 
     /**
@@ -2819,29 +2752,13 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    customAggregateFn: function (storeName, property, aggregatefn, successCallback, {indexName, query, errorCallback}) {
+    customAggregateFn: function (storeName, property, aggregatefn, successCallback, { indexName, query, errorCallback }) {
       _index = null;
 
-      var options = {
-        query: query,
-        errorCallback
-      }
+      var origin = 'get -> customAggregateFn(...)';
+      var options = { origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
 
-      var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        origin: 'get -> Custom -> getaggregateFunction(...)',
-        options: options
-      };
-
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore('get -> customAggregateFuction(...)', storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex('get -> customAggregateFuction(...)', indexName);
-      }
-      taskQueue.push(task);
+      makeAggregateTask(storeName, property, successCallback, aggregatefn, options);
     },
 
     /**
@@ -2931,6 +2848,31 @@ var sixdb = function(_dbName) {
 
       taskQueue.push(task);
     }
+  }
+
+  function makeAggregateTask(storeName, property, successCallback, aggregatefn, {origin, indexName, query, errorCallback}){
+    _index = null;
+
+      var options = {
+        query: query,
+        errorCallback: errorCallback
+      }
+
+      var task = {
+        type: 'getAggregateFunction',
+        property: property,
+        aggregatefn: aggregatefn,
+        successCallback: successCallback,
+        origin: origin,
+        options: options
+      };
+
+      taskQueue.push(tkOpen);
+      setHelpTask.setStore(origin, storeName, 'readonly');
+      if (indexName) {
+        setHelpTask.setIndex(origin, indexName);
+      }
+      taskQueue.push(task);
   }
 
   //#endregion Task queue system

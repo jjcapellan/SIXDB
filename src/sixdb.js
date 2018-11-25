@@ -310,7 +310,7 @@ var sixdb = function(_dbName) {
     var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
 
 
-    sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, cursorFunction: cursorGetRecords, successCallback: successCallback };
+    sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorGetRecords, successCallback: successCallback };
 
 
     /// request callbacks
@@ -370,7 +370,7 @@ var sixdb = function(_dbName) {
       var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       var extMode = conditionsBlocksArray[0].externalLogOperator;
       var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, cursorFunction: cursorGetRecords, successCallback: successCallback };
+      sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorGetRecords, successCallback: successCallback };
 
     }
 
@@ -812,8 +812,6 @@ var sixdb = function(_dbName) {
       return;
     }*/
 
-    var counter = 0;
-
     if (!query) {
       if (_index)
         query = _index.keyPath + '!= null';
@@ -821,33 +819,26 @@ var sixdb = function(_dbName) {
         query = _store.keyPath + '!= -1';
     }
 
+    if (query) {
+      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      sharedObj = {
+        counter: 0,
+        get event() { return this.counter },
+        extMode: extMode,
+        origin: origin,
+        query: query,
+        conditionsBlocksArray: conditionsBlocksArray,
+        exitsInFirstTrue: exitsInFirstTrue,
+        logFunction: countLog, cursorFunction: voidFn, successCallback: successCallback
+      };
+
+    }
+
     var onSuccessQuery = function (event) {
       var cursor = event.target.result;
-      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      var extMode = conditionsBlocksArray[0].externalLogOperator; //external logical operator
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          counter++;
-        }
-        cursor.continue();
-
-      } else {
-          successCallback(counter, origin, query);
-        db.close();
-        logger('Processed query finished: "' + query + '"\n'+ counter +' records counted from the query to store: "' + _store.name + '"');
-        _index = null;
-        done();
-      }
-
+      cursorLoop(cursor);
     };
 
     var onError = function (event) {
@@ -1001,6 +992,7 @@ var sixdb = function(_dbName) {
       query: query,
       conditionsBlocksArray: conditionsBlocksArray,
       exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
       cursorFunction: cursorDelRecords,
       successCallback: successCallback
     };
@@ -1149,6 +1141,7 @@ var sixdb = function(_dbName) {
       query: query,
       conditionsBlocksArray: conditionsBlocksArray,
       exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
       cursorFunction: cursorUpdate,
       successCallback: successCallback
     };
@@ -1343,11 +1336,21 @@ var sixdb = function(_dbName) {
     } else {
       successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
       db.close();
-      logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+      //logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+      sharedObj.logFunction();
       _index = null;
       sharedObj = {};
       done();
     }
+  }
+
+  /// Logger functions
+  function queryLog(){
+    logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+  }
+
+  function countLog(){
+    logger('Processed query finished: "' + sharedObj.query + '"\n'+ sharedObj.counter +' records counted from the query to store: "' + _store.name + '"');
   }
 
   //#endregion helper functions

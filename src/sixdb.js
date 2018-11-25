@@ -189,10 +189,7 @@ var sixdb = function(_dbName) {
     //// Executed if maxResults is null. Don't needs cursor. (It's faster)
     //
     var onsuccesGetAllFunction = function(event) {
-      successCallback(event.target.result, origin);
-      db.close();
-      logger('All records returned from store "' + _store.name + '"');
-      done();
+      requestSuccessAction(event.target.result, origin, successCallback, 'All records returned from store "' + _store.name + '"');
     };
 
     var onerrorFunction = function(event) {
@@ -278,10 +275,7 @@ var sixdb = function(_dbName) {
 
     /// Callbacks of request
     var onsuccess = function (event) {
-      successCallback(event.target.result, origin);
-      db.close();
-      logger('All records returned from store "' + _store.name + '"');
-      done();
+      requestSuccessAction(event.target.result, origin, successCallback, 'All records returned from store "' + _store.name + '"');
     };
     var onerror = function (event) {
       requestErrorAction(origin, request.error, errorCallback);
@@ -644,10 +638,7 @@ var sixdb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
-          successCallback(event,origin);
-        db.close();
-        logger('New object store "'+storeName+'" created');
-        done();
+        requestSuccessAction(event, origin, successCallback, 'New object store "'+storeName+'" created');
       };
   }
 
@@ -766,11 +757,8 @@ var sixdb = function(_dbName) {
       }
     };
 
-    request.onsuccess = function (event) {
-        successCallback(event, origin);
-      db.close();
-      logger('Index "' + indexName + '" created in store "' + storeName + '"');
-      done();
+    request.onsuccess = function(event) {
+      requestSuccessAction(event, origin, successCallback, 'Index "' + indexName + '" created in store "' + storeName + '"');
     };
 
     request.onerror = function (event) {
@@ -894,10 +882,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onsuccess = function (event) {
-        successCallback(event, origin);
-      db.close();
-      logger('Object store "'+ storeName + '" deleted');
-      done();
+      requestSuccessAction(event, origin, successCallback, 'Object store "'+ storeName + '" deleted');
     };
 
     request.onerror = function (event) {
@@ -1067,10 +1052,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onsuccess = function (event) {
-        successCallback(event, origin);
-      db.close();
-      logger('Index "' + indexName + '" deleted from object store "' + storeName + '"');
-      done();
+      requestSuccessAction(event, origin, successCallback, 'Index "' + indexName + '" deleted from object store "' + storeName + '"');
     };
 
     request.onerror = function (event) {
@@ -1240,6 +1222,13 @@ var sixdb = function(_dbName) {
     taskQueue.shift();
     errorCallback(lastErrorObj);
     checkTasks();
+  }
+
+  function requestSuccessAction(event, origin, successCallback, message) {
+    successCallback(event, origin);
+    db.close();
+    logger(message);
+    done();
   }
 
   function testCursor(conditionsBlocksArray, exitsInFirst, cursor) {

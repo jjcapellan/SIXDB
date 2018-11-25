@@ -94,6 +94,10 @@ var sixdb = function(_dbName) {
 
   var _index = null;
 
+  var sharedObj = {};
+
+  var i = 0;
+
   /**
    * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
    * @param  {function} compareFunction Function to compare a property value with a test value.<br>
@@ -302,33 +306,19 @@ var sixdb = function(_dbName) {
 
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
+    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
+    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
+
+
+    sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, cursorFunction: cursorGetRecords, successCallback: successCallback };
+
 
     /// request callbacks
     var onsucces = function (event) {
       var cursor = event.target.result;
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var test = false;
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          resultFiltered.push(cursor.value);
-          counter++;
-        }
-        cursor.continue();
-      } else {
-        successCallback(resultFiltered, origin, query);
-        db.close();
-        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
-        done();
-      }
+      cursorLoop(cursor);
     };
+
     var onerror = function (event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -371,14 +361,18 @@ var sixdb = function(_dbName) {
     request.onerror = onerrorFunction;
   }
 
-  function getRecordsD(query, {origin, successCallback, errorCallback}) {
-    var counter = 0;
+  function getRecordsD(query, { origin, successCallback, errorCallback }) {
     var resultFiltered = [];
     var isIndexKeyValue = isKey(query);
     var request = null;
 
+    if (!isIndexKeyValue) {
+      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
+      sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, cursorFunction: cursorGetRecords, successCallback: successCallback };
 
-    var conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+    }
 
     /// request callbacks
     var onsuccesIndexGetKey = function (event) {
@@ -390,29 +384,7 @@ var sixdb = function(_dbName) {
     };
     var onsuccesCursor = function (event) {
       var cursor = event.target.result;
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var test = false;
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          resultFiltered.push(cursor.value);
-          counter++;
-        }
-        cursor.continue();
-      } else {
-        successCallback(resultFiltered, origin, query);
-        db.close();
-        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _index.objectStore.name + '"');
-        _index = null;
-        done();
-      }
+      cursorLoop(cursor);
     };
     var onerror = function (event) {
       _index = null;
@@ -996,7 +968,6 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delRecords(...)';
     logger(origin + logEnum.begin);
     var request = null;
-    var isIndexKeyValue = false;
 
       /*
     // Test arguments
@@ -1008,57 +979,45 @@ var sixdb = function(_dbName) {
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
     // 
-    isIndexKeyValue = isKey(query);
+    var isIndexKeyValue = isKey(query);
 
 
     var conditionsBlocksArray;
-    conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
-    var counter = 0;
+    if (isIndexKeyValue) {
+      // if is a number here is converted to string
+      query = _index.keyPath + '=' + query;
+    }
+    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
+    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
+
+
+    sharedObj = {
+      counter: 0,      
+      extMode: extMode,
+      event: event,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      cursorFunction: cursorDelRecords,
+      successCallback: successCallback
+    };
 
     var onsuccesCursor = function (event) {
-
       var cursor = event.target.result;
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-
-      var test = false;
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          var request = cursor.delete();
-          request.onsuccess = function () {
-            counter++;
-          };
-        }
-        cursor.continue();
-
-      } else {
-          successCallback(event, origin, query);
-        db.close();
-        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
-        _index = null;
-        done();
-      }
-
+      cursorLoop(cursor);
     }; // end onsuccesCursor
 
     var onerrorFunction = function (event) {
       _index = null;
+      sharedObj = {};
       requestErrorAction(origin,request.error, errorCallback);
     };
 
     if (_index) {
-      if (isIndexKeyValue) {
-        // if is a number here is converted to string
-        query = _index.keyPath + '=' + query;
-        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      }
+      
       request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
       if (!request) {
         checkTasks();
@@ -1156,7 +1115,6 @@ var sixdb = function(_dbName) {
     logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
     var request = null;
-    var i = 0;
 
     /*
     // Test arguments
@@ -1170,94 +1128,65 @@ var sixdb = function(_dbName) {
     isIndexKeyValue = isKey(query);
 
     var conditionsBlocksArray;
-    conditionsBlocksArray = (!isIndexKeyValue) ? qrySys.makeConditionsBlocksArray(query) : null;
+    if (isIndexKeyValue) {
+      // If query is a single number value then is mofied to be valid to the query system
+      query = _index.keyPath + '=' + query;      
+    }
+    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+    
+    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
+    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
 
-    var counter = 0;
 
-    var onsuccesCursor = function (event) {
+    sharedObj = {
+      counter: 0,
+      keys: Object.keys(objectValues),
+      newObjectValuesSize: Object.keys(objectValues).length,
+      extMode: extMode,
+      objectValues: objectValues,
+      event: event,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      cursorFunction: cursorUpdate,
+      successCallback: successCallback
+    };
 
+    var onsuccesCursor = function(event) {
       var cursor = event.target.result;
-      var keys = Object.keys(objectValues); //Array with the property names that will be updated
-      var newObjectValuesSize = keys.length;
-      var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null; //external logical operator
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-      if (cursor) {
-
-        var test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          var updateData = cursor.value;
-          for (i = 0; i < newObjectValuesSize; i++) {
-            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-            updateData[keys[i]] =
-              typeof objectValues[keys[i]] == "function" ? objectValues[keys[i]](updateData[keys[i]]) : objectValues[keys[i]];
-          }
-
-          var request = cursor.update(updateData);
-          request.onsuccess = function () {
-            counter++;
-          };
-        }
-        cursor.continue();
-
-      } else {
-        successCallback(event, origin, query);
-        db.close();
-        logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
-        _index = null;
-        done();
-      }
-
+      cursorLoop(cursor);
     };
 
     var onerrorFunction = function (event) {
       _index = null;
-      requestErrorAction(origin,request.error, errorCallback);
+      sharedObj = {};
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
     if (_index) {
-      if (isIndexKeyValue) {
-        // If query is a single number value then is mofied to be valid to the query system
-        query = _index.keyPath + '=' + query;
-        conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      }
       request = tryOpenCursor(origin, _index, errorCallback);// index.openCursor();
       if (!request) {
         checkTasks();
         return;
       }
-      request.onsuccess = onsuccesCursor;
-      request.onerror = onerrorFunction;
+
     } else {
       request = tryOpenCursor(origin, _store, errorCallback); // store.openCursor();
       if (!request) {
         checkTasks();
         return;
       }
-      request.onsuccess = onsuccesCursor;
-      request.onerror = onerrorFunction;
     }
+
+    request.onsuccess = onsuccesCursor;
+    request.onerror = onerrorFunction;
   }
 
   //#endregion Private functions
 
   //#region helper functions
   /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  function getIndex(origin, store, indexName, errorCallback) {
-    var index = null;
-    try {
-      index = store.index(indexName);
-    } catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return index;
-  }
 
   function tryStoreGetAll(origin, store, errorCallback){
     var request = null;
@@ -1376,6 +1305,49 @@ var sixdb = function(_dbName) {
       logger(lastErrorObj, true);
     }
     done();
+  }
+
+  /// Cursor functions /////////////////////
+
+  function cursorUpdate(cursor){
+    var updateData = cursor.value;
+          for (i = 0; i < sharedObj.newObjectValuesSize; i++) {
+            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+            updateData[sharedObj.keys[i]] =
+              typeof sharedObj.objectValues[sharedObj.keys[i]] == "function" ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]]) : sharedObj.objectValues[sharedObj.keys[i]];
+          }
+
+          cursor.update(updateData);
+  }
+
+  function cursorDelRecords(cursor) {
+    cursor.delete();
+  }
+
+  function cursorGetRecords(cursor){
+    sharedObj.resultFiltered.push(cursor.value);
+  }
+
+  function cursorLoop(cursor){
+
+      if (cursor) {
+
+      var test = testCursor(sharedObj.conditionsBlocksArray, sharedObj.exitsInFirstTrue, cursor);
+
+      if (test) {
+        sharedObj.cursorFunction(cursor);
+        sharedObj.counter++;
+      }
+      cursor.continue();
+
+    } else {
+      successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
+      db.close();
+      logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+      _index = null;
+      sharedObj = {};
+      done();
+    }
   }
 
   //#endregion helper functions

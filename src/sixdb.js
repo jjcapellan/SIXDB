@@ -77,6 +77,8 @@ var sixdb = function(_dbName) {
     }
   };
 
+  var voidFn = function () { return; };
+
   /**
    * Function to compare a property value with a test value
    * @private
@@ -148,17 +150,13 @@ var sixdb = function(_dbName) {
    * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function lastRecords(maxResults, successCallback, errorCallback) {
+  function lastRecords(maxResults, successCallback = voidFn, errorCallback = voidFn) {
     var origin = "get -> lastRecords(...)";
     var resultFiltered = [];
     var counter = 0;
     var request = null;
 
     logger(origin + logEnum.begin);
-
-    if (!errorCallback) errorCallback = function() {
-        return;
-      };
 
       /*
     // Test arguments
@@ -241,15 +239,10 @@ var sixdb = function(_dbName) {
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */  
-  function getRecords(_storeName, successCallback, {query, errorCallback}) {
+  function getRecords(_storeName, successCallback = voidFn, {query, errorCallback = voidFn}) {
     var origin = "get -> getRecords(...)";
     /*var _index = null;*/
     logger(origin + logEnum.begin);
-
-    if (!errorCallback) 
-    errorCallback = function () {
-      return;
-    };
 
     /*
     // Test arguments
@@ -458,15 +451,9 @@ var sixdb = function(_dbName) {
    * @param  {function} successCallback Receives as parameters the result (a number) and origin.
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function getaggregateFunction( property, aggregatefn, successCallback, origin,{query, errorCallback}) {
-
-    
+  function getaggregateFunction( property, aggregatefn, successCallback = voidFn, origin,{query, errorCallback = voidFn}) {
 
     logger(origin + logEnum.begin);
-
-    if (!errorCallback) errorCallback = function () {
-      return;
-    };
 
     /*
     // Test arguments
@@ -609,14 +596,10 @@ var sixdb = function(_dbName) {
    * @private
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function newDB(errorCallback) {
+  function newDB(errorCallback = voidFn) {
     var request = window.indexedDB.open(dbName);
     var origin='add -> newDB(...)';
     logger(origin + logEnum.begin);
-
-    if(!errorCallback){
-      errorCallback=function(){return;};
-    }
 
     // Boolean: Database doesn't exist (no database = noDb)
     var noDb = false;
@@ -651,14 +634,10 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function newStore(storeName, successCallback, errorCallback) {
+  function newStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
     var version;
     var origin='add -> newStore(...)';
     logger(origin + logEnum.begin);
-
-    if(!errorCallback){
-      errorCallback=function(){return;};
-    }
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -701,9 +680,7 @@ var sixdb = function(_dbName) {
       };
 
       request.onsuccess = function(event) {
-        if(successCallback){
           successCallback(event,origin);
-        }
         db.close();
         logger('New object store "'+storeName+'" created');
         done();
@@ -718,20 +695,17 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function newRecord(obj, successCallback, errorCallback) {
+  function newRecord(obj, successCallback = voidFn, errorCallback = voidFn) {
     var origin = "add -> newRecord(...)";
     var request;
     logger(origin + logEnum.begin);
 
-    if(!errorCallback)
-      errorCallback=function(){return;};
-
-      /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
+    /*
+  // Test arguments
+  if (errorSys.testArgs(origin, arguments)) {
+    invalidArgsAcction(errorCallback);
+    return;
+  }*/
 
     var counter = 0;
     if (Array.isArray(obj)) {
@@ -740,38 +714,34 @@ var sixdb = function(_dbName) {
 
       for (i = 0; i < objSize; i++) {
         request = _store.add(obj[i]);
-        request.onsuccess = function(event) {
+        request.onsuccess = function (event) {
           counter++;
           if (counter == objSize) {
             logger('New record/s added to store "' + _store.name + '"');
-            if (successCallback) {
-              successCallback(event, origin);
-            }
+            successCallback(event, origin);
             db.close();
             done();
           }
         };
 
-        request.onerror = function(event) {
-          requestErrorAction(origin,request.error, errorCallback);
+        request.onerror = function (event) {
+          requestErrorAction(origin, request.error, errorCallback);
         };
       }
     } else {
       request = _store.add(obj);
-      request.onsuccess = function(event) {
+      request.onsuccess = function (event) {
         insertFinished(event);
       };
 
-      request.onerror = function(event) {
-        requestErrorAction(origin,event.target.error, errorCallback);
+      request.onerror = function (event) {
+        requestErrorAction(origin, event.target.error, errorCallback);
       };
     }
 
     function insertFinished(event) {
       logger('New record/s added to store "' + _store.name + '"');
-      if (successCallback) {
-        successCallback(event, origin);
-      }
+      successCallback(event, origin);
       db.close();
       done();
     }
@@ -786,13 +756,10 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function newIndex(storeName, indexName, keyPath, successCallback, errorCallback) {
+  function newIndex(storeName, indexName, keyPath, successCallback = voidFn, errorCallback = voidFn) {
     var version;
     var origin = 'add -> newIndex(...)';
     logger(origin + logEnum.begin);
-
-    if(!errorCallback)
-      errorCallback=function(){return;};
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -836,9 +803,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onsuccess = function (event) {
-      if (successCallback) {
         successCallback(event, origin);
-      }
       db.close();
       logger('Index "' + indexName + '" created in store "' + storeName + '"');
       done();
@@ -863,13 +828,10 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-  function count(indexName, query, successCallback, errorCallback) {
+  function count(indexName, query, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'get -> count(...)';
     logger(origin + logEnum.begin);
     var request = null;
-
-    if(!errorCallback)
-      errorCallback = function(){return;};
 
       /*
     // Test arguments
@@ -907,9 +869,7 @@ var sixdb = function(_dbName) {
         cursor.continue();
 
       } else {
-        if (successCallback) {
           successCallback(counter, origin, query);
-        }
         db.close();
         logger('Processed query finished: "' + query + '"\n'+ counter +' records counted from the query to store: "' + _store.name + '"');
         _index = null;
@@ -951,14 +911,11 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delStore(storeName, successCallback, errorCallback) {
+  function delStore(storeName, successCallback = voidFn = voidFn, errorCallback = voidFn) {
     var version;
     var origin = 'del -> delStore(...)';
     logger(origin + logEnum.begin);
-    
-    if(!errorCallback){
-      errorCallback=function(){return;};
-    }
+
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
       invalidArgsAcction(errorCallback);
@@ -982,9 +939,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onsuccess = function (event) {
-      if (successCallback) {
         successCallback(event, origin);
-      }
       db.close();
       logger('Object store "'+ storeName + '" deleted');
       done();
@@ -1001,13 +956,9 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delDB( successCallback, errorCallback) {    
-    var origin='del -> delDB(...)';
+  function delDB(successCallback, errorCallback = voidFn) {
+    var origin = 'del -> delDB(...)';
     logger(origin + logEnum.begin);
-
-    if(!errorCallback){
-      errorCallback=function(){return;};
-    }
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -1016,14 +967,12 @@ var sixdb = function(_dbName) {
     }
     var request = window.indexedDB.deleteDatabase(dbName);
 
-    request.onerror = function(event) {
-      requestErrorAction(origin,request.error,errorCallback);
+    request.onerror = function (event) {
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
-    request.onsuccess = function(event) {
-      if(successCallback){
-        successCallback(event, origin);
-      }
+    request.onsuccess = function (event) {
+      successCallback(event, origin);
       logger('Database "' + dbName + '" deleted');
       done();
     };
@@ -1043,32 +992,17 @@ var sixdb = function(_dbName) {
    * @param {function(event,origin)} [successCallback] Function called on success. Receives event, origin and query as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delRecords(query, successCallback, errorCallback) {
+  function delRecords(query, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'del -> delRecords(...)';
     logger(origin + logEnum.begin);
     var request = null;
     var isIndexKeyValue = false;
-    
-
-    if(!errorCallback)
-      errorCallback=function(){return;};
 
       /*
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
       invalidArgsAcction(errorCallback);
       return;
-    }*/
-
-    /*
-    // Gets index
-    var _index;
-    if(indexName!=null){
-      _index=getIndex(origin,_store,indexName,errorCallback);
-      if(!_index){
-        checkTasks();
-        return;
-      }
     }*/
 
     //// Gets isIndexKeyValue
@@ -1105,9 +1039,7 @@ var sixdb = function(_dbName) {
         cursor.continue();
 
       } else {
-        if (successCallback) {
           successCallback(event, origin, query);
-        }
         db.close();
         logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
         _index = null;
@@ -1152,13 +1084,10 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delIndex(storeName, indexName, successCallback, errorCallback) {
+  function delIndex(storeName, indexName, successCallback = voidFn, errorCallback = voidFn) {
     var version;
     var origin = 'del -> delIndex(...)';
     logger(origin + logEnum.begin);
-
-    if(!errorCallback)
-      errorCallback=function(){return;};
 
     // Test arguments
     if (errorSys.testArgs(origin, arguments)) {
@@ -1195,9 +1124,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onsuccess = function (event) {
-      if (successCallback) {
         successCallback(event, origin);
-      }
       db.close();
       logger('Index "' + indexName + '" deleted from object store "' + storeName + '"');
       done();
@@ -1224,7 +1151,7 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function updateRecords(query, objectValues, successCallback, errorCallback) {
+  function updateRecords(query, objectValues, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'update -> updateRecords(...)';
     logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
@@ -1278,9 +1205,7 @@ var sixdb = function(_dbName) {
         cursor.continue();
 
       } else {
-        if (successCallback) {
-          successCallback(event, origin, query);
-        }
+        successCallback(event, origin, query);
         db.close();
         logger('Processed query: "' + query + '" finished\n' + counter + ' records returned from object store "' + _store.name + '"');
         _index = null;
@@ -2385,8 +2310,6 @@ var sixdb = function(_dbName) {
      *
      */
     records: function (storeName, query, objectValues, {indexName, successCallback, errorCallback}) {
-      if (!errorCallback)
-        errorCallback = function () { return; };
 
       var task = {
         type: "updateRecordsByIndex",

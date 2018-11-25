@@ -491,44 +491,36 @@ var sixdb = function(_dbName) {
   function getAggregateFunctionB(_store,  query, {origin, property, aggregatefn, successCallback, errorCallback}) {
 
     var request = null;
-    var actualValue = null;
+    //var actualValue = null;
     var isIndexKeyValue = isKey(query);
     if (isIndexKeyValue)
       query = _store.keyPath + '=' + query;
-    var counter = 0;
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
+      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      sharedObj = {
+        counter: 0,
+        actualValue:null,
+        get event() { return this.actualValue },
+        property: property,
+        aggregatefn: aggregatefn,
+        extMode: extMode,
+        origin: origin,
+        query: query,
+        conditionsBlocksArray: conditionsBlocksArray,
+        exitsInFirstTrue: exitsInFirstTrue,
+        logFunction: aggregateLog, cursorFunction: cursorAggregate, successCallback: successCallback
+      };
 
     /// request callbacks
     var onsuccesCursor = function (event) {
       var cursor = event.target.result;
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var test = false;
-
-      // If operator between condition blocks is "&" then all blocks must be true: (true) & (true) & (true) ===> true
-      // If operator between is "|" then at least one must be true: (false) | (true) | (false) ===> true
-      //
-      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      if (cursor) {
-
-        test = testCursor(conditionsBlocksArray, exitsInFirstTrue, cursor);
-
-        if (test) {
-          if (cursor.value[property]) {
-            counter++;
-            actualValue = aggregatefn(actualValue, cursor.value[property], counter);
-          }
-        }
-        cursor.continue();
-      } else {
-        successCallback(actualValue, origin, query);
-        _index = null;
-        db.close();
-        logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
-        done();
-      }
+      cursorLoop(cursor);
     };
     var onerrorFunction = function (event) {
       _index = null;
+      sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
     };
 
@@ -831,7 +823,7 @@ var sixdb = function(_dbName) {
         query: query,
         conditionsBlocksArray: conditionsBlocksArray,
         exitsInFirstTrue: exitsInFirstTrue,
-        logFunction: countLog, cursorFunction: voidFn, successCallback: successCallback
+        logFunction: countLog, cursorFunction: cursorCount, successCallback: successCallback
       };
 
     }
@@ -1311,14 +1303,28 @@ var sixdb = function(_dbName) {
           }
 
           cursor.update(updateData);
+          sharedObj.counter++;
   }
 
   function cursorDelRecords(cursor) {
     cursor.delete();
+    sharedObj.counter++;
   }
 
   function cursorGetRecords(cursor){
     sharedObj.resultFiltered.push(cursor.value);
+    sharedObj.counter++;
+  }
+
+  function cursorCount(){
+    sharedObj.counter++;
+  }
+
+  function cursorAggregate(cursor){
+    if (cursor.value[sharedObj.property]) {
+      sharedObj.counter++;
+      sharedObj.actualValue = sharedObj.aggregatefn(sharedObj.actualValue, cursor.value[sharedObj.property], sharedObj.counter);
+    }
   }
 
   function cursorLoop(cursor){
@@ -1329,7 +1335,6 @@ var sixdb = function(_dbName) {
 
       if (test) {
         sharedObj.cursorFunction(cursor);
-        sharedObj.counter++;
       }
       cursor.continue();
 
@@ -1351,6 +1356,10 @@ var sixdb = function(_dbName) {
 
   function countLog(){
     logger('Processed query finished: "' + sharedObj.query + '"\n'+ sharedObj.counter +' records counted from the query to store: "' + _store.name + '"');
+  }
+
+  function aggregateLog(){
+    logger('Result of ' + sharedObj.origin + ' on property "' + sharedObj.property + '": ' + sharedObj.actualValue);
   }
 
   //#endregion helper functions

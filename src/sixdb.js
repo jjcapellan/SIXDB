@@ -162,13 +162,6 @@ var sixdb = function(_dbName) {
 
     logger(origin + logEnum.begin);
 
-      /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
-
     //// Executed if maxResults is not null. Opens a cursor to count the results.
     //
     var onsuccesCursorFunction = function(event) {
@@ -244,13 +237,6 @@ var sixdb = function(_dbName) {
     var origin = "get -> getRecords(...)";
     /*var _index = null;*/
     logger(origin + logEnum.begin);
-
-    /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
 
     var commonArgs = {origin: origin, successCallback: successCallback, errorCallback: errorCallback};
 
@@ -421,13 +407,6 @@ var sixdb = function(_dbName) {
 
     logger(origin + logEnum.begin);
 
-    /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
-
     var commonArgs = {origin: origin, property: property, aggregatefn: aggregatefn, successCallback: successCallback, errorCallback: errorCallback};
 
     if (!_index && !query)
@@ -597,12 +576,6 @@ var sixdb = function(_dbName) {
     var origin='add -> newStore(...)';
     logger(origin + logEnum.begin);
 
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }
-
       // If store already exist then returns
       if (db.objectStoreNames.contains(storeName)) {
         db.close();
@@ -654,13 +627,6 @@ var sixdb = function(_dbName) {
     var origin = "add -> newRecord(...)";
     var request;
     logger(origin + logEnum.begin);
-
-    /*
-  // Test arguments
-  if (errorSys.testArgs(origin, arguments)) {
-    invalidArgsAcction(errorCallback);
-    return;
-  }*/
 
     var counter = 0;
     if (Array.isArray(obj)) {
@@ -715,12 +681,6 @@ var sixdb = function(_dbName) {
     var version;
     var origin = 'add -> newIndex(...)';
     logger(origin + logEnum.begin);
-
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }
 
     //// Gets the new version
     //
@@ -784,13 +744,6 @@ var sixdb = function(_dbName) {
     var origin = 'get -> count(...)';
     logger(origin + logEnum.begin);
     var request = null;
-
-      /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
 
     if (!query) {
       if (_index)
@@ -859,12 +812,6 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delStore(...)';
     logger(origin + logEnum.begin);
 
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }
-
     //// Gets the new version
     //
     version = db.version;
@@ -900,11 +847,6 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delDB(...)';
     logger(origin + logEnum.begin);
 
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }
     var request = window.indexedDB.deleteDatabase(dbName);
 
     request.onerror = function (event) {
@@ -936,13 +878,6 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delRecords(...)';
     logger(origin + logEnum.begin);
     var request = null;
-
-      /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
 
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
@@ -1017,12 +952,6 @@ var sixdb = function(_dbName) {
     var origin = 'del -> delIndex(...)';
     logger(origin + logEnum.begin);
 
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }
-
     //// Gets the new version
     //
     version = db.version;
@@ -1081,13 +1010,6 @@ var sixdb = function(_dbName) {
     logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
     var request = null;
-
-    /*
-    // Test arguments
-    if (errorSys.testArgs(origin, arguments)) {
-      invalidArgsAcction(errorCallback);
-      return;
-    }*/
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
@@ -2650,67 +2572,6 @@ var sixdb = function(_dbName) {
       20: 'IndexedDB error'
     },
 
-    testArgs: function (origin, args) {      
-      var errorId = 0;
-
-      switch (origin) {
-
-        case 'get -> lastRecords(...)':
-          errorId = this.testLastRecordsArgs(args);
-          break;
-
-        case 'get -> getRecords(...)':
-          errorId = this.testGetRecordsArgs(args);
-          break;
-
-        case 'add -> newStore(...)':
-          errorId = this.testStoreArgs(args);
-          break;
-
-        case 'add -> newRecord(...)':
-          errorId = this.testNewRecordArgs(args);
-          break;
-
-        case 'add -> newIndex(...)':
-          errorId = this.testNewIndexArgs(args);
-          break;
-
-        case 'get -> count(...)':
-          errorId = this.testCountArgs(args);
-          break;
-
-        case 'del -> delStore(...)':
-          errorId = this.testStoreArgs(args);
-          break;
-
-        case 'del -> delDB(...)':
-          errorId = this.testDelDBArgs(args);
-          break;
-
-        case 'del -> delRecords(...)':
-          errorId = this.testDelRecordsArgs(args);
-          break;
-
-        case 'del -> delIndex(...)':
-          errorId = this.testDelIndexArgs(args);
-          break;
-
-        case 'update -> updateRecords(...)':
-          errorId = this.testUpdateRecordsArgs(args);
-          break;
-
-
-        default:
-          return false;
-      }
-
-      if (errorId != 0)
-        return this.makeErrorObject(origin, errorId);
-      else
-        return false;
-
-    },
-
     testStr: function (str) {
       if (str) {
         if (typeof (str) != 'string') {
@@ -2741,7 +2602,7 @@ var sixdb = function(_dbName) {
      * @param  {object} domException DOMexception triggered by the error
      * @return {boolean}
      */
-    makeErrorObject: function(origin,errorCode, domException){
+    makeErrorObject: function(origin, errorCode, domException){
       var errorObj = {};
       if(!domException){
       errorObj.code = errorCode;
@@ -2758,387 +2619,7 @@ var sixdb = function(_dbName) {
       lastErrorObj = errorObj;
 
       return true;
-    },
-
-    testLastRecordsArgs: function (args) {
-
-      var errorId = -1;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-        // maxResults
-        if (typeof (args[1]) != 'number' && args[1] != null) {
-          errorId = 12;
-          break;
-        }
-        // succesCallback
-        if (!this.testCallback(args[2])) {
-          errorId = 13;
-          break;
-        }
-        // errorCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 14;
-          break;
-        }
-        errorId = 0;
-      }
-      return errorId;
-    },
-
-    testGetRecordsArgs: function (args) {
-      var errorId = -1;
-      var qtype = null;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        // indexName
-        if (this.testStr(args[1])) {
-          if (this.test == 1) {
-            errorId = 5;
-            break;
-          }
-        }
-
-        //query
-        if (args[2]) {
-          qtype = typeof (args[2]);
-          if (qtype != 'string' && qtype != 'number') {
-            errorId = 9;
-            break;
-          }
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[4])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-      }
-      return errorId;
-
-    },
-
-    testStoreArgs: function(args){
-
-      var errorId=-1;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-        // succesCallback
-        if (!this.testCallback(args[1])) {
-          errorId = 13;
-          break;
-        }
-        // errorCallback
-        if (!this.testCallback(args[2])) {
-          errorId = 14;
-          break;
-        }
-        errorId = 0;
-      }
-      return errorId;
-      
-    },
-
-    testNewRecordArgs: function(args){
-      var errorId = -1;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-        // obj
-        if (args[1]) {
-          if (typeof (args[1]) != 'object') {
-            errorId = 15;
-            break;
-          }
-        }
-        else {
-          errorId = 3;
-          break;
-        }
-        // succesCallback
-        if (!this.testCallback(args[2])) {
-          errorId = 13;
-          break;
-        }
-        // errorCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 14;
-          break;
-        }
-        errorId = 0;
-      }
-
-      return errorId;
-      
-    },
-
-    testNewIndexArgs: function(args){
-
-      var errorId = -1;
-      
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-        //indexName
-        if (this.testStr(args[1])) {
-          errorId = (this.test == 1) ? 5 : 4;
-          break;
-        }
-        // keyPath
-        if (this.testStr(args[2])) {
-          errorId = (this.test == 1) ? 7 : 6;
-          break;
-        }
-        // succesCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 13;
-          break;
-        }
-        // errorCallback
-        if (!this.testCallback(args[4])) {
-          errorId = 14;
-          break;
-        }
-        errorId = 0;
-      }
-      return errorId;
-      
-    },
-
-    testCountArgs: function (args) {
-      var errorId = -1;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        // indexName
-        if (args[1]) {
-          if (typeof (args[1]) != 'string') {
-            errorId = 5;
-            break;
-          }
-        }
-
-        // query
-        if (args[2]) {
-          if (typeof (args[2]) != 'string') {
-            errorId = 16;
-            break;
-          }
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[4])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-      }
-      return errorId;
-    },
-
-    testDelDBArgs: function (args) {
-      var errorId = -1;
-
-      while (errorId < 0) {
-        // succesCallback
-        if (!this.testCallback(args[0])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[1])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-      }
-      return errorId;
-    },
-
-    testDelRecordsArgs: function (args) {
-      var errorId = -1;
-      var qtype = null;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        // indexName
-        if (args[1]) {
-          if (typeof (args[1]) != 'string') {
-            errorId = 5;
-            break;
-          }
-        }
-
-        //query
-        if (args[2]) {
-          qtype = typeof (args[2]);
-          if (qtype != 'string' && qtype != 'number') {
-            errorId = 9;
-            break;
-          }
-        } else {
-          errorId = 8;
-          break;
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[4])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-
-      }
-      return errorId;
-    },
-
-    testDelIndexArgs: function (args) {
-      var errorId = -1;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        //indexName
-        if (this.testStr(args[1])) {
-          errorId = (this.test == 1) ? 5 : 4;
-          break;
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[2])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[3])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-      }
-      return errorId;
-    },
-
-    testUpdateRecordsArgs: function (args) {
-      var errorId = -1;
-      var qtype = null;
-
-      while (errorId < 0) {
-        // storeName
-        if (this.testStr(args[0])) {
-          errorId = (this.test == 1) ? 1 : 2;
-          break;
-        }
-
-        // indexName
-        if (args[1]) {
-          if (typeof (args[1]) != 'string') {
-            errorId = 5;
-            break;
-          }
-        }
-
-        //query
-        if (args[2]) {
-          qtype = typeof (args[2]);
-          if (qtype != 'string' && qtype != 'number') {
-            errorId = 9;
-            break;
-          }
-        } else {
-          errorId = 8;
-          break;
-        }
-
-        // objectValues
-        if (args[3]) {
-          if (typeof (args[3]) != 'object') {
-            errorId = 11;
-            break;
-          }
-        } else {
-          errorId = 10;
-          break;
-        }
-
-        // succesCallback
-        if (!this.testCallback(args[4])) {
-          errorId = 13;
-          break;
-        }
-
-        // errorCallback
-        if (!this.testCallback(args[5])) {
-          errorId = 14;
-          break;
-        }
-
-        errorId = 0;
-      }
-      return errorId;
-    } 
+    }
   };
 
   //#endregion Error handler

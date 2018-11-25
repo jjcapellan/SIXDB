@@ -1483,21 +1483,10 @@ var sixdb = function(_dbName) {
       // If query is like: " c = 15 "
       if (leftOperands.length == 1) {
 
-        conditionsArray.push(
-          {
-            keyPath: leftOperands[0],   // property
-            cond: operators[0],         // =, >, <, ...
-            value: rightOperands[0]     // value
-          }
-        );
+        //{property, operator (=,>,<, ...), value}
+        conditionsArray.push({keyPath: leftOperands[0], cond: operators[0], value: rightOperands[0]});
 
-        conditionsBlocksArray.push(
-          {
-            conditionsArray: conditionsArray,
-            internalLogOperator: null,
-            externalLogOperator: extLogOperator
-          }
-        );
+        conditionsBlocksArray.push({ conditionsArray: conditionsArray, internalLogOperator: null, externalLogOperator: extLogOperator });
 
         conditionsArray = null;
 
@@ -1514,22 +1503,10 @@ var sixdb = function(_dbName) {
 
 
         for (i = 0; i < operators.length; i++) {
-          conditionsArray.push(
-            {
-              keyPath: leftOperands[i],
-              cond: operators[i],
-              value: rightOperands[i]
-            }
-          );
+          conditionsArray.push({ keyPath: leftOperands[i], cond: operators[i], value: rightOperands[i] });
         }
 
-        conditionsBlocksArray.push(
-          {
-            conditionsArray: conditionsArray,
-            internalLogOperator: logOperatorsType,
-            externalLogOperator: extLogOperator
-          }
-        );
+        conditionsBlocksArray.push({ conditionsArray: conditionsArray, internalLogOperator: logOperatorsType, externalLogOperator: extLogOperator });
         conditionsArray = null;
       } // end if else
 

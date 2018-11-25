@@ -1655,7 +1655,8 @@ var sixdb = function(_dbName) {
    * @private
    */
   var tkOpen={
-    type:"openDb"
+    args: null,
+    fn: openDb
   };
 
   /**
@@ -1681,83 +1682,15 @@ var sixdb = function(_dbName) {
 
     idle = false;
 
-    var type = taskQueue[0].type;
+    //var type = taskQueue[0].type;
     var task = taskQueue[0];
 
-    switch (type) {
-
-      case 'openDb':
-        openDb();
-        break;
-      
-      case 'setStore':
-        setStore(task.origin, task.storeName, task.rwMode);
-        break;
-
-      case 'setIndex':
-        setIndex(task.origin, task.indexName);
-        break;
-
-      case "newStore":
-        newStore(task.storeName, task.successCallback, task.errorCallback);
-        break;
-
-      case "newRecords":
-        newRecord(task.obj, task.successCallback, task.errorCallback);
-        break;
-
-      case "newDB":
-        newDB(task.errorCallback);
-        break;
-
-      case "count":
-        count(task.indexName, task.query, task.successCallback, task.errorCallback);
-        break;
-
-      case "custom":
-        logger('Custom task' + logEnum.begin);
+    if(!task.type){
+      task.fn.apply(this, task.args);
+    } else {
+      logger('Custom task' + logEnum.begin);
         task.fn.apply(task.context, task.args);
         done();
-        break;
-
-      case "delStore":
-        delStore(task.storeName, task.successCallback, errorCallback);
-        break;
-
-      case "delDB":
-        delDB(task.successCallback, task.errorCallback);
-        break;
-
-      case "delRecords":
-        delRecords(task.query, task.successCallback, task.errorCallback);
-        break;
-
-      case "delIndex":
-        delIndex(task.storeName, task.indexName, task.successCallback, task.errorCallback);
-        break;
-
-      case "updateRecordsByIndex":
-        updateRecords(task.query, task.objectValues, task.successCallback, task.errorCallback);
-        break;
-
-      case "newIndex":
-        newIndex(task.storeName, task.indexName, task.keyPath, task.successCallback, task.errorCallback);
-        break;
-
-      case "lastRecords":
-        lastRecords(task.maxResults, task.successCallback, task.errorCallback);
-        break;
-
-      case "getRecords":
-        getRecords(task.storeName, task.successCallback, task.options);
-        break;
-
-      case "getAggregateFunction":
-        getaggregateFunction(task.property, task.aggregatefn, task.successCallback, task.origin, task.options);
-        break;
-
-      default:
-        break;
     }
   }
 
@@ -1780,7 +1713,6 @@ var sixdb = function(_dbName) {
    * @namespace
    */
   this.add = { 
-    
     /**
      * Add the task "create new database" to the task queue. Internal use only.
      * @private
@@ -1788,11 +1720,14 @@ var sixdb = function(_dbName) {
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
     db: function(errorCallback) {
-      var task = { type: "newDB", errorCallback: errorCallback };
+      var args = [errorCallback];
+      var task = {
+        args: args,
+        fn: newDB
+      }
 
       taskQueue.push(task);
     },
-
     /**
      * Adds the task "create a new object store" to the task queue.
      * @public
@@ -1821,21 +1756,16 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    store: function (storeName, {successCallback, errorCallback}) {
-      // Make the task object
-      var task = {
-        type: "newStore",
-        storeName: storeName,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+    store: function(storeName, { successCallback, errorCallback }) {
+      var args = [storeName, successCallback, errorCallback];
+
+      var task = { args: args, fn: newStore }; // arguments // private function to execute
 
       // Adds the task open database to taskQueue
       taskQueue.push(tkOpen);
       // Adds this task to taskQueue
       taskQueue.push(task);
     },
-
     /**
      * Add the task "insert new record in object store" to the task queue.
      * @public
@@ -1871,19 +1801,14 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    records: function (storeName, obj, {successCallback, errorCallback}) {
-      var task = {
-        type: "newRecords",
-        obj: obj,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+    records: function(storeName, obj, { successCallback, errorCallback }) {
+      var args = [obj, successCallback, errorCallback];
+      var task = { args: args, fn: newRecord };
 
       taskQueue.push(tkOpen);
-      setHelpTask.setStore('add -> Records(...)', storeName, 'readwrite');
+      setHelpTask.setStore("add -> Records(...)", storeName, "readwrite");
       taskQueue.push(task);
     },
-
     /**
      * Adds the task "create a new index" to the task queue.
      * @public
@@ -1924,20 +1849,14 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    index: function (storeName, indexName, keyPath, {successCallback, errorCallback}) {
-      var task = {
-        type: "newIndex",
-        storeName: storeName,
-        indexName: indexName,
-        keyPath: keyPath,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+    index: function(storeName, indexName, keyPath, { successCallback, errorCallback }) {
+      var args = [storeName, indexName, keyPath, successCallback, errorCallback];
+
+      var task = { args: args, fn: newIndex };
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
     },
-
     /**
      * Add a specific function to the SIXDB task queue.
      * @param  {any} fn Our custom function that we want to add to the task queue.
@@ -1989,7 +1908,7 @@ var sixdb = function(_dbName) {
      * //
      * mydb.execTasks();
      */
-    customTask: function (fn, context, args) {
+    customTask: function(fn, context, args) {
       var argsArray = [];
       if (args) {
         var i = 0;
@@ -1997,15 +1916,10 @@ var sixdb = function(_dbName) {
           argsArray[2 - i] = arguments[i];
         }
       }
-      var task = {
-        type: "custom",
-        fn: fn,
-        context: context,
-        args: argsArray
-      };
+      var task = { type: "custom", fn: fn, context: context, args: argsArray };
 
       taskQueue.push(task);
-    }
+    } 
   };
 
   /**
@@ -2020,11 +1934,12 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    db: function( {successCallback, errorCallback}) {
+    db: function ({ successCallback, errorCallback }) {
+
+      var args = [successCallback, errorCallback];
       var task = {
-        type: "delDB",
-        successCallback: successCallback,
-        errorCallback: errorCallback
+        args: args,
+        fn: delDB
       };
 
       taskQueue.push(task);
@@ -2038,13 +1953,12 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    store: function(storeName, {successCallback, errorCallback}) {
+    store: function (storeName, { successCallback, errorCallback }) {
+      var args = [storeName, successCallback, errorCallback]
       var task = {
-        type: "delStore",
-        storeName: storeName,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+        args: args,
+        fn: delStore
+      }
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
@@ -2091,12 +2005,11 @@ var sixdb = function(_dbName) {
      *
      * mydb.execTasks();
      */
-    records: function(storeName, query, {indexName, successCallback, errorCallback}) {
+    records: function (storeName, query, { indexName, successCallback, errorCallback }) {
+      var args = [query, successCallback, errorCallback];
       var task = {
-        type: "delRecords",
-        query: query,
-        successCallback: successCallback,
-        errorCallback: errorCallback
+        args: args,
+        fn: delRecords
       };
 
       taskQueue.push(tkOpen);
@@ -2116,14 +2029,12 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    index: function(storeName, indexName, {successCallback, errorCallback}) {
+    index: function (storeName, indexName, { successCallback, errorCallback }) {
+      var args = [storeName, indexName, successCallback, errorCallback];
       var task = {
-        type: "delIndex",
-        storeName: storeName,
-        indexName: indexName,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+        args: args,
+        fn: delIndex
+      }
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
@@ -2205,14 +2116,11 @@ var sixdb = function(_dbName) {
      *
      */
     records: function (storeName, query, objectValues, {indexName, successCallback, errorCallback}) {
-
-      var task = {
-        type: "updateRecordsByIndex",
-        query: query,
-        objectValues: objectValues,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };
+      var args = [query, objectValues, successCallback, errorCallback];
+      var task ={
+        args: args,
+        fn: updateRecords
+      }
 
       taskQueue.push(tkOpen);
       setHelpTask.setStore('update -> Records(...)', storeName, 'readwrite');
@@ -2287,13 +2195,12 @@ var sixdb = function(_dbName) {
      * };     
      *
      */
-    lastRecords: function(storeName, maxResults, successCallback, errorCallback) {
-      var task = {
-        type: "lastRecords",
-        maxResults: maxResults,
-        successCallback: successCallback,
-        errorCallback: errorCallback
-      };     
+    lastRecords: function(storeName, maxResults, successCallback, errorCallback) {   
+      var args = [maxResults, successCallback, errorCallback];
+      var task ={
+        args: args,
+        fn: lastRecords
+      }
 
       taskQueue.push(tkOpen);
       setHelpTask.setStore('get -> lastRecords(...)', storeName, 'readonly');
@@ -2372,14 +2279,13 @@ var sixdb = function(_dbName) {
       var options = {
         query: query,
         errorCallback: errorCallback
-      }
-
-      var task = {
-        type: "getRecords",
-        storeName: storeName,
-        successCallback: successCallback,
-        options: options
       };
+      var args = [storeName, successCallback, options];
+      var task = {
+        args: args,
+        fn: getRecords
+      };
+
 
       taskQueue.push(tkOpen);
       setHelpTask.setStore('get -> Records(...)', storeName, 'readonly');
@@ -2393,8 +2299,10 @@ var sixdb = function(_dbName) {
       _index = null;
 
       var origin = 'get -> aggregateFn(...)';
-      var args = { storeName: storeName, property: property , successCallback: successCallback, aggregatefn: aggregatefn ,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback };
+      var args = {
+        storeName: storeName, property: property, successCallback: successCallback, aggregatefn: aggregatefn,
+        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback
+      };
 
       makeAggregateTask(args);
     },
@@ -2449,12 +2357,10 @@ var sixdb = function(_dbName) {
      * 
      */
     count: function (storeName, successCallback, { indexName, query, errorCallback }) {
+      var args = [indexName, query, successCallback, errorCallback];
       var task = {
-        type: "count",
-        indexName: indexName,
-        query: query,
-        successCallback: successCallback,
-        errorCallback: errorCallback
+        args: args,
+        fn: count
       };
 
       taskQueue.push(tkOpen);
@@ -2467,22 +2373,21 @@ var sixdb = function(_dbName) {
   };  
 
   var setHelpTask = {
-    setStore: function(origin, storeName, rwMode){
+    setStore: function(origin, storeName, rwMode){ 
+      var args = [origin, storeName, rwMode];
       var task = {
-        type: "setStore",
-        origin: origin,
-        storeName: storeName,
-        rwMode: rwMode
-      };    
+        args: args,
+        fn: setStore
+      };
 
       taskQueue.push(task);
     },
     setIndex: function(origin, indexName){
+      args = [origin, indexName]; 
       var task = {
-        type: "setIndex",
-        origin: origin,
-        indexName: indexName
-      };    
+        args: args,
+        fn: setIndex
+      };
 
       taskQueue.push(task);
     }
@@ -2495,14 +2400,10 @@ var sixdb = function(_dbName) {
         query: query,
         errorCallback: errorCallback
       }
-
+      var args = [property, aggregatefn, successCallback, origin, options];
       var task = {
-        type: 'getAggregateFunction',
-        property: property,
-        aggregatefn: aggregatefn,
-        successCallback: successCallback,
-        origin: origin,
-        options: options
+        args: args,
+        fn: getaggregateFunction
       };
 
       taskQueue.push(tkOpen);

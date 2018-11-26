@@ -74,9 +74,18 @@ var sixdb = function(_dbName) {
     }
   };
 
+  // void function
   var voidFn = function() {
     return;
   };
+
+  var _store = null;
+
+  var _index = null;
+
+  var sharedObj = {};
+
+  var i = 0;
 
   /**
    * Function to compare a property value with a test value
@@ -88,14 +97,6 @@ var sixdb = function(_dbName) {
   var customOperator = function(value1, value2) {
     return value1 == value2;
   };
-
-  var _store = null;
-
-  var _index = null;
-
-  var sharedObj = {};
-
-  var i = 0;
 
   /**
    * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
@@ -599,7 +600,6 @@ var sixdb = function(_dbName) {
 
     request.onsuccess = function(event) {
       var db = event.target.result;
-      dbVersion = db.version;
       db.close();
       if (noDb) {
         logger('Database "' + dbName + '" created');
@@ -640,7 +640,7 @@ var sixdb = function(_dbName) {
     var newVersion = version + 1;
     var store;
 
-    request = window.indexedDB.open(dbName, newVersion);
+    var request = window.indexedDB.open(dbName, newVersion);
 
     request.onupgradeneeded = function(event) {
       db = event.target.result;
@@ -680,47 +680,49 @@ var sixdb = function(_dbName) {
    */
   function newRecord(obj, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'add -> newRecord(...)';
-    var request;
     logger(origin + logEnum.begin);
+    var args = {obj, origin, successCallback, errorCallback}; //shorthand properties es6
 
-    var counter = 0;
     if (Array.isArray(obj)) {
-      var i, objSize;
-      objSize = obj.length;
-
-      for (i = 0; i < objSize; i++) {
-        request = _store.add(obj[i]);
-        request.onsuccess = function(event) {
-          counter++;
-          if (counter == objSize) {
-            logger('New record/s added to store "' + _store.name + '"');
-            successCallback(event, origin);
-            db.close();
-            done();
-          }
-        };
-
-        request.onerror = function(event) {
-          requestErrorAction(origin, request.error, errorCallback);
-        };
-      }
+      newRecordA(args);
     } else {
-      request = _store.add(obj);
-      request.onsuccess = function(event) {
-        insertFinished(event);
-      };
+      newRecordB(args);
+    }
+  }
 
-      request.onerror = function(event) {
-        requestErrorAction(origin, event.target.error, errorCallback);
+  function newRecordA({ obj, origin, successCallback, errorCallback }) {
+    var objSize = obj.length;
+    var counter = 0;
+
+    while (counter < objSize) {
+      var request = _store.add(obj[counter]);
+      counter++;
+      request.onerror = function (event) {
+        requestErrorAction(origin, request.error, errorCallback);
       };
     }
+    requestSuccessAction(
+      event,
+      origin,
+      successCallback,
+      'New record/s added to store "' + _store.name + '"'
+    );
+  }
 
-    function insertFinished(event) {
-      logger('New record/s added to store "' + _store.name + '"');
-      successCallback(event, origin);
-      db.close();
-      done();
-    }
+  function newRecordB({ obj, origin, successCallback, errorCallback }) {
+    var request = _store.add(obj);
+    request.onsuccess = function (event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'New record/s added to store "' + _store.name + '"'
+      );
+    };
+
+    request.onerror = function (event) {
+      requestErrorAction(origin, event.target.error, errorCallback);
+    };
   }
 
   /**
@@ -808,64 +810,57 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function count(indexName, query, successCallback = voidFn, errorCallback = voidFn) {
+  function count(query, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'get -> count(...)';
     logger(origin + logEnum.begin);
-    var request = null;
 
     if (!query) {
       if (_index) query = _index.keyPath + '!= null';
       else query = _store.keyPath + '!= -1';
     }
 
-    
-      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      var extMode = conditionsBlocksArray
-        ? conditionsBlocksArray[0].externalLogOperator
-        : null;
-      var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-      sharedObj = {
-        counter: 0,
-        get event() {
-          return this.counter;
-        },
-        extMode: extMode,
-        origin: origin,
-        query: query,
-        conditionsBlocksArray: conditionsBlocksArray,
-        exitsInFirstTrue: exitsInFirstTrue,
-        logFunction: countLog,
-        cursorFunction: cursorCount,
-        successCallback: successCallback
-      };
-
-    var onSuccessQuery = function(event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-
-    var onError = function(event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+    /// Object used by cursorLoop()
+    sharedObj = {
+      counter: 0,
+      get event() {
+        return this.counter;
+      },
+      extMode: extMode,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: countLog,
+      cursorFunction: cursorCount,
+      successCallback: successCallback
     };
 
     if (_index) {
-      request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onSuccessQuery;
-      request.onerror = onError;
+      countA(_index, errorCallback);
     } else {
-      request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onSuccessQuery;
-      request.onerror = onError;
-    } //end if else block
+      countA(_store, errorCallback);
+    }
+  }
+
+  function countA(store, errorCallback) {
+    var request = tryOpenCursor(sharedObj.origin, store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = function (event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    };
+    request.onerror = function (event) {
+      _index = null;
+      requestErrorAction(origin, request.error, errorCallback);
+    };
   }
 
   /**
@@ -875,11 +870,7 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delStore(
-    storeName,
-    successCallback = voidFn,
-    errorCallback = voidFn
-  ) {
+  function delStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
     var version;
     var origin = 'del -> delStore(...)';
     logger(origin + logEnum.begin);
@@ -999,19 +990,14 @@ var sixdb = function(_dbName) {
 
     if (_index) {
       request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onsuccesCursor;
     } else {
       request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onsuccesCursor;
     }
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesCursor;
     request.onerror = onerrorFunction;
   }
 
@@ -1433,15 +1419,10 @@ var sixdb = function(_dbName) {
     makeConditionsBlocksArray: function(query) {
       var t = this;
       var conditionsBlocksArray = [];
-      var i = 0;
 
       //// Gets blocks
       //
       var blocks = query.match(t.blockRgx);
-      // Delete left parentheses
-      if (blocks) {
-        t.deleteLeftParentheses(blocks);
-      }
 
       // Logical operators between blocks, all must be the same type
       var extLogOperator = query.match(t.blockOperatorRgx)
@@ -1452,21 +1433,24 @@ var sixdb = function(_dbName) {
       if (!blocks) {
         t.pushConditionBlockToArray(query, null, conditionsBlocksArray);
         return conditionsBlocksArray;
-      } else {
-        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "
-        if (extLogOperator) {
-          if (extLogOperator == '&' || extLogOperator == '&&') {
-            extLogOperator = 'and';
-          } else {
-            extLogOperator = 'or';
-          }
-        }
-
-        for (i = 0; i < blocks.length; i++) {
-          t.pushConditionBlockToArray(blocks[i], extLogOperator, conditionsBlocksArray);
-        }
-        return conditionsBlocksArray;
       }
+
+      // Delete left parentheses
+      t.deleteLeftParentheses(blocks);
+
+      // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "
+      if (extLogOperator) {
+        if (extLogOperator == '&' || extLogOperator == '&&') {
+          extLogOperator = 'and';
+        } else {
+          extLogOperator = 'or';
+        }
+      }
+
+      for (i = 0; i < blocks.length; i++) {
+        t.pushConditionBlockToArray(blocks[i], extLogOperator, conditionsBlocksArray);
+      }
+      return conditionsBlocksArray;
     },
 
     deleteLeftParentheses: function(blocks) {
@@ -1563,14 +1547,14 @@ var sixdb = function(_dbName) {
       var t = this;
       var i = 0;
 
-      var test = operator == 'and' || operator == null ? true : false;
+      var test = operator == 'and' || !operator ? true : false;
       for (i = 0; i < conditionsArray.length; i++) {
         test = t.testCondition(
           cursor.value[conditionsArray[i].keyPath],
           conditionsArray[i].cond,
           conditionsArray[i].value
         );
-        if ((operator == 'and' || operator == null) && !test) return false;
+        if ((operator == 'and' || !operator) && !test) return false;
         else if (operator == 'or' && test) return true;
       }
 
@@ -2388,7 +2372,7 @@ var sixdb = function(_dbName) {
      *
      */
     count: function(storeName, successCallback, { indexName, query, errorCallback }) {
-      var args = [indexName, query, successCallback, errorCallback];
+      var args = [query, successCallback, errorCallback];
       var task = {
         args: args,
         fn: count
@@ -2414,7 +2398,7 @@ var sixdb = function(_dbName) {
       taskQueue.push(task);
     },
     setIndex: function(origin, indexName) {
-      args = [origin, indexName];
+      var args = [origin, indexName];
       var task = {
         args: args,
         fn: setIndex
@@ -2522,11 +2506,12 @@ var sixdb = function(_dbName) {
     },
 
     testCallback: function(fn) {
+      var isFunction = true;
       if (fn) {
         if (typeof fn != 'function') {
-          return false;
+          isFunction = false;
         }
-        return true;
+        return isFunction;
       }
     },
 

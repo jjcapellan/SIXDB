@@ -4,10 +4,10 @@
  *  @author Juan Jose Capellan <soycape@hotmail.com>
  */
 
-/** 
+/**
  * @license
  * MIT LICENSE
- * 
+ *
  * Copyright (c) 2018 Juan Jose Capellan
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -35,8 +35,6 @@
  * @param  {string} _dbName Name for the new database.
  */
 var sixdb = function(_dbName) {
-
-
   var db; // current instance of the opened database
 
   /**
@@ -47,23 +45,22 @@ var sixdb = function(_dbName) {
    */
   var dbName = _dbName;
 
-  
   /**
    * Database name getter
    * @public
    * @return {string} Database name
    */
-  this.getName = function () {
+  this.getName = function() {
     return dbName;
   };
 
-/**
- * Console output mode. True to turn off console output.
- * @private
- * @type {boolean} 
- * @default
- * @readonly
- */
+  /**
+   * Console output mode. True to turn off console output.
+   * @private
+   * @type {boolean}
+   * @default
+   * @readonly
+   */
   var consoleOff = false;
 
   /**
@@ -71,13 +68,15 @@ var sixdb = function(_dbName) {
    * @param {boolean} off True turn off the console output.
    * @return {string} Database name
    */
-  this.setConsoleOff = function (off) {
-    if (typeof (off) == 'boolean') {
+  this.setConsoleOff = function(off) {
+    if (typeof off == 'boolean') {
       consoleOff = off;
     }
   };
 
-  var voidFn = function () { return; };
+  var voidFn = function() {
+    return;
+  };
 
   /**
    * Function to compare a property value with a test value
@@ -86,8 +85,8 @@ var sixdb = function(_dbName) {
    * @param  {string | number} value2 Value to test
    * @return {boolean}
    */
-  var customOperator = function (value1, value2) {
-    return (value1 == value2);
+  var customOperator = function(value1, value2) {
+    return value1 == value2;
   };
 
   var _store = null;
@@ -102,29 +101,29 @@ var sixdb = function(_dbName) {
    * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
    * @param  {function} compareFunction Function to compare a property value with a test value.<br>
    * @return {void}
-   * @example 
+   * @example
    * var mydb = new sixdb('myDatabase');
-   * 
+   *
    * //
    * // The compare function must have two arguments, property value and test value. If this function triggers
    * // an error exception, then the query system returns the condition as false.
    * //
    * mydb.setCustomOperator(
    *     function(propertyValue, testValue){
-   *         return (propertyValue.length == testValue.length); 
+   *         return (propertyValue.length == testValue.length);
    *     });
-   * 
+   *
    */
-  this.setCustomOperator = function (compareFunction){
-    if(compareFunction){
-      if(typeof(compareFunction)=='function'){
-        if(compareFunction.length == 2){
-        customOperator = compareFunction;
+  this.setCustomOperator = function(compareFunction) {
+    if (compareFunction) {
+      if (typeof compareFunction == 'function') {
+        if (compareFunction.length == 2) {
+          customOperator = compareFunction;
         }
       }
     }
   };
-  
+
   //#region Private functions
   //////////////////////////////////////////////////////////////////////////////////////
 
@@ -133,14 +132,14 @@ var sixdb = function(_dbName) {
    * @private
    * @return {void}
    */
-  function openDb(){
+  function openDb() {
     var request = window.indexedDB.open(dbName);
 
-    request.onerror = function (event) {
-      alert("Error. You must allow web app to use indexedDB.");
+    request.onerror = function(event) {
+      alert('Error. You must allow web app to use indexedDB.');
     };
 
-    request.onsuccess = function (event) {
+    request.onsuccess = function(event) {
       db = event.target.result;
       done();
     };
@@ -155,7 +154,7 @@ var sixdb = function(_dbName) {
    * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function lastRecords(maxResults, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = "get -> lastRecords(...)";
+    var origin = 'get -> lastRecords(...)';
     var resultFiltered = [];
     var counter = 0;
     var request = null;
@@ -182,34 +181,37 @@ var sixdb = function(_dbName) {
     //// Executed if maxResults is null. Don't needs cursor. (It's faster)
     //
     var onsuccesGetAllFunction = function(event) {
-      requestSuccessAction(event.target.result, origin, successCallback, 'All records returned from store "' + _store.name + '"');
+      requestSuccessAction(
+        event.target.result,
+        origin,
+        successCallback,
+        'All records returned from store "' + _store.name + '"'
+      );
     };
 
     var onerrorFunction = function(event) {
-      requestErrorAction(origin,request.error, errorCallback);
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
     //// Gets the correct request
     if (maxResults != null) {
       /// Opens a cursor from last record in reverse direction
-      try{
-      request = (_store.openCursor(null, "prev").onsuccess = onsuccesCursorFunction);
-      } catch(e){
+      try {
+        request = _store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
+      } catch (e) {
         db.close();
-      errorSys.makeErrorObject(origin, 20, request.error);
-      logger(lastErrorObj, true);
-      taskQueue.shift();
-      errorCallback(lastErrorObj);
-      checkTasks();
+        errorSys.makeErrorObject(origin, 20, request.error);
+        logger(lastErrorObj, true);
+        taskQueue.shift();
+        errorCallback(lastErrorObj);
+        checkTasks();
       }
       request.onsuccess = onsuccesCursorFunction;
       request.onerror = onerrorFunction;
-
-
     } else {
       /// Gets all records. It is faster than openCursor.
-      request = tryStoreGetAll(origin,_store,errorCallback); //store.getAll();
-      if(!request){
+      request = tryStoreGetAll(origin, _store, errorCallback); //store.getAll();
+      if (!request) {
         checkTasks();
         return;
       }
@@ -232,41 +234,44 @@ var sixdb = function(_dbName) {
    * A single value always refers to the index keypath so the index can not be null in this case.
    * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */  
-  function getRecords(_storeName, successCallback = voidFn, {query, errorCallback = voidFn}) {
-    var origin = "get -> getRecords(...)";
+   */
+
+  function getRecords(
+    _storeName,
+    successCallback = voidFn,
+    { query, errorCallback = voidFn }
+  ) {
+    var origin = 'get -> getRecords(...)';
     /*var _index = null;*/
     logger(origin + logEnum.begin);
 
-    var commonArgs = {origin: origin, successCallback: successCallback, errorCallback: errorCallback};
+    var commonArgs = {
+      origin: origin,
+      successCallback: successCallback,
+      errorCallback: errorCallback
+    };
 
-    if (!_index && !query)
-      getRecordsA(commonArgs);
-    else
-      if (!_index && query)
-        getRecordsB(query, commonArgs);
-      else
-        if (_index && !query)
-          getRecordsC(commonArgs);
-        else
-          if (_index && query)
-            getRecordsD(query, commonArgs);
-
+    if (!_index && !query) getRecordsA(commonArgs);
+    else if (!_index && query) getRecordsB(query, commonArgs);
+    else if (_index && !query) getRecordsC(commonArgs);
+    else if (_index && query) getRecordsD(query, commonArgs);
   }
 
-  function getRecordsA({origin, successCallback, errorCallback}) {
-
+  function getRecordsA({ origin, successCallback, errorCallback }) {
     var request = null;
 
-
     /// Callbacks of request
-    var onsuccess = function (event) {
-      requestSuccessAction(event.target.result, origin, successCallback, 'All records returned from store "' + _store.name + '"');
+    var onsuccess = function(event) {
+      requestSuccessAction(
+        event.target.result,
+        origin,
+        successCallback,
+        'All records returned from store "' + _store.name + '"'
+      );
     };
-    var onerror = function (event) {
+    var onerror = function(event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
-
 
     /// request definition
     request = tryStoreGetAll(origin, _store, errorCallback);
@@ -276,33 +281,43 @@ var sixdb = function(_dbName) {
     }
     request.onsuccess = onsuccess;
     request.onerror = onerror;
-
   }
 
-  function getRecordsB(query, {origin, successCallback, errorCallback}) {
+  function getRecordsB(query, { origin, successCallback, errorCallback }) {
     var counter = 0;
     var resultFiltered = [];
     var request = null;
 
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
-    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
-    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
 
-
-    sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorGetRecords, successCallback: successCallback };
-
+    sharedObj = {
+      counter: 0,
+      extMode: extMode,
+      event: resultFiltered,
+      resultFiltered: resultFiltered,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
+      cursorFunction: cursorGetRecords,
+      successCallback: successCallback
+    };
 
     /// request callbacks
-    var onsucces = function (event) {
+    var onsucces = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
 
-    var onerror = function (event) {
+    var onerror = function(event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
-
 
     /// request definition
     request = tryOpenCursor(origin, _store, errorCallback);
@@ -314,19 +329,24 @@ var sixdb = function(_dbName) {
     request.onerror = onerror;
   }
 
-  function getRecordsC({origin, successCallback, errorCallback}) {
-
+  function getRecordsC({ origin, successCallback, errorCallback }) {
     var request = null;
 
     /// request callbacks
-    var onsuccesGetAll = function (event) {
+    var onsuccesGetAll = function(event) {
       successCallback(event.target.result, origin);
       db.close();
-      logger('All records returned from index "' + _index.name + '" in store "'+_index.objectStore.name+'"');
+      logger(
+        'All records returned from index "' +
+          _index.name +
+          '" in store "' +
+          _index.objectStore.name +
+          '"'
+      );
       _index = null;
       done();
     };
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -349,39 +369,58 @@ var sixdb = function(_dbName) {
     if (!isIndexKeyValue) {
       var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
       var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var exitsInFirstTrue = extMode == null || extMode == "and" ? false : true;
-      sharedObj = { counter: 0, extMode: extMode, event: resultFiltered, resultFiltered: resultFiltered, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorGetRecords, successCallback: successCallback };
-
+      var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+      sharedObj = {
+        counter: 0,
+        extMode: extMode,
+        event: resultFiltered,
+        resultFiltered: resultFiltered,
+        origin: origin,
+        query: query,
+        conditionsBlocksArray: conditionsBlocksArray,
+        exitsInFirstTrue: exitsInFirstTrue,
+        logFunction: queryLog,
+        cursorFunction: cursorGetRecords,
+        successCallback: successCallback
+      };
     }
 
     /// request callbacks
-    var onsuccesIndexGetKey = function (event) {
+    var onsuccesIndexGetKey = function(event) {
       successCallback(event.target.result, origin, query);
       db.close();
-      logger('Records with key "' + query + '" returned from index "' + _index.name + '" on object store "' + _index.objectStore.name + '"');
+      logger(
+        'Records with key "' +
+          query +
+          '" returned from index "' +
+          _index.name +
+          '" on object store "' +
+          _index.objectStore.name +
+          '"'
+      );
       _index = null;
       done();
     };
-    var onsuccesCursor = function (event) {
+    var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-    var onerror = function (event) {
+    var onerror = function(event) {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
 
     /// request definition
-    request = (!isIndexKeyValue) ? tryOpenCursor(origin, _index, errorCallback) : tryIndexGetKey(origin, _index, query, errorCallback);
+    request = !isIndexKeyValue
+      ? tryOpenCursor(origin, _index, errorCallback)
+      : tryIndexGetKey(origin, _index, query, errorCallback);
     if (!request) {
       checkTasks();
       return;
     }
-    request.onsuccess = (isIndexKeyValue) ? onsuccesIndexGetKey : onsuccesCursor;
+    request.onsuccess = isIndexKeyValue ? onsuccesIndexGetKey : onsuccesCursor;
     request.onerror = onerror;
-
   }
-
 
   /**
    * This thing goes through the registers and applies an aggregate function in one property.
@@ -403,30 +442,39 @@ var sixdb = function(_dbName) {
    * @param  {function} successCallback Receives as parameters the result (a number) and origin.
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function getaggregateFunction( property, aggregatefn, successCallback = voidFn, origin,{query, errorCallback = voidFn}) {
-
+  function getaggregateFunction(
+    property,
+    aggregatefn,
+    successCallback = voidFn,
+    origin,
+    { query, errorCallback = voidFn }
+  ) {
     logger(origin + logEnum.begin);
 
-    var commonArgs = {origin: origin, property: property, aggregatefn: aggregatefn, successCallback: successCallback, errorCallback: errorCallback};
+    var commonArgs = {
+      origin: origin,
+      property: property,
+      aggregatefn: aggregatefn,
+      successCallback: successCallback,
+      errorCallback: errorCallback
+    };
 
-    if (!_index && !query)
-      getaggregateFunctionA(_store, commonArgs);
-    else if (!_index && query)
-      getAggregateFunctionB(_store, query, commonArgs);
-    else if (_index && !query)
-      getaggregateFunctionA(_index, commonArgs);
-    else if (_index && query)
-      getAggregateFunctionB(_index, query, commonArgs);
-
+    if (!_index && !query) getaggregateFunctionA(_store, commonArgs);
+    else if (!_index && query) getAggregateFunctionB(_store, query, commonArgs);
+    else if (_index && !query) getaggregateFunctionA(_index, commonArgs);
+    else if (_index && query) getAggregateFunctionB(_index, query, commonArgs);
   }
 
-  function getaggregateFunctionA(_store, {origin, property, aggregatefn, successCallback, errorCallback}) {
+  function getaggregateFunctionA(
+    _store,
+    { origin, property, aggregatefn, successCallback, errorCallback }
+  ) {
     var request = null;
     var actualValue = null;
     var counter = 0;
 
     /// request callbacks
-    var onsuccess = function (event) {
+    var onsuccess = function(event) {
       var cursor = event.target.result;
 
       if (cursor) {
@@ -435,17 +483,15 @@ var sixdb = function(_dbName) {
           actualValue = aggregatefn(actualValue, cursor.value[property], counter);
         }
         cursor.continue();
-
       } else {
         successCallback(actualValue, origin);
         db.close();
         logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
         _index = null;
         done();
-
       }
     };
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -458,40 +504,47 @@ var sixdb = function(_dbName) {
     }
     request.onsuccess = onsuccess;
     request.onerror = onerrorFunction;
-
   }
 
-  function getAggregateFunctionB(_store,  query, {origin, property, aggregatefn, successCallback, errorCallback}) {
-
+  function getAggregateFunctionB(
+    _store,
+    query,
+    { origin, property, aggregatefn, successCallback, errorCallback }
+  ) {
     var request = null;
     //var actualValue = null;
     var isIndexKeyValue = isKey(query);
-    if (isIndexKeyValue)
-      query = _store.keyPath + '=' + query;
+    if (isIndexKeyValue) query = _store.keyPath + '=' + query;
     var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
-    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
-      sharedObj = {
-        counter: 0,
-        actualValue:null,
-        get event() { return this.actualValue },
-        property: property,
-        aggregatefn: aggregatefn,
-        extMode: extMode,
-        origin: origin,
-        query: query,
-        conditionsBlocksArray: conditionsBlocksArray,
-        exitsInFirstTrue: exitsInFirstTrue,
-        logFunction: aggregateLog, cursorFunction: cursorAggregate, successCallback: successCallback
-      };
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+    sharedObj = {
+      counter: 0,
+      actualValue: null,
+      get event() {
+        return this.actualValue;
+      },
+      property: property,
+      aggregatefn: aggregatefn,
+      extMode: extMode,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: aggregateLog,
+      cursorFunction: cursorAggregate,
+      successCallback: successCallback
+    };
 
     /// request callbacks
-    var onsuccesCursor = function (event) {
+    var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       _index = null;
       sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
@@ -505,9 +558,7 @@ var sixdb = function(_dbName) {
     }
     request.onsuccess = onsuccesCursor;
     request.onerror = onerrorFunction;
-
   }
-
 
   /**
    * The conditionObject contains the three elements to test a condition.
@@ -535,7 +586,7 @@ var sixdb = function(_dbName) {
    */
   function newDB(errorCallback = voidFn) {
     var request = window.indexedDB.open(dbName);
-    var origin='add -> newDB(...)';
+    var origin = 'add -> newDB(...)';
     logger(origin + logEnum.begin);
 
     // Boolean: Database doesn't exist (no database = noDb)
@@ -559,7 +610,7 @@ var sixdb = function(_dbName) {
     };
 
     request.onerror = function(event) {
-      requestErrorAction(origin,request.error, errorCallback);
+      requestErrorAction(origin, request.error, errorCallback);
     };
   }
 
@@ -573,46 +624,50 @@ var sixdb = function(_dbName) {
    */
   function newStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
     var version;
-    var origin='add -> newStore(...)';
+    var origin = 'add -> newStore(...)';
     logger(origin + logEnum.begin);
 
-      // If store already exist then returns
-      if (db.objectStoreNames.contains(storeName)) {
-        db.close();
-        logger('Object store "' + storeName + '" already exists');
-        done();
+    // If store already exist then returns
+    if (db.objectStoreNames.contains(storeName)) {
+      db.close();
+      logger('Object store "' + storeName + '" already exists');
+      done();
+      return;
+    }
+
+    version = db.version;
+    db.close();
+    var newVersion = version + 1;
+    var store;
+
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+
+      try {
+        store = db.createObjectStore(storeName, {
+          keyPath: 'nId',
+          autoIncrement: true
+        });
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
         return;
       }
 
-      
-      version = db.version;
-      db.close();
-      var newVersion = version + 1;
-      var store;
-
-      request = window.indexedDB.open(dbName, newVersion);
-
-      request.onupgradeneeded = function(event) {
-        db = event.target.result;
-
-        try {
-          store = db.createObjectStore(storeName, {
-            keyPath: "nId",
-            autoIncrement: true
-          });
-        } catch (e) {
-          requestErrorAction(origin, e, errorCallback);
-          return;
-        }
-
-        store.onerror = function(event) {
-          requestErrorAction(origin,event.target.error, errorCallback);
-        };
+      store.onerror = function(event) {
+        requestErrorAction(origin, event.target.error, errorCallback);
       };
+    };
 
-      request.onsuccess = function(event) {
-        requestSuccessAction(event, origin, successCallback, 'New object store "'+storeName+'" created');
-      };
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'New object store "' + storeName + '" created'
+      );
+    };
   }
 
   /**
@@ -624,7 +679,7 @@ var sixdb = function(_dbName) {
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
   function newRecord(obj, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = "add -> newRecord(...)";
+    var origin = 'add -> newRecord(...)';
     var request;
     logger(origin + logEnum.begin);
 
@@ -635,7 +690,7 @@ var sixdb = function(_dbName) {
 
       for (i = 0; i < objSize; i++) {
         request = _store.add(obj[i]);
-        request.onsuccess = function (event) {
+        request.onsuccess = function(event) {
           counter++;
           if (counter == objSize) {
             logger('New record/s added to store "' + _store.name + '"');
@@ -645,17 +700,17 @@ var sixdb = function(_dbName) {
           }
         };
 
-        request.onerror = function (event) {
+        request.onerror = function(event) {
           requestErrorAction(origin, request.error, errorCallback);
         };
       }
     } else {
       request = _store.add(obj);
-      request.onsuccess = function (event) {
+      request.onsuccess = function(event) {
         insertFinished(event);
       };
 
-      request.onerror = function (event) {
+      request.onerror = function(event) {
         requestErrorAction(origin, event.target.error, errorCallback);
       };
     }
@@ -677,7 +732,13 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function newIndex(storeName, indexName, keyPath, successCallback = voidFn, errorCallback = voidFn) {
+  function newIndex(
+    storeName,
+    indexName,
+    keyPath,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
     var version;
     var origin = 'add -> newIndex(...)';
     logger(origin + logEnum.begin);
@@ -693,7 +754,7 @@ var sixdb = function(_dbName) {
     //
     request = window.indexedDB.open(dbName, newVersion);
 
-    request.onupgradeneeded = function (event) {
+    request.onupgradeneeded = function(event) {
       db = event.target.result;
       var store = null;
 
@@ -711,72 +772,81 @@ var sixdb = function(_dbName) {
         store.createIndex(indexName, keyPath);
       } else {
         db.close();
-        logger('The index "' + indexName + '" already exists in store "' + storeName + '"');
+        logger(
+          'The index "' + indexName + '" already exists in store "' + storeName + '"'
+        );
         done();
         return;
       }
     };
 
     request.onsuccess = function(event) {
-      requestSuccessAction(event, origin, successCallback, 'Index "' + indexName + '" created in store "' + storeName + '"');
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Index "' + indexName + '" created in store "' + storeName + '"'
+      );
     };
 
-    request.onerror = function (event) {
-      requestErrorAction(origin,request.error, errorCallback);
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
     };
   }
 
   /**
-     * Count the records
-     * @private
-     * @param  {string} storeName Store name.
-     * @param {string | null} indexName Index name. With null is not used.
-     * @param {string | null} query String that contains a query. Example of valid queries:<br>
-     * property = value                           // Simple query<br>
-     * c > 10 & name='peter'                      // Query with 2 conditions<br>
-     * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-     * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-     * With null query, all records are counted.
-     * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
-     * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-     */
+   * Count the records
+   * @private
+   * @param  {string} storeName Store name.
+   * @param {string | null} indexName Index name. With null is not used.
+   * @param {string | null} query String that contains a query. Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * With null query, all records are counted.
+   * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
   function count(indexName, query, successCallback = voidFn, errorCallback = voidFn) {
     var origin = 'get -> count(...)';
     logger(origin + logEnum.begin);
     var request = null;
 
     if (!query) {
-      if (_index)
-        query = _index.keyPath + '!= null';
-      else
-        query = _store.keyPath + '!= -1';
+      if (_index) query = _index.keyPath + '!= null';
+      else query = _store.keyPath + '!= -1';
     }
 
-    if (query) {
+    
       var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
-      var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true;
+      var extMode = conditionsBlocksArray
+        ? conditionsBlocksArray[0].externalLogOperator
+        : null;
+      var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
       sharedObj = {
         counter: 0,
-        get event() { return this.counter },
+        get event() {
+          return this.counter;
+        },
         extMode: extMode,
         origin: origin,
         query: query,
         conditionsBlocksArray: conditionsBlocksArray,
         exitsInFirstTrue: exitsInFirstTrue,
-        logFunction: countLog, cursorFunction: cursorCount, successCallback: successCallback
+        logFunction: countLog,
+        cursorFunction: cursorCount,
+        successCallback: successCallback
       };
 
-    }
-
-    var onSuccessQuery = function (event) {
+    var onSuccessQuery = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
 
-    var onError = function (event) {
+    var onError = function(event) {
       _index = null;
-      requestErrorAction(origin,request.error,errorCallback);
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
     if (_index) {
@@ -796,8 +866,6 @@ var sixdb = function(_dbName) {
       request.onsuccess = onSuccessQuery;
       request.onerror = onError;
     } //end if else block
-
-
   }
 
   /**
@@ -807,7 +875,11 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delStore(storeName, successCallback = voidFn = voidFn, errorCallback = voidFn) {
+  function delStore(
+    storeName,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
     var version;
     var origin = 'del -> delStore(...)';
     logger(origin + logEnum.begin);
@@ -823,17 +895,22 @@ var sixdb = function(_dbName) {
     //
     request = window.indexedDB.open(dbName, newVersion);
 
-    request.onupgradeneeded = function (event) {
+    request.onupgradeneeded = function(event) {
       db = event.target.result;
       db.deleteObjectStore(storeName);
     };
 
-    request.onsuccess = function (event) {
-      requestSuccessAction(event, origin, successCallback, 'Object store "'+ storeName + '" deleted');
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Object store "' + storeName + '" deleted'
+      );
     };
 
-    request.onerror = function (event) {
-      requestErrorAction(origin,request.error,errorCallback);
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
     };
   }
 
@@ -849,11 +926,11 @@ var sixdb = function(_dbName) {
 
     var request = window.indexedDB.deleteDatabase(dbName);
 
-    request.onerror = function (event) {
+    request.onerror = function(event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
 
-    request.onsuccess = function (event) {
+    request.onsuccess = function(event) {
       successCallback(event, origin);
       logger('Database "' + dbName + '" deleted');
       done();
@@ -881,9 +958,8 @@ var sixdb = function(_dbName) {
 
     //// Gets isIndexKeyValue
     //// True if query is a single value (an index key)
-    // 
+    //
     var isIndexKeyValue = isKey(query);
-
 
     var conditionsBlocksArray;
     if (isIndexKeyValue) {
@@ -892,12 +968,13 @@ var sixdb = function(_dbName) {
     }
     conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
 
-    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
-    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
-
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
 
     sharedObj = {
-      counter: 0,      
+      counter: 0,
       extMode: extMode,
       event: event,
       origin: origin,
@@ -909,19 +986,18 @@ var sixdb = function(_dbName) {
       successCallback: successCallback
     };
 
-    var onsuccesCursor = function (event) {
+    var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     }; // end onsuccesCursor
 
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       _index = null;
       sharedObj = {};
-      requestErrorAction(origin,request.error, errorCallback);
+      requestErrorAction(origin, request.error, errorCallback);
     };
 
     if (_index) {
-      
       request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
       if (!request) {
         checkTasks();
@@ -947,7 +1023,12 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
    * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function delIndex(storeName, indexName, successCallback = voidFn, errorCallback = voidFn) {
+  function delIndex(
+    storeName,
+    indexName,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
     var version;
     var origin = 'del -> delIndex(...)';
     logger(origin + logEnum.begin);
@@ -963,7 +1044,7 @@ var sixdb = function(_dbName) {
     //
     request = window.indexedDB.open(dbName, newVersion);
 
-    request.onupgradeneeded = function (event) {
+    request.onupgradeneeded = function(event) {
       db = event.target.result;
       var store = null;
 
@@ -980,11 +1061,16 @@ var sixdb = function(_dbName) {
       store.deleteIndex(indexName);
     };
 
-    request.onsuccess = function (event) {
-      requestSuccessAction(event, origin, successCallback, 'Index "' + indexName + '" deleted from object store "' + storeName + '"');
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Index "' + indexName + '" deleted from object store "' + storeName + '"'
+      );
     };
 
-    request.onerror = function (event) {
+    request.onerror = function(event) {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -1005,7 +1091,12 @@ var sixdb = function(_dbName) {
    * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
    * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
    */
-  function updateRecords(query, objectValues, successCallback = voidFn, errorCallback = voidFn) {
+  function updateRecords(
+    query,
+    objectValues,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
     var origin = 'update -> updateRecords(...)';
     logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
@@ -1018,34 +1109,48 @@ var sixdb = function(_dbName) {
     var conditionsBlocksArray;
     if (isIndexKeyValue) {
       // If query is a single number value then is mofied to be valid to the query system
-      query = _index.keyPath + '=' + query;      
+      query = _index.keyPath + '=' + query;
     }
     conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-    
-    var extMode = (conditionsBlocksArray) ? conditionsBlocksArray[0].externalLogOperator : null;
-    var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
 
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
 
-    sharedObj = { counter: 0, keys: Object.keys(objectValues), newObjectValuesSize: Object.keys(objectValues).length, extMode: extMode, objectValues: objectValues, event: event, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorUpdate, successCallback: successCallback };
+    sharedObj = {
+      counter: 0,
+      keys: Object.keys(objectValues),
+      newObjectValuesSize: Object.keys(objectValues).length,
+      extMode: extMode,
+      objectValues: objectValues,
+      event: event,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
+      cursorFunction: cursorUpdate,
+      successCallback: successCallback
+    };
 
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
 
-    var onerrorFunction = function (event) {
+    var onerrorFunction = function(event) {
       _index = null;
       sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
     };
 
     if (_index) {
-      request = tryOpenCursor(origin, _index, errorCallback);// index.openCursor();
+      request = tryOpenCursor(origin, _index, errorCallback); // index.openCursor();
       if (!request) {
         checkTasks();
         return;
       }
-
     } else {
       request = tryOpenCursor(origin, _store, errorCallback); // store.openCursor();
       if (!request) {
@@ -1063,11 +1168,11 @@ var sixdb = function(_dbName) {
   //#region helper functions
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  function tryStoreGetAll(origin, store, errorCallback){
+  function tryStoreGetAll(origin, store, errorCallback) {
     var request = null;
-    try{
+    try {
       request = store.getAll();
-    } catch(e){
+    } catch (e) {
       reportCatch(origin, e, errorCallback);
       return null;
     }
@@ -1115,15 +1220,16 @@ var sixdb = function(_dbName) {
     logger(lastErrorObj, true);
   }
 
+  /*
   function invalidArgsAcction(errorCallback) {
     taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
     db.close();
     errorCallback(lastErrorObj);
     logger(lastErrorObj, true);
     checkTasks();
-  }
+  }*/
 
-  function requestErrorAction(origin,error,errorCallback) {
+  function requestErrorAction(origin, error, errorCallback) {
     db.close();
     errorSys.makeErrorObject(origin, 20, error);
     logger(lastErrorObj, true);
@@ -1157,7 +1263,7 @@ var sixdb = function(_dbName) {
   function isKey(query) {
     var isKey = false;
     if (query) {
-      if (typeof query == "number") {
+      if (typeof query == 'number') {
         isKey = true;
       } else {
         isKey = query.match(qrySys.operatorRgx) ? false : true;
@@ -1170,8 +1276,7 @@ var sixdb = function(_dbName) {
     _store = null;
     try {
       _store = db.transaction(storeName, rwMode).objectStore(storeName);
-    }
-    catch (e) {
+    } catch (e) {
       errorSys.makeErrorObject(origin, 20, e);
       logger(lastErrorObj, true);
     }
@@ -1191,16 +1296,18 @@ var sixdb = function(_dbName) {
 
   /// Cursor functions /////////////////////
 
-  function cursorUpdate(cursor){
+  function cursorUpdate(cursor) {
     var updateData = cursor.value;
-          for (i = 0; i < sharedObj.newObjectValuesSize; i++) {
-            // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-            updateData[sharedObj.keys[i]] =
-              typeof sharedObj.objectValues[sharedObj.keys[i]] == "function" ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]]) : sharedObj.objectValues[sharedObj.keys[i]];
-          }
+    for (i = 0; i < sharedObj.newObjectValuesSize; i++) {
+      // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+      updateData[sharedObj.keys[i]] =
+        typeof sharedObj.objectValues[sharedObj.keys[i]] == 'function'
+          ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]])
+          : sharedObj.objectValues[sharedObj.keys[i]];
+    }
 
-          cursor.update(updateData);
-          sharedObj.counter++;
+    cursor.update(updateData);
+    sharedObj.counter++;
   }
 
   function cursorDelRecords(cursor) {
@@ -1208,33 +1315,38 @@ var sixdb = function(_dbName) {
     sharedObj.counter++;
   }
 
-  function cursorGetRecords(cursor){
+  function cursorGetRecords(cursor) {
     sharedObj.resultFiltered.push(cursor.value);
     sharedObj.counter++;
   }
 
-  function cursorCount(){
+  function cursorCount() {
     sharedObj.counter++;
   }
 
-  function cursorAggregate(cursor){
+  function cursorAggregate(cursor) {
     if (cursor.value[sharedObj.property]) {
       sharedObj.counter++;
-      sharedObj.actualValue = sharedObj.aggregatefn(sharedObj.actualValue, cursor.value[sharedObj.property], sharedObj.counter);
+      sharedObj.actualValue = sharedObj.aggregatefn(
+        sharedObj.actualValue,
+        cursor.value[sharedObj.property],
+        sharedObj.counter
+      );
     }
   }
 
-  function cursorLoop(cursor){
-
-      if (cursor) {
-
-      var test = testCursor(sharedObj.conditionsBlocksArray, sharedObj.exitsInFirstTrue, cursor);
+  function cursorLoop(cursor) {
+    if (cursor) {
+      var test = testCursor(
+        sharedObj.conditionsBlocksArray,
+        sharedObj.exitsInFirstTrue,
+        cursor
+      );
 
       if (test) {
         sharedObj.cursorFunction(cursor);
       }
       cursor.continue();
-
     } else {
       successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
       db.close();
@@ -1247,16 +1359,39 @@ var sixdb = function(_dbName) {
   }
 
   /// Logger functions
-  function queryLog(){
-    logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+  function queryLog() {
+    logger(
+      'Processed query: "' +
+        sharedObj.query +
+        '" finished\n' +
+        sharedObj.counter +
+        ' records returned from object store "' +
+        _store.name +
+        '"'
+    );
   }
 
-  function countLog(){
-    logger('Processed query finished: "' + sharedObj.query + '"\n'+ sharedObj.counter +' records counted from the query to store: "' + _store.name + '"');
+  function countLog() {
+    logger(
+      'Processed query finished: "' +
+        sharedObj.query +
+        '"\n' +
+        sharedObj.counter +
+        ' records counted from the query to store: "' +
+        _store.name +
+        '"'
+    );
   }
 
-  function aggregateLog(){
-    logger('Result of ' + sharedObj.origin + ' on property "' + sharedObj.property + '": ' + sharedObj.actualValue);
+  function aggregateLog() {
+    logger(
+      'Result of ' +
+        sharedObj.origin +
+        ' on property "' +
+        sharedObj.property +
+        '": ' +
+        sharedObj.actualValue
+    );
   }
 
   //#endregion helper functions
@@ -1274,12 +1409,11 @@ var sixdb = function(_dbName) {
    * @property {function} testCondition Test a conditional expression as false or true.
    */
   var qrySys = {
-
     /**
      * Initializes the regex variables used to parse the query string
      * @return {void}
      */
-    init: function () {
+    init: function() {
       this.blockRgx = /\(.*?(?=\))/g;
       this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
       this.operatorRgx = /(=|>|<|>=|<=|!=|<>|\^|\$|~~)+/g;
@@ -1296,8 +1430,7 @@ var sixdb = function(_dbName) {
      * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
      * @return {object[]} Returns and array of coditions blocks.
      */
-    makeConditionsBlocksArray: function (query) {
-
+    makeConditionsBlocksArray: function(query) {
       var t = this;
       var conditionsBlocksArray = [];
       var i = 0;
@@ -1306,20 +1439,21 @@ var sixdb = function(_dbName) {
       //
       var blocks = query.match(t.blockRgx);
       // Delete left parentheses
-      if(blocks){
+      if (blocks) {
         t.deleteLeftParentheses(blocks);
       }
 
       // Logical operators between blocks, all must be the same type
-      var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
-
+      var extLogOperator = query.match(t.blockOperatorRgx)
+        ? query.match(t.blockOperatorRgx)
+        : null;
 
       // If condition is a single sentence like: " a = 10 & b > 5 "
       if (!blocks) {
         t.pushConditionBlockToArray(query, null, conditionsBlocksArray);
         return conditionsBlocksArray;
       } else {
-        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "        
+        // If condition is a multiple sentence like: " (a = 5 & b = 10) || (c < 4 & f > 10) "
         if (extLogOperator) {
           if (extLogOperator == '&' || extLogOperator == '&&') {
             extLogOperator = 'and';
@@ -1328,17 +1462,14 @@ var sixdb = function(_dbName) {
           }
         }
 
-        
         for (i = 0; i < blocks.length; i++) {
-
           t.pushConditionBlockToArray(blocks[i], extLogOperator, conditionsBlocksArray);
-
         }
         return conditionsBlocksArray;
       }
     },
 
-    deleteLeftParentheses: function (blocks) {
+    deleteLeftParentheses: function(blocks) {
       var i = 0;
       var size = blocks.length;
       for (i = 0; i < size; i++) {
@@ -1346,8 +1477,7 @@ var sixdb = function(_dbName) {
       }
     },
 
-    pushConditionBlockToArray: function (qry, extLogOperator, conditionsBlocksArray) {
-
+    pushConditionBlockToArray: function(qry, extLogOperator, conditionsBlocksArray) {
       var i = 0;
       var t = this;
 
@@ -1368,7 +1498,7 @@ var sixdb = function(_dbName) {
       }
 
       //// Gets operators
-      //// Removing righ operands (values) before extract comparison operators avoids 
+      //// Removing righ operands (values) before extract comparison operators avoids
       //// problems with literal values that include comparisson symbols(= , >,...) quoted.
       //
       for (i = 0; i < rightOperands.length; i++) {
@@ -1376,21 +1506,25 @@ var sixdb = function(_dbName) {
       }
       var operators = qry.match(t.operatorRgx);
 
-
       var conditionsArray = [];
 
       // If query is like: " c = 15 "
       if (leftOperands.length == 1) {
-
         //{property, operator (=,>,<, ...), value}
-        conditionsArray.push({keyPath: leftOperands[0], cond: operators[0], value: rightOperands[0]});
+        conditionsArray.push({
+          keyPath: leftOperands[0],
+          cond: operators[0],
+          value: rightOperands[0]
+        });
 
-        conditionsBlocksArray.push({ conditionsArray: conditionsArray, internalLogOperator: null, externalLogOperator: extLogOperator });
+        conditionsBlocksArray.push({
+          conditionsArray: conditionsArray,
+          internalLogOperator: null,
+          externalLogOperator: extLogOperator
+        });
 
         conditionsArray = null;
-
       } else {
-
         // if query is like: " c = 15 & a > 30 "
         var logOperatorsType = qry.match(/[\&\|]+/g)[0];
 
@@ -1400,40 +1534,48 @@ var sixdb = function(_dbName) {
           logOperatorsType = 'or';
         }
 
-
         for (i = 0; i < operators.length; i++) {
-          conditionsArray.push({ keyPath: leftOperands[i], cond: operators[i], value: rightOperands[i] });
+          conditionsArray.push({
+            keyPath: leftOperands[i],
+            cond: operators[i],
+            value: rightOperands[i]
+          });
         }
 
-        conditionsBlocksArray.push({ conditionsArray: conditionsArray, internalLogOperator: logOperatorsType, externalLogOperator: extLogOperator });
+        conditionsBlocksArray.push({
+          conditionsArray: conditionsArray,
+          internalLogOperator: logOperatorsType,
+          externalLogOperator: extLogOperator
+        });
         conditionsArray = null;
       } // end if else
-
     },
 
     /**
      * Test a block of conditions. For example:
      * (a<100 && a>20) || (b = 30 & c != 50 && a >= 200)   <==== Here are 2 conditions blocks. The first block has 2 conditions.
-     * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson. 
+     * @param  {IDBCursor} cursor Contains the actual record value to make the comparisson.
      * @param  {conditionObject[]} conditionsArray Contains the conditions.
      * @param  {string | null} operator Is a logical operator that can be "and", "or" or null.
      * @return {boolean} Result after evaluating the conditions block (true/false)
      */
-    testConditionBlock: function (cursor, conditionsArray, operator) {
-
+    testConditionBlock: function(cursor, conditionsArray, operator) {
       var t = this;
-      var i=0;
+      var i = 0;
 
-      var test = (operator == 'and' || operator == null) ? true : false;
+      var test = operator == 'and' || operator == null ? true : false;
       for (i = 0; i < conditionsArray.length; i++) {
-        test = t.testCondition(cursor.value[conditionsArray[i].keyPath], conditionsArray[i].cond, conditionsArray[i].value);
-        if ((operator == "and" || operator == null) && !test) return false;
-        else if (operator == "or" && test) return true;
+        test = t.testCondition(
+          cursor.value[conditionsArray[i].keyPath],
+          conditionsArray[i].cond,
+          conditionsArray[i].value
+        );
+        if ((operator == 'and' || operator == null) && !test) return false;
+        else if (operator == 'or' && test) return true;
       }
-      
+
       return test;
     },
-    
 
     /**
      * Test a conditional expression as false or true
@@ -1443,61 +1585,61 @@ var sixdb = function(_dbName) {
      * @param {string | number} value2 Second value to compare
      * @returns {boolean} Result after evaluating the condition
      */
-    testCondition: function (value1, condition, value2) {
+    testCondition: function(value1, condition, value2) {
       var result;
       switch (condition) {
-        case "=":
+        case '=':
           result = value1 == value2 ? true : false;
           break;
 
-        case ">":
+        case '>':
           result = value1 > value2 ? true : false;
           break;
 
-        case "<":
+        case '<':
           result = value1 < value2 ? true : false;
           break;
 
-        case ">=":
+        case '>=':
           result = value1 >= value2 ? true : false;
           break;
 
-        case "<=":
+        case '<=':
           result = value1 <= value2 ? true : false;
           break;
 
-        case "!=":
+        case '!=':
           result = value1 != value2 ? true : false;
           break;
 
-        case "<>":                        // string value1 contains substring value2
-        if(typeof(value1)!='string'){
-          return false;
-        }
-        result=(value1.indexOf(value2)!=-1);
-        break;
-
-        case "^":
-          if (typeof (value1) != 'string') {
+        case '<>': // string value1 contains substring value2
+          if (typeof value1 != 'string') {
             return false;
           }
-          result = (value1.indexOf(value2) == 0);
+          result = value1.indexOf(value2) != -1;
           break;
 
-        case "$":
-        if(typeof(value1)!='string'){
-          return false;
-        }
-        result=(value1.indexOf(value2)==value1.length-value2.length);
-        break;
+        case '^':
+          if (typeof value1 != 'string') {
+            return false;
+          }
+          result = value1.indexOf(value2) == 0;
+          break;
 
-        case "~~":
-        try{
-        result = customOperator(value1,value2);
-        } catch(e){
-          result = false;
-        }
-        break;
+        case '$':
+          if (typeof value1 != 'string') {
+            return false;
+          }
+          result = value1.indexOf(value2) == value1.length - value2.length;
+          break;
+
+        case '~~':
+          try {
+            result = customOperator(value1, value2);
+          } catch (e) {
+            result = false;
+          }
+          break;
 
         default:
           break;
@@ -1505,8 +1647,6 @@ var sixdb = function(_dbName) {
       return result;
     }
   }; // end qrySys
-
-
 
   //#endregion Query system
 
@@ -1528,10 +1668,10 @@ var sixdb = function(_dbName) {
   var taskQueue = [];
 
   /**
-   * Object task to open database used by the Task queue system 
+   * Object task to open database used by the Task queue system
    * @private
    */
-  var tkOpen={
+  var tkOpen = {
     args: null,
     fn: openDb
   };
@@ -1552,7 +1692,7 @@ var sixdb = function(_dbName) {
    */
   function checkTasks() {
     if (taskQueue.length == 0) {
-      idle = true;      
+      idle = true;
       logger('No pending tasks');
       return;
     }
@@ -1562,18 +1702,18 @@ var sixdb = function(_dbName) {
     //var type = taskQueue[0].type;
     var task = taskQueue[0];
 
-    if(!task.type){
+    if (!task.type) {
       task.fn.apply(this, task.args);
     } else {
       logger('Custom task' + logEnum.begin);
-        task.fn.apply(task.context, task.args);
-        done();
+      task.fn.apply(task.context, task.args);
+      done();
     }
   }
 
   /**
-   * Execs pending tasks. The tasks are executed sequentially. 
-   * A task does not run until the previous one ends. 
+   * Execs pending tasks. The tasks are executed sequentially.
+   * A task does not run until the previous one ends.
    * This avoids problems arising from the asynchronous nature of the indexedDB api.
    * @public
    */
@@ -1583,13 +1723,11 @@ var sixdb = function(_dbName) {
     }
   };
 
-  
-
   /**
    * Contains add methods
    * @namespace
    */
-  this.add = { 
+  this.add = {
     /**
      * Add the task "create new database" to the task queue. Internal use only.
      * @private
@@ -1601,7 +1739,7 @@ var sixdb = function(_dbName) {
       var task = {
         args: args,
         fn: newDB
-      }
+      };
 
       taskQueue.push(task);
     },
@@ -1683,7 +1821,7 @@ var sixdb = function(_dbName) {
       var task = { args: args, fn: newRecord };
 
       taskQueue.push(tkOpen);
-      setHelpTask.setStore("add -> Records(...)", storeName, "readwrite");
+      setHelpTask.setStore('add -> Records(...)', storeName, 'readwrite');
       taskQueue.push(task);
     },
     /**
@@ -1793,10 +1931,10 @@ var sixdb = function(_dbName) {
           argsArray[2 - i] = arguments[i];
         }
       }
-      var task = { type: "custom", fn: fn, context: context, args: argsArray };
+      var task = { type: 'custom', fn: fn, context: context, args: argsArray };
 
       taskQueue.push(task);
-    } 
+    }
   };
 
   /**
@@ -1811,8 +1949,7 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    db: function ({ successCallback, errorCallback }) {
-
+    db: function({ successCallback, errorCallback }) {
       var args = [successCallback, errorCallback];
       var task = {
         args: args,
@@ -1830,12 +1967,12 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    store: function (storeName, { successCallback, errorCallback }) {
-      var args = [storeName, successCallback, errorCallback]
+    store: function(storeName, { successCallback, errorCallback }) {
+      var args = [storeName, successCallback, errorCallback];
       var task = {
         args: args,
         fn: delStore
-      }
+      };
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
@@ -1875,14 +2012,14 @@ var sixdb = function(_dbName) {
      * // Deletes records with age < 20 and salary > 1500 using a conditionObject array as query.
      * //
      * mydb.del.records(
-     *    'objectStoreName',          
+     *    'objectStoreName',
      *    null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.
-     *    'age < 20 & salary > 1500'      
+     *    'age < 20 & salary > 1500'
      * );
      *
      * mydb.execTasks();
      */
-    records: function (storeName, query, { indexName, successCallback, errorCallback }) {
+    records: function(storeName, query, { indexName, successCallback, errorCallback }) {
       var args = [query, successCallback, errorCallback];
       var task = {
         args: args,
@@ -1906,12 +2043,12 @@ var sixdb = function(_dbName) {
      * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
      * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
      */
-    index: function (storeName, indexName, { successCallback, errorCallback }) {
+    index: function(storeName, indexName, { successCallback, errorCallback }) {
       var args = [storeName, indexName, successCallback, errorCallback];
       var task = {
         args: args,
         fn: delIndex
-      }
+      };
 
       taskQueue.push(tkOpen);
       taskQueue.push(task);
@@ -1978,7 +2115,7 @@ var sixdb = function(_dbName) {
      *     null,
      *     myErrorCallback
      * );
-     * 
+     *
      *
      * // Execs all pending tasks.
      * //
@@ -1992,12 +2129,17 @@ var sixdb = function(_dbName) {
      * };
      *
      */
-    records: function (storeName, query, objectValues, {indexName, successCallback, errorCallback}) {
+    records: function(
+      storeName,
+      query,
+      objectValues,
+      { indexName, successCallback, errorCallback }
+    ) {
       var args = [query, objectValues, successCallback, errorCallback];
-      var task ={
+      var task = {
         args: args,
         fn: updateRecords
-      }
+      };
 
       taskQueue.push(tkOpen);
       setHelpTask.setStore('update -> Records(...)', storeName, 'readwrite');
@@ -2009,22 +2151,23 @@ var sixdb = function(_dbName) {
   };
 
   this.aggregateFuncs = {
-    sum: function (actual, selected) {
+    sum: function(actual, selected) {
       return actual + selected;
     },
-    avg: function (actual, selected, counter) {
+    avg: function(actual, selected, counter) {
       return (actual * (counter - 1) + selected) / counter;
     },
-    max: function (actual, selected) {
-      return (selected > actual) ? selected : actual;
+    max: function(actual, selected) {
+      return selected > actual ? selected : actual;
     },
-    min: function (actual, selected, counter) {
-      if (counter == 1) {  // First value of actual is null. Without this, min is allways null
+    min: function(actual, selected, counter) {
+      if (counter == 1) {
+        // First value of actual is null. Without this, min is allways null
         actual = selected;
       }
-      return ((selected < actual) && (counter > 1)) ? selected : actual;
+      return selected < actual && counter > 1 ? selected : actual;
     }
-  }
+  };
 
   /**
    * Contains get methods
@@ -2053,14 +2196,14 @@ var sixdb = function(_dbName) {
      * // Gets the last 200 records from the object store named "storeName", and sends the result to a function(Callback)
      * //
      * mydb.get.lastRecords('storeName', 200, myCallback);
-     * 
-     * 
+     *
+     *
      * //
      * //Execs all pending tasks
      * //
      * mydb.execTasks();
-     * 
-     * 
+     *
+     *
      * // Callback function to process the results
      * //
      * function myCallback(resultsArray){
@@ -2069,15 +2212,15 @@ var sixdb = function(_dbName) {
      *     for(i=0;i<size;i++){
      *         console.log('Name: ' + resultsArray[i].name + ' Age: ' + resultsArray[i].age + '\n');
      *     };
-     * };     
+     * };
      *
      */
-    lastRecords: function(storeName, maxResults, successCallback, errorCallback) {   
+    lastRecords: function(storeName, maxResults, successCallback, errorCallback) {
       var args = [maxResults, successCallback, errorCallback];
-      var task ={
+      var task = {
         args: args,
         fn: lastRecords
-      }
+      };
 
       taskQueue.push(tkOpen);
       setHelpTask.setStore('get -> lastRecords(...)', storeName, 'readonly');
@@ -2109,7 +2252,7 @@ var sixdb = function(_dbName) {
      *     age: 32
      * }
      *
-     * 
+     *
      * //
      * // Callback function to process the result
      * //
@@ -2125,33 +2268,33 @@ var sixdb = function(_dbName) {
      *
      * }
      *
-     * 
+     *
      * //
      * // If there is an index named "ages" based on property "age", we can get a person with age = 32.
      * //
      * mydb.get.records(
-     *    'objectStoreName', 
-     *    'ages', 
-     *    32, 
+     *    'objectStoreName',
+     *    'ages',
+     *    32,
      *    myCallback
      * );
-     * 
-     * 
+     *
+     *
      * //
      * // Or we can get persons with age > 30 and name! = Peter
      * //
      * mydb.get.records(
      *    'objectStoreName',
      *    null,
-     *    'age>30 & name != "Peter"', 
+     *    'age>30 & name != "Peter"',
      *    myCallback
      * );
      *
-     * 
+     *
      * // Execs all pending tasks
      * mydb.execTasks();
      */
-    records: function (storeName, successCallback, { errorCallback, indexName, query }) {
+    records: function(storeName, successCallback, { errorCallback, indexName, query }) {
       _index = null;
       var options = {
         query: query,
@@ -2163,7 +2306,6 @@ var sixdb = function(_dbName) {
         fn: getRecords
       };
 
-
       taskQueue.push(tkOpen);
       setHelpTask.setStore('get -> Records(...)', storeName, 'readonly');
       if (indexName) {
@@ -2171,14 +2313,26 @@ var sixdb = function(_dbName) {
       }
       taskQueue.push(task);
     },
-    
-    aggregateFn: function (storeName, property, aggregatefn, successCallback, { indexName, query, errorCallback }) {
+
+    aggregateFn: function(
+      storeName,
+      property,
+      aggregatefn,
+      successCallback,
+      { indexName, query, errorCallback }
+    ) {
       _index = null;
 
       var origin = 'get -> aggregateFn(...)';
       var args = {
-        storeName: storeName, property: property, successCallback: successCallback, aggregatefn: aggregatefn,
-        origin: origin, indexName: indexName, query: query, errorCallback: errorCallback
+        storeName: storeName,
+        property: property,
+        successCallback: successCallback,
+        aggregatefn: aggregatefn,
+        origin: origin,
+        indexName: indexName,
+        query: query,
+        errorCallback: errorCallback
       };
 
       makeAggregateTask(args);
@@ -2205,35 +2359,35 @@ var sixdb = function(_dbName) {
      *     name: 'Peter',
      *     age: 32
      * };
-     * 
+     *
      * // Simple success callback
      * //
      * function successFunction(count,origin,query){
      *     console.log(count + ' records counted with query "' + query + '"");
      * }
-     * 
+     *
      * //
      * // Counts all records in the store "southFactory"
      * //
      * mydb.get.count('southFactory',null,null,successFunction);
-     * 
+     *
      * //
      * // Counts all records in the index 'Names'
      * //
-     * mydb.get.count('southFactory','Names',null,successFunction); 
-     * 
+     * mydb.get.count('southFactory','Names',null,successFunction);
+     *
      * //
      * // Counts all persons with age > 30
      * //
      * mydb.get.count('southFactory',null,'age > 30',successFunction);
-     * 
+     *
      * //
      * // Execs all pending task
      * //
      * mydb.execTasks();
-     * 
+     *
      */
-    count: function (storeName, successCallback, { indexName, query, errorCallback }) {
+    count: function(storeName, successCallback, { indexName, query, errorCallback }) {
       var args = [indexName, query, successCallback, errorCallback];
       var task = {
         args: args,
@@ -2247,10 +2401,10 @@ var sixdb = function(_dbName) {
       }
       taskQueue.push(task);
     }
-  };  
+  };
 
   var setHelpTask = {
-    setStore: function(origin, storeName, rwMode){ 
+    setStore: function(origin, storeName, rwMode) {
       var args = [origin, storeName, rwMode];
       var task = {
         args: args,
@@ -2259,8 +2413,8 @@ var sixdb = function(_dbName) {
 
       taskQueue.push(task);
     },
-    setIndex: function(origin, indexName){
-      args = [origin, indexName]; 
+    setIndex: function(origin, indexName) {
+      args = [origin, indexName];
       var task = {
         args: args,
         fn: setIndex
@@ -2268,27 +2422,36 @@ var sixdb = function(_dbName) {
 
       taskQueue.push(task);
     }
-  }
+  };
 
-  function makeAggregateTask({storeName, property, successCallback, aggregatefn, origin, indexName, query, errorCallback}){
+  function makeAggregateTask({
+    storeName,
+    property,
+    successCallback,
+    aggregatefn,
+    origin,
+    indexName,
+    query,
+    errorCallback
+  }) {
     _index = null;
 
-      var options = {
-        query: query,
-        errorCallback: errorCallback
-      }
-      var args = [property, aggregatefn, successCallback, origin, options];
-      var task = {
-        args: args,
-        fn: getaggregateFunction
-      };
+    var options = {
+      query: query,
+      errorCallback: errorCallback
+    };
+    var args = [property, aggregatefn, successCallback, origin, options];
+    var task = {
+      args: args,
+      fn: getaggregateFunction
+    };
 
-      taskQueue.push(tkOpen);
-      setHelpTask.setStore(origin, storeName, 'readonly');
-      if (indexName) {
-        setHelpTask.setIndex(origin, indexName);
-      }
-      taskQueue.push(task);
+    taskQueue.push(tkOpen);
+    setHelpTask.setStore(origin, storeName, 'readonly');
+    if (indexName) {
+      setHelpTask.setIndex(origin, indexName);
+    }
+    taskQueue.push(task);
   }
 
   //#endregion Task queue system
@@ -2296,20 +2459,15 @@ var sixdb = function(_dbName) {
   //#region Logger system
   /////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  
   var logEnum = {
     begin: '//--------------------------------------->'
   };
 
-  
-  function logger(message, isError){
-    if(consoleOff && !isError)
-    return;
+  function logger(message, isError) {
+    if (consoleOff && !isError) return;
 
-    if(!isError)
-    console.log(message);
-    else
-    console.error(message);
+    if (!isError) console.log(message);
+    else console.error(message);
   }
 
   //#endregion Logger system
@@ -2318,14 +2476,14 @@ var sixdb = function(_dbName) {
   ///////////////////////////////////////////////////////////////////////////////////////////
 
   var lastErrorObj;
-  
+
   /**
-  * Contains all error codes.
-  * @private
-  * @type {object} 
-  * @default
-  * @readonly
-  */
+   * Contains all error codes.
+   * @private
+   * @type {object}
+   * @default
+   * @readonly
+   */
   var errorSys = {
     codes: {
       // Incorrect parameter
@@ -2350,22 +2508,22 @@ var sixdb = function(_dbName) {
       20: 'IndexedDB error'
     },
 
-    testStr: function (str) {
+    testStr: function(str) {
       if (str) {
-        if (typeof (str) != 'string') {
+        if (typeof str != 'string') {
           this.test = 1;
           return 1;
-        }                  // str isn't string
+        } // str isn't string
       } else {
         this.test = 2;
-        return 2;                   // str is null
+        return 2; // str is null
       }
-      return false;                  // str exist and is a string
+      return false; // str exist and is a string
     },
 
-    testCallback: function (fn) {
+    testCallback: function(fn) {
       if (fn) {
-        if (typeof (fn) != 'function') {
+        if (typeof fn != 'function') {
           return false;
         }
         return true;
@@ -2373,25 +2531,25 @@ var sixdb = function(_dbName) {
     },
 
     /**
-     * Makes an error object, stores it in lastErrorObj variable. 
+     * Makes an error object, stores it in lastErrorObj variable.
      * @private
      * @param  {string} origin Name of the origin function
      * @param  {number} errorCode Id number.
      * @param  {object} domException DOMexception triggered by the error
      * @return {boolean}
      */
-    makeErrorObject: function(origin, errorCode, domException){
+    makeErrorObject: function(origin, errorCode, domException) {
       var errorObj = {};
-      if(!domException){
-      errorObj.code = errorCode;
-      errorObj.type = (errorCode<17)?'Invalid parameter':'IndexedDB error';
-      errorObj.origin = origin;
-      errorObj.description = this.codes[errorCode];
+      if (!domException) {
+        errorObj.code = errorCode;
+        errorObj.type = errorCode < 17 ? 'Invalid parameter' : 'IndexedDB error';
+        errorObj.origin = origin;
+        errorObj.description = this.codes[errorCode];
       } else {
-      errorObj.code = 20;
-      errorObj.type = domException.name;
-      errorObj.origin = origin;
-      errorObj.description = domException.message;
+        errorObj.code = 20;
+        errorObj.type = domException.name;
+        errorObj.origin = origin;
+        errorObj.description = domException.message;
       }
 
       lastErrorObj = errorObj;
@@ -2417,14 +2575,10 @@ var sixdb = function(_dbName) {
      * @returns {Array} The part of original array wich represents the page
      */
     pageFromArray: function(array, elementsPerPage, page) {
-      var pageArray = array.slice(
-        (page - 1) * elementsPerPage,
-        page * elementsPerPage
-      );
+      var pageArray = array.slice((page - 1) * elementsPerPage, page * elementsPerPage);
       return pageArray;
     }
   };
-
 
   //// Initialization /////////////////////////////
   qrySys.init();

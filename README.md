@@ -16,7 +16,7 @@ But, IndexedDB lacks a query language, is asynchronous and can be complex to man
 SIXDB adds an abstraction layer over indexedDB that hides that complexity.  
 
 You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).  
-Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB/)
+**Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB/)**
 
 
 ## In this document ...
@@ -41,6 +41,7 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 * [Task queue](#Task-queue) system that manages all asynchronous operations.
 * Natural and intuitive [Query language](#Query-system).
 * Simple and flexible methods to perform CRUD operations.
+* In addition to the predefined aggregate functions (sum, max, min, avg) you can use your own functions.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
 * Lightweight. SIXDB takes less than 100Kb minified and less than 10Kb compressed with gzip.
@@ -52,13 +53,13 @@ Complete SIXDB documentation available [here](https://jjcapellan.github.io/SIXDB
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.js) or the minified version [sixdb.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.min.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.min.js"></script>
 ``` 
 
 
@@ -99,7 +100,7 @@ var mydb = new sixdb('companyDB');
 // SIXDB adds an autoincrement primary key (named "nid") to each store.
 // To create it we need the method add.store():
 //
-//     add.store( storeName, errorCallback)
+//     add.store(storeName, { successCallback, errorCallback } = {})
 //
 // In this case one object store named "southFactory" is created.
 // 
@@ -113,7 +114,7 @@ mydb.add.store('southFactory');
 // Using an index we can avoid querying all the object store and losing performance.
 // To create a new index we use add.index():
 //
-//     add.index( storeName, indexName, keyPath, errorCallback)
+//     add.index(storeName, indexName, keyPath, { successCallback, errorCallback }={})
 //
 // In this case we create a single index named "IDs" with the keypath "ID"
 //
@@ -142,7 +143,7 @@ var mydb = new sixdb('companyDB');
 //
 // To insert one or more records is used add.records():
 //
-//     add.records( storeName, obj, errorCallback)
+//     add.records(storeName, obj, { successCallback, errorCallback }={})
 //
 // Inserts one record in "southFactory" object store.
 //
@@ -188,7 +189,7 @@ var mydb = new sixdb('companyDB');
 //
 // To get the last records we use get.lastRecords():
 //
-//     get.lastRecords( storeName, maxResults, successCallback, errorCallback)
+//     get.lastRecords (storeName, maxResults, successCallback, errorCallback)
 //
 // Reads the 5 last records from "southFactory" object store.
 // The third parameter is a function that will receive the result of the query.
@@ -213,28 +214,26 @@ mydb.get.lastRecords(
 //
 // The method get.records() lets us use querys:
 //
-//     get.records( storeName, indexName, query, successCallback, errorCallback)
+//     get.records (storeName, successCallback, { errorCallback, indexName, query } = {})
 //
 // Gets the record with ID "2" from the index "IDs" in store "southFactory".
-// If you replace 'Adam' with null then the query sends all index records to the function readerCallback
+// If you don't use query then the function sends all index records to the function readerCallback
 //
 mydb.get.records(
-    'southFactory',         // Object store name
-    'IDs',                  // Index name
-    2,                      // Query. A single value refers to the index keyPath.
-    readerCallback
+    'southFactory',                   
+    readerCallback,
+    {indexName: 'IDs', query: 2}    // A single value of the query refers to the index keyPath.
 );
 
 
 //
 // Gets employees records from manufacturing department with a salary higher than 1200.
-// Here the third parameter (query) is an conditional expression that filters the records.
 // The query can't be a single value if the index is null.
 //
 mydb.get.records(
     'southFactory', 
-    null,
-    'department = "manufacturing" & salary > 1200'
+    readerCallback,
+    { query: 'department = "manufacturing" & salary > 1200' }
 );
 
 
@@ -286,29 +285,26 @@ var mydb = new sixdb('companyDB');
 //
 // We only need one method to update one or more records:
 //
-//     update.records( storeName, indexName, query, objectValues, errorCallback)
+//     update.recordsfunction(storeName, query, objectValues, { indexName, successCallback, errorCallback } = {})
 //
 // This simple example changes the salary and age of an employee with ID 2 using the index 'IDs'.
 //
 mydb.update.records(
-    'southFactory',             // Object store name
-    'IDs',                      // Index name
-    2,                          // Here the query is a single value that refers to the index keyPath
-    {salary: 1290, age: 39},    // Object with the new values
-    myErrorCallback             // Optional function to handle errors
+    'southFactory',                                                // Object store name
+    {salary: 1290, age: 39},                                       // Object with the new values
+    {indexName: 'IDs', query: 2, errorCallback: myErrorCallback}   // Optional arguments
 );
 
 
 //
-// Updates the salary of all records where department is manufacturing and age > 30.
+// Updates the salary of all records where department is manufacturing and age > 30 to a new salary of 1300.
 // Here a conditional expression is used as query. The index is null so all the store object is queried.
 //
 mydb.update.records(
-    'southFactory',                                                     // Object store name
-    null,                                                               // Index name is null so query can't be a single value
-    'department = "manufacturing" & age > 30',                          // query
-    {salary: 1300},                                                     // Object with the new values
-    myErrorCallback                                                     // Optional function to handle errors
+    'southFactory',                                       // Object store name
+    { salary: 1300 },                                     // Object with the new values
+    { query: 'department = "manufacturing" & age > 30',   // Optional arguments
+    errorCallback: myErrorCallback }   
 );
 
 
@@ -318,10 +314,9 @@ mydb.update.records(
 //
 mydb.update.records(
     'southFactory',
-    null,
-    'age > 40 | salary < 600',                                          // Query
-    {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
-    myErrorCallback
+    { salary: function(oldSalary) { return oldSalary + 300;} },           // A function is used as new value
+    { query: 'age > 40 | salary < 600',                                   // Optional arguments
+    errorCallback: myErrorCallback }
 );
 
 
@@ -352,15 +347,15 @@ var mydb = new sixdb('companyDB');
 //
 // To delete one or more records there is the method del.records():
 //
-//     del.records( storeName, indexName, query, errorCallback)
+//     del.records (storeName, query, { indexName, successCallback, errorCallback } = {})
 //
-// For eample, this deletes the record with ID 5 from the object store "southFactory"
+// For eample, this deletes the record with ID 5 from the object store "southFactory".
 //
 mydb.del.records(
-    'southFactory',     // Object store name
-    'IDs',              // Index name
-    5,                  // Query. A single value refers to the index keypath.
-    myErrorCallback     // Optional parameter. Function to handle errors.                     
+    'southFactory',                   // Object store name
+    5,                                // Query. A single value refers to the index keypath.
+    { indexName: 'IDs', 
+    errorCallback: myErrorCallback }                    
 );
 
 
@@ -369,7 +364,6 @@ mydb.del.records(
 //
 mydb.del.records(
     'southFactory',
-    null,
     '(department="manufacturing") & (salary > 1200 | age > 60)'             // Query with 2 groups of conditions
 );
 
@@ -424,10 +418,10 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong
 * Some functions accepts a single value as a query when the value refers to the keypath of an existing index
 ```javascript
 mydb.del.records(
-    'southFactory',     // Object store name
-    'IDs',              // Index name. Contains all objects with ID property in the object store "southFactory"
-    5,                  // Query. A single value refers to the index keypath.
-    myErrorCallback     // Optional parameter. Function to handle errors.                     
+    'southFactory',                   // Object store name     
+    5,                                // Query. A single value refers to the index keypath.
+    { indexName: 'IDs',               // Index. Contains all objects with ID property in the object store "southFactory"
+    errorCallback: myErrorCallback }  // Function to handle errors.                     
 );
 ```
 * Spaces or symbols in the value of a condition must be enclosed in quotation marks. Parentheses and nested quotes are not supported.
@@ -475,10 +469,9 @@ This function will receive the current record value as a parameter and return th
 //
 mydb.update.records(
     'southFactory',
-    null,
-    'department = "manufacturing"',
-    {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
-    myErrorCallback
+    { salary: function(oldSalary) { return oldSalary + 300;} },           // A function is used as new value
+    { query: 'department = "manufacturing"',                              // Optional arguments
+    errorCallback: myErrorCallback }
 );
 ```
 
@@ -520,11 +513,10 @@ mydb.add.customTask(
 
 
 
-// Reads all records from "southFactory" object store. 
+// Reads all records from "southFactory" object store. (Without query parameter, get.records() returns all records)
 //
-mydb.get.lastRecords(
+mydb.get.records(
     store, 
-    null, 
     readerCallback
 );
 

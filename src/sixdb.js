@@ -125,1240 +125,6 @@ var sixdb = function(_dbName) {
     }
   };
 
-  //#region Private functions
-  //////////////////////////////////////////////////////////////////////////////////////
-
-  /**
-   * Opens the database
-   * @private
-   * @return {void}
-   */
-  function openDb() {
-    var request = window.indexedDB.open(dbName);
-
-    request.onerror = function(event) {
-      alert('Error. You must allow web app to use indexedDB.');
-    };
-
-    request.onsuccess = function(event) {
-      db = event.target.result;
-      done();
-    };
-  }
-
-  /**
-   * Gets last records from an object store
-   * @private
-   * @param {string} storeName Store name.
-   * @param {number} maxResults Limits the records retrieved.
-   * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
-   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function lastRecords(maxResults, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = 'get -> lastRecords(...)';
-    var resultFiltered = [];
-    var counter = 0;
-    var request = null;
-
-    logger(origin + logEnum.begin);
-
-    //// Executed if maxResults is not null. Opens a cursor to count the results.
-    //
-    var onsuccesCursorFunction = function(event) {
-      var cursor = event.target.result;
-
-      if (cursor && counter < maxResults) {
-        resultFiltered.push(cursor.value);
-        counter++;
-        cursor.continue();
-      } else {
-        successCallback(resultFiltered, origin);
-        db.close();
-        logger(counter + ' last records returned from store "' + _store.name + '"');
-        done();
-      }
-    };
-
-    //// Executed if maxResults is null. Don't needs cursor. (It's faster)
-    //
-    var onsuccesGetAllFunction = function(event) {
-      requestSuccessAction(
-        event.target.result,
-        origin,
-        successCallback,
-        'All records returned from store "' + _store.name + '"'
-      );
-    };
-
-    var onerrorFunction = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    //// Gets the correct request
-    if (maxResults != null) {
-      /// Opens a cursor from last record in reverse direction
-      try {
-        request = _store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
-      } catch (e) {
-        db.close();
-        errorSys.makeErrorObject(origin, 20, request.error);
-        logger(lastErrorObj, true);
-        taskQueue.shift();
-        errorCallback(lastErrorObj);
-        checkTasks();
-      }
-      request.onsuccess = onsuccesCursorFunction;
-      request.onerror = onerrorFunction;
-    } else {
-      /// Gets all records. It is faster than openCursor.
-      request = tryStoreGetAll(origin, _store, errorCallback); //store.getAll();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-      request.onsuccess = onsuccesGetAllFunction;
-      request.onerror = onerrorFunction;
-    }
-  } //end lastRecords()
-
-  /**
-   * Gets a record/s from an object store using a key value from an index.
-   * @private
-   * @param {string} storeName Store name.
-   * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} [query] Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-
-  function getRecords(
-    _storeName,
-    successCallback = voidFn,
-    { query, errorCallback = voidFn }
-  ) {
-    var origin = 'get -> getRecords(...)';
-    /*var _index = null;*/
-    logger(origin + logEnum.begin);
-
-    var commonArgs = {
-      origin: origin,
-      successCallback: successCallback,
-      errorCallback: errorCallback
-    };
-
-    if (!_index && !query) getRecordsA(commonArgs);
-    else if (!_index && query) getRecordsB(query, commonArgs);
-    else if (_index && !query) getRecordsC(commonArgs);
-    else if (_index && query) getRecordsD(query, commonArgs);
-  }
-
-  function getRecordsA({ origin, successCallback, errorCallback }) {
-    var request = null;
-
-    /// Callbacks of request
-    var onsuccess = function(event) {
-      requestSuccessAction(
-        event.target.result,
-        origin,
-        successCallback,
-        'All records returned from store "' + _store.name + '"'
-      );
-    };
-    var onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryStoreGetAll(origin, _store, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccess;
-    request.onerror = onerror;
-  }
-
-  function getRecordsB(query, { origin, successCallback, errorCallback }) {
-    var counter = 0;
-    var resultFiltered = [];
-    var request = null;
-
-    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
-    var extMode = conditionsBlocksArray
-      ? conditionsBlocksArray[0].externalLogOperator
-      : null;
-    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-
-    sharedObj = {
-      counter: 0,
-      extMode: extMode,
-      event: resultFiltered,
-      resultFiltered: resultFiltered,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: queryLog,
-      cursorFunction: cursorGetRecords,
-      successCallback: successCallback
-    };
-
-    /// request callbacks
-    var onsucces = function(event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-
-    var onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryOpenCursor(origin, _store, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsucces;
-    request.onerror = onerror;
-  }
-
-  function getRecordsC({ origin, successCallback, errorCallback }) {
-    var request = null;
-
-    /// request callbacks
-    var onsuccesGetAll = function(event) {
-      successCallback(event.target.result, origin);
-      db.close();
-      logger(
-        'All records returned from index "' +
-          _index.name +
-          '" in store "' +
-          _index.objectStore.name +
-          '"'
-      );
-      _index = null;
-      done();
-    };
-    var onerrorFunction = function(event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryIndexGetAll(origin, _index, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccesGetAll;
-    request.onerror = onerrorFunction;
-  }
-
-  function getRecordsD(query, { origin, successCallback, errorCallback }) {
-    var resultFiltered = [];
-    var isIndexKeyValue = isKey(query);
-    var request = null;
-
-    if (!isIndexKeyValue) {
-      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-      var extMode = conditionsBlocksArray[0].externalLogOperator;
-      var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-      sharedObj = {
-        counter: 0,
-        extMode: extMode,
-        event: resultFiltered,
-        resultFiltered: resultFiltered,
-        origin: origin,
-        query: query,
-        conditionsBlocksArray: conditionsBlocksArray,
-        exitsInFirstTrue: exitsInFirstTrue,
-        logFunction: queryLog,
-        cursorFunction: cursorGetRecords,
-        successCallback: successCallback
-      };
-    }
-
-    /// request callbacks
-    var onsuccesIndexGetKey = function(event) {
-      successCallback(event.target.result, origin, query);
-      db.close();
-      logger(
-        'Records with key "' +
-          query +
-          '" returned from index "' +
-          _index.name +
-          '" on object store "' +
-          _index.objectStore.name +
-          '"'
-      );
-      _index = null;
-      done();
-    };
-    var onsuccesCursor = function(event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-    var onerror = function(event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = !isIndexKeyValue
-      ? tryOpenCursor(origin, _index, errorCallback)
-      : tryIndexGetKey(origin, _index, query, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = isIndexKeyValue ? onsuccesIndexGetKey : onsuccesCursor;
-    request.onerror = onerror;
-  }
-
-  /**
-   * This thing goes through the registers and applies an aggregate function in one property.
-   * @private
-   * @param {string} storeName Store name.
-   * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} [query] Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * @param  {string} property Represents the column to apply the aggregate function.
-   * @param  {function} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.<br>
-   * Example:<br>
-   * var myaggregateFunction = function(actualValue, selectedValue){
-   *     return actualValue + selectedValue;
-   *     };
-   * @param  {function} successCallback Receives as parameters the result (a number) and origin.
-   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function getaggregateFunction(
-    property,
-    aggregatefn,
-    successCallback = voidFn,
-    origin,
-    { query, errorCallback = voidFn }
-  ) {
-    logger(origin + logEnum.begin);
-
-    var commonArgs = {
-      origin: origin,
-      property: property,
-      aggregatefn: aggregatefn,
-      successCallback: successCallback,
-      errorCallback: errorCallback
-    };
-
-    if (!_index && !query) getaggregateFunctionA(_store, commonArgs);
-    else if (!_index && query) getAggregateFunctionB(_store, query, commonArgs);
-    else if (_index && !query) getaggregateFunctionA(_index, commonArgs);
-    else if (_index && query) getAggregateFunctionB(_index, query, commonArgs);
-  }
-
-  function getaggregateFunctionA(
-    _store,
-    { origin, property, aggregatefn, successCallback, errorCallback }
-  ) {
-    var request = null;
-    var actualValue = null;
-    var counter = 0;
-
-    /// request callbacks
-    var onsuccess = function(event) {
-      var cursor = event.target.result;
-
-      if (cursor) {
-        if (cursor.value[property]) {
-          counter++;
-          actualValue = aggregatefn(actualValue, cursor.value[property], counter);
-        }
-        cursor.continue();
-      } else {
-        successCallback(actualValue, origin);
-        db.close();
-        logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
-        _index = null;
-        done();
-      }
-    };
-    var onerrorFunction = function(event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccess;
-    request.onerror = onerrorFunction;
-  }
-
-  function getAggregateFunctionB(
-    _store,
-    query,
-    { origin, property, aggregatefn, successCallback, errorCallback }
-  ) {
-    var request = null;
-    //var actualValue = null;
-    var isIndexKeyValue = isKey(query);
-    if (isIndexKeyValue) query = _store.keyPath + '=' + query;
-    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
-    var extMode = conditionsBlocksArray
-      ? conditionsBlocksArray[0].externalLogOperator
-      : null;
-    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-    sharedObj = {
-      counter: 0,
-      actualValue: null,
-      get event() {
-        return this.actualValue;
-      },
-      property: property,
-      aggregatefn: aggregatefn,
-      extMode: extMode,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: aggregateLog,
-      cursorFunction: cursorAggregate,
-      successCallback: successCallback
-    };
-
-    /// request callbacks
-    var onsuccesCursor = function(event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-    var onerrorFunction = function(event) {
-      _index = null;
-      sharedObj = {};
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    /// request definition
-    request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccesCursor;
-    request.onerror = onerrorFunction;
-  }
-
-  /**
-   * The conditionObject contains the three elements to test a condition.
-   * @private
-   * @typedef {Object} conditionObject
-   * @property {string} keyPath Indicates a key path to test.
-   * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=", "<>" ).
-   * @property {any} value Indicates the value to test.
-   * @example
-   *
-   * //Object to store in the object store
-   * var person = {
-   *     name: 'Peter',
-   *     age: 32
-   * }
-   *
-   * // Example of conditionObject
-   * var condition = { keyPath: 'age', cond: '<', value: 45};
-   */
-
-  /**
-   * Creates the new Database.
-   * @private
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function newDB(errorCallback = voidFn) {
-    var request = window.indexedDB.open(dbName);
-    var origin = 'add -> newDB(...)';
-    logger(origin + logEnum.begin);
-
-    // Boolean: Database doesn't exist (no database = noDb)
-    var noDb = false;
-
-    // if onupgradeneeded means is a new database
-    request.onupgradeneeded = function(event) {
-      noDb = true;
-    };
-
-    request.onsuccess = function(event) {
-      var db = event.target.result;
-      db.close();
-      if (noDb) {
-        logger('Database "' + dbName + '" created');
-      } else {
-        logger('Database "' + dbName + '" already exists');
-      }
-      done();
-    };
-
-    request.onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-  }
-
-  /**
-   * Creates a new object store
-   * @private
-   * @param {string} dbName Database name
-   * @param {string} storeName Objects store name
-   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function newStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
-    var version;
-    var origin = 'add -> newStore(...)';
-    logger(origin + logEnum.begin);
-
-    // If store already exist then returns
-    if (db.objectStoreNames.contains(storeName)) {
-      db.close();
-      logger('Object store "' + storeName + '" already exists');
-      done();
-      return;
-    }
-
-    version = db.version;
-    db.close();
-    var newVersion = version + 1;
-    var store;
-
-    var request = window.indexedDB.open(dbName, newVersion);
-
-    request.onupgradeneeded = function(event) {
-      db = event.target.result;
-
-      try {
-        store = db.createObjectStore(storeName, {
-          keyPath: 'nId',
-          autoIncrement: true
-        });
-      } catch (e) {
-        requestErrorAction(origin, e, errorCallback);
-        return;
-      }
-
-      store.onerror = function(event) {
-        requestErrorAction(origin, event.target.error, errorCallback);
-      };
-    };
-
-    request.onsuccess = function(event) {
-      requestSuccessAction(
-        event,
-        origin,
-        successCallback,
-        'New object store "' + storeName + '" created'
-      );
-    };
-  }
-
-  /**
-   * Insert a new record/s in a object store
-   * @private
-   * @param {string} storeName Object store name
-   * @param {(object | object[])} obj An object or objects array to insert in object store
-   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function newRecord(obj, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = 'add -> newRecord(...)';
-    logger(origin + logEnum.begin);
-    var args = {obj, origin, successCallback, errorCallback}; //shorthand properties es6
-
-    if (Array.isArray(obj)) {
-      newRecordA(args);
-    } else {
-      newRecordB(args);
-    }
-  }
-
-  function newRecordA({ obj, origin, successCallback, errorCallback }) {
-    var objSize = obj.length;
-    var counter = 0;
-
-    while (counter < objSize) {
-      var request = _store.add(obj[counter]);
-      counter++;
-      request.onerror = function (event) {
-        requestErrorAction(origin, request.error, errorCallback);
-      };
-    }
-    requestSuccessAction(
-      event,
-      origin,
-      successCallback,
-      'New record/s added to store "' + _store.name + '"'
-    );
-  }
-
-  function newRecordB({ obj, origin, successCallback, errorCallback }) {
-    var request = _store.add(obj);
-    request.onsuccess = function (event) {
-      requestSuccessAction(
-        event,
-        origin,
-        successCallback,
-        'New record/s added to store "' + _store.name + '"'
-      );
-    };
-
-    request.onerror = function (event) {
-      requestErrorAction(origin, event.target.error, errorCallback);
-    };
-  }
-
-  /**
-   * Creates a new index in an object store.
-   * @private
-   * @param {string} storeName Object store name
-   * @param {string} indexName Index name
-   * @param {string} keyPath Key that the index use
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function newIndex(
-    storeName,
-    indexName,
-    keyPath,
-    successCallback = voidFn,
-    errorCallback = voidFn
-  ) {
-    var version;
-    var origin = 'add -> newIndex(...)';
-    logger(origin + logEnum.begin);
-
-    //// Gets the new version
-    //
-    version = db.version;
-    db.close();
-    var newVersion = version + 1;
-
-    //// The change of the database schema only can be performed in the onupgradedneeded event
-    //// so a new version number is needed to trigger that event.
-    //
-    request = window.indexedDB.open(dbName, newVersion);
-
-    request.onupgradeneeded = function(event) {
-      db = event.target.result;
-      var store = null;
-
-      var upgradeTransaction = event.target.transaction;
-
-      //// Gets store
-      try {
-        store = upgradeTransaction.objectStore(storeName);
-      } catch (e) {
-        requestErrorAction(origin, e, errorCallback);
-        return;
-      }
-
-      if (!store.indexNames.contains(indexName)) {
-        store.createIndex(indexName, keyPath);
-      } else {
-        db.close();
-        logger(
-          'The index "' + indexName + '" already exists in store "' + storeName + '"'
-        );
-        done();
-        return;
-      }
-    };
-
-    request.onsuccess = function(event) {
-      requestSuccessAction(
-        event,
-        origin,
-        successCallback,
-        'Index "' + indexName + '" created in store "' + storeName + '"'
-      );
-    };
-
-    request.onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-  }
-
-  /**
-   * Count the records
-   * @private
-   * @param  {string} storeName Store name.
-   * @param {string | null} indexName Index name. With null is not used.
-   * @param {string | null} query String that contains a query. Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * With null query, all records are counted.
-   * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function count(query, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = 'get -> count(...)';
-    logger(origin + logEnum.begin);
-
-    if (!query) {
-      if (_index) query = _index.keyPath + '!= null';
-      else query = _store.keyPath + '!= -1';
-    }
-
-    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-    var extMode = conditionsBlocksArray
-      ? conditionsBlocksArray[0].externalLogOperator
-      : null;
-    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-    /// Object used by cursorLoop()
-    sharedObj = {
-      counter: 0,
-      get event() {
-        return this.counter;
-      },
-      extMode: extMode,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: countLog,
-      cursorFunction: cursorCount,
-      successCallback: successCallback
-    };
-
-    if (_index) {
-      initCursorLoop(_index, errorCallback);
-    } else {
-      initCursorLoop(_store, errorCallback);
-    }
-  }
-
-  /**
-   * Deletes an object store.
-   * @private
-   * @param {string} storeName Object store name
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function delStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
-    var version;
-    var origin = 'del -> delStore(...)';
-    logger(origin + logEnum.begin);
-
-    //// Gets the new version
-    //
-    version = db.version;
-    db.close();
-    var newVersion = version + 1;
-
-    //// The change of the database schema only can be performed in the onupgradedneeded event
-    //// so a new version number is needed to trigger that event.
-    //
-    request = window.indexedDB.open(dbName, newVersion);
-
-    request.onupgradeneeded = function(event) {
-      db = event.target.result;
-      db.deleteObjectStore(storeName);
-    };
-
-    request.onsuccess = function(event) {
-      requestSuccessAction(
-        event,
-        origin,
-        successCallback,
-        'Object store "' + storeName + '" deleted'
-      );
-    };
-
-    request.onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-  }
-
-  /**
-   * Deletes a Database
-   * @private
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function delDB(successCallback, errorCallback = voidFn) {
-    var origin = 'del -> delDB(...)';
-    logger(origin + logEnum.begin);
-
-    var request = window.indexedDB.deleteDatabase(dbName);
-
-    request.onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    request.onsuccess = function(event) {
-      successCallback(event, origin);
-      logger('Database "' + dbName + '" deleted');
-      done();
-    };
-  }
-
-  /**
-   * Deletes one or more records from a store. Records are selected by the query.
-   * @private
-   * @param {string} storeName Object store name.
-   * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
-   * @param {string | number} query Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * @param {function(event,origin)} [successCallback] Function called on success. Receives event, origin and query as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function delRecords(query, successCallback = voidFn, errorCallback = voidFn) {
-    var origin = 'del -> delRecords(...)';
-    logger(origin + logEnum.begin);
-    var request = null;
-
-    //// Gets isIndexKeyValue
-    //// True if query is a single value (an index key)
-    //
-    var isIndexKeyValue = isKey(query);
-
-    var conditionsBlocksArray;
-    if (isIndexKeyValue) {
-      // if is a number here is converted to string
-      query = _index.keyPath + '=' + query;
-    }
-    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
-    var extMode = conditionsBlocksArray
-      ? conditionsBlocksArray[0].externalLogOperator
-      : null;
-    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-
-    sharedObj = {
-      counter: 0,
-      extMode: extMode,
-      event: event,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: queryLog,
-      cursorFunction: cursorDelRecords,
-      successCallback: successCallback
-    };
-
-    var onsuccesCursor = function(event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    }; // end onsuccesCursor
-
-    var onerrorFunction = function(event) {
-      _index = null;
-      sharedObj = {};
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-
-    if (_index) {
-      request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
-    } else {
-      request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
-    }
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = onsuccesCursor;
-    request.onerror = onerrorFunction;
-  }
-
-  /**
-   * Deletes an index
-   * @private
-   * @param {string} storeName Object store name
-   * @param {string} indexName Index name
-   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
-   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function delIndex(
-    storeName,
-    indexName,
-    successCallback = voidFn,
-    errorCallback = voidFn
-  ) {
-    var version;
-    var origin = 'del -> delIndex(...)';
-    logger(origin + logEnum.begin);
-
-    //// Gets the new version
-    //
-    version = db.version;
-    db.close();
-    var newVersion = version + 1;
-
-    //// The change of the database schema only can be performed in the onupgradedneeded event
-    //// so a new version number is needed to trigger that event.
-    //
-    request = window.indexedDB.open(dbName, newVersion);
-
-    request.onupgradeneeded = function(event) {
-      db = event.target.result;
-      var store = null;
-
-      var upgradeTransaction = event.target.transaction;
-
-      //// Gets store
-      try {
-        store = upgradeTransaction.objectStore(storeName);
-      } catch (e) {
-        requestErrorAction(origin, e, errorCallback);
-        return;
-      }
-
-      store.deleteIndex(indexName);
-    };
-
-    request.onsuccess = function(event) {
-      requestSuccessAction(
-        event,
-        origin,
-        successCallback,
-        'Index "' + indexName + '" deleted from object store "' + storeName + '"'
-      );
-    };
-
-    request.onerror = function(event) {
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-  }
-
-  /**
-   * Updates one or more records. Records are selected by the query and updated with the objectValues.
-   * @private
-   * @param  {string} storeName Object store name.
-   * @param  {string} [indexName] Index name. If is null then no index is used (It is usually slower)
-   * @param {string | number} query Example of valid queries:<br>
-   * property = value                           // Simple query<br>
-   * c > 10 & name='peter'                      // Query with 2 conditions<br>
-   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
-   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
-   * 'Peter'                                    // Single value always refers to the index keypath<br>
-   * A single value always refers to the index keypath so the index can not be null in this case.
-   * @param  {object} objectValues Object with the new values (ex: {property1: value, property3: value}).
-   * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
-   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
-   */
-  function updateRecords(
-    query,
-    objectValues,
-    successCallback = voidFn,
-    errorCallback = voidFn
-  ) {
-    var origin = 'update -> updateRecords(...)';
-    logger(origin + logEnum.begin);
-    var isIndexKeyValue = false;
-
-    //// Gets isIndexKeyValue
-    //// If true then is query is a single value (an index key)
-    isIndexKeyValue = isKey(query);
-
-    var conditionsBlocksArray;
-    if (isIndexKeyValue) {
-      // If query is a single number value then is mofied to be valid to the query system
-      query = _index.keyPath + '=' + query;
-    }
-    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
-    var extMode = conditionsBlocksArray
-      ? conditionsBlocksArray[0].externalLogOperator
-      : null;
-    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
-
-    sharedObj = {
-      counter: 0,
-      keys: Object.keys(objectValues),
-      newObjectValuesSize: Object.keys(objectValues).length,
-      extMode: extMode,
-      objectValues: objectValues,
-      event: event,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: queryLog,
-      cursorFunction: cursorUpdate,
-      successCallback: successCallback
-    };
-
-    if (_index) {
-      initCursorLoop(_index, errorCallback);
-    } else {
-      initCursorLoop(_store, errorCallback);
-    }
-  }
-
-  function initCursorLoop(store, errorCallback){
-    var request = tryOpenCursor(sharedObj.origin, store, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = function (event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-    request.onerror = function (event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
-    };
-  }
-
-  //#endregion Private functions
-
-  //#region helper functions
-  /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  function tryStoreGetAll(origin, store, errorCallback) {
-    var request = null;
-    try {
-      request = store.getAll();
-    } catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return request;
-  }
-
-  function tryIndexGetAll(origin, index, errorCallback) {
-    var request = null;
-    try {
-      request = index.getAll();
-    } catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return request;
-  }
-
-  function tryIndexGetKey(origin, index, key, errorCallback) {
-    var request = null;
-    try {
-      request = index.getAll(key);
-    } catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return request;
-  }
-
-  function tryOpenCursor(origin, openerObj, errorCallback) {
-    var request = null;
-    try {
-      request = openerObj.openCursor();
-    } catch (e) {
-      reportCatch(origin, e, errorCallback);
-      return null;
-    }
-    return request;
-  }
-
-  function reportCatch(origin, e, errorCallback) {
-    errorSys.makeErrorObject(origin, 20, e);
-    taskQueue.shift();
-    db.close();
-    errorCallback(lastErrorObj);
-    logger(lastErrorObj, true);
-  }
-
-  /*
-  function invalidArgsAcction(errorCallback) {
-    taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
-    db.close();
-    errorCallback(lastErrorObj);
-    logger(lastErrorObj, true);
-    checkTasks();
-  }*/
-
-  function requestErrorAction(origin, error, errorCallback) {
-    db.close();
-    errorSys.makeErrorObject(origin, 20, error);
-    logger(lastErrorObj, true);
-    taskQueue.shift();
-    errorCallback(lastErrorObj);
-    checkTasks();
-  }
-
-  function requestSuccessAction(event, origin, successCallback, message) {
-    successCallback(event, origin);
-    db.close();
-    logger(message);
-    done();
-  }
-
-  function testCursor(conditionsBlocksArray, exitsInFirst, cursor) {
-    var test = false;
-    var i = 0;
-    var size = conditionsBlocksArray.length;
-    for (i = 0; i < size; i++) {
-      var conditions = conditionsBlocksArray[i].conditionsArray;
-      var intMode = conditionsBlocksArray[i].internalLogOperator;
-      test = qrySys.testConditionBlock(cursor, conditions, intMode);
-      if (test == exitsInFirst) {
-        break;
-      }
-    }
-    return test;
-  }
-
-  function isKey(query) {
-    var isKey = false;
-    if (query) {
-      if (typeof query == 'number') {
-        isKey = true;
-      } else {
-        isKey = query.match(qrySys.operatorRgx) ? false : true;
-      }
-    }
-    return isKey;
-  }
-
-  function setStore(origin, storeName, rwMode) {
-    _store = null;
-    try {
-      _store = db.transaction(storeName, rwMode).objectStore(storeName);
-    } catch (e) {
-      errorSys.makeErrorObject(origin, 20, e);
-      logger(lastErrorObj, true);
-    }
-    done();
-  }
-
-  function setIndex(origin, indexName) {
-    _index = null;
-    try {
-      _index = _store.index(indexName);
-    } catch (e) {
-      errorSys.makeErrorObject(origin, 20, e);
-      logger(lastErrorObj, true);
-    }
-    done();
-  }
-
-  /// Cursor functions /////////////////////
-
-  function cursorUpdate(cursor) {
-    var updateData = cursor.value;
-    for (i = 0; i < sharedObj.newObjectValuesSize; i++) {
-      // If the new value for the property keys[i] is a function then the new value is function(oldValue)
-      updateData[sharedObj.keys[i]] =
-        typeof sharedObj.objectValues[sharedObj.keys[i]] == 'function'
-          ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]])
-          : sharedObj.objectValues[sharedObj.keys[i]];
-    }
-
-    cursor.update(updateData);
-    sharedObj.counter++;
-  }
-
-  function cursorDelRecords(cursor) {
-    cursor.delete();
-    sharedObj.counter++;
-  }
-
-  function cursorGetRecords(cursor) {
-    sharedObj.resultFiltered.push(cursor.value);
-    sharedObj.counter++;
-  }
-
-  function cursorCount() {
-    sharedObj.counter++;
-  }
-
-  function cursorAggregate(cursor) {
-    if (cursor.value[sharedObj.property]) {
-      sharedObj.counter++;
-      sharedObj.actualValue = sharedObj.aggregatefn(
-        sharedObj.actualValue,
-        cursor.value[sharedObj.property],
-        sharedObj.counter
-      );
-    }
-  }
-
-  function cursorLoop(cursor) {
-    if (cursor) {
-      var test = testCursor(
-        sharedObj.conditionsBlocksArray,
-        sharedObj.exitsInFirstTrue,
-        cursor
-      );
-
-      if (test) {
-        sharedObj.cursorFunction(cursor);
-      }
-      cursor.continue();
-    } else {
-      successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
-      db.close();
-      //logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
-      sharedObj.logFunction();
-      _index = null;
-      sharedObj = {};
-      done();
-    }
-  }
-
-  /// Logger functions
-  function queryLog() {
-    logger(
-      'Processed query: "' +
-        sharedObj.query +
-        '" finished\n' +
-        sharedObj.counter +
-        ' records returned from object store "' +
-        _store.name +
-        '"'
-    );
-  }
-
-  function countLog() {
-    logger(
-      'Processed query finished: "' +
-        sharedObj.query +
-        '"\n' +
-        sharedObj.counter +
-        ' records counted from the query to store: "' +
-        _store.name +
-        '"'
-    );
-  }
-
-  function aggregateLog() {
-    logger(
-      'Result of ' +
-        sharedObj.origin +
-        ' on property "' +
-        sharedObj.property +
-        '": ' +
-        sharedObj.actualValue
-    );
-  }
-
-  //#endregion helper functions
-
   //#region Query system
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2521,6 +1287,1240 @@ var sixdb = function(_dbName) {
   };
 
   //#endregion Error handler
+
+  //#region Private functions
+  //////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * Opens the database
+   * @private
+   * @return {void}
+   */
+  function openDb() {
+    var request = window.indexedDB.open(dbName);
+
+    request.onerror = function(event) {
+      alert('Error. You must allow web app to use indexedDB.');
+    };
+
+    request.onsuccess = function(event) {
+      db = event.target.result;
+      done();
+    };
+  }
+
+  /**
+   * Gets last records from an object store
+   * @private
+   * @param {string} storeName Store name.
+   * @param {number} maxResults Limits the records retrieved.
+   * @param {function(object[],string)} successCallback Function called when done. Receives as parameters the retrieved records and origin.
+   * @param {function(event)} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function lastRecords(maxResults, successCallback = voidFn, errorCallback = voidFn) {
+    var origin = 'get -> lastRecords(...)';
+    var resultFiltered = [];
+    var counter = 0;
+    var request = null;
+
+    logger(origin + logEnum.begin);
+
+    //// Executed if maxResults is not null. Opens a cursor to count the results.
+    //
+    var onsuccesCursorFunction = function(event) {
+      var cursor = event.target.result;
+
+      if (cursor && counter < maxResults) {
+        resultFiltered.push(cursor.value);
+        counter++;
+        cursor.continue();
+      } else {
+        successCallback(resultFiltered, origin);
+        db.close();
+        logger(counter + ' last records returned from store "' + _store.name + '"');
+        done();
+      }
+    };
+
+    //// Executed if maxResults is null. Don't needs cursor. (It's faster)
+    //
+    var onsuccesGetAllFunction = function(event) {
+      requestSuccessAction(
+        event.target.result,
+        origin,
+        successCallback,
+        'All records returned from store "' + _store.name + '"'
+      );
+    };
+
+    var onerrorFunction = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    //// Gets the correct request
+    if (maxResults != null) {
+      /// Opens a cursor from last record in reverse direction
+      try {
+        request = _store.openCursor(null, 'prev').onsuccess = onsuccesCursorFunction;
+      } catch (e) {
+        db.close();
+        errorSys.makeErrorObject(origin, 20, request.error);
+        logger(lastErrorObj, true);
+        taskQueue.shift();
+        errorCallback(lastErrorObj);
+        checkTasks();
+      }
+      request.onsuccess = onsuccesCursorFunction;
+      request.onerror = onerrorFunction;
+    } else {
+      /// Gets all records. It is faster than openCursor.
+      request = tryStoreGetAll(origin, _store, errorCallback); //store.getAll();
+      if (!request) {
+        checkTasks();
+        return;
+      }
+      request.onsuccess = onsuccesGetAllFunction;
+      request.onerror = onerrorFunction;
+    }
+  } //end lastRecords()
+
+  /**
+   * Gets a record/s from an object store using a key value from an index.
+   * @private
+   * @param {string} storeName Store name.
+   * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+   * @param {string | number} [query] Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
+   * A single value always refers to the index keypath so the index can not be null in this case.
+   * @param {function(object[],string)} successCallback Receives as parameters the result and origin. Result can be an object array, single object or string.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+
+  function getRecords(
+    _storeName,
+    successCallback = voidFn,
+    { query, errorCallback = voidFn }
+  ) {
+    var origin = 'get -> getRecords(...)';
+    /*var _index = null;*/
+    logger(origin + logEnum.begin);
+
+    var commonArgs = {
+      origin: origin,
+      successCallback: successCallback,
+      errorCallback: errorCallback
+    };
+
+    if (!_index && !query) getRecordsA(commonArgs);
+    else if (!_index && query) getRecordsB(query, commonArgs);
+    else if (_index && !query) getRecordsC(commonArgs);
+    else if (_index && query) getRecordsD(query, commonArgs);
+  }
+
+  function getRecordsA({ origin, successCallback, errorCallback }) {
+    var request = null;
+
+    /// Callbacks of request
+    var onsuccess = function(event) {
+      requestSuccessAction(
+        event.target.result,
+        origin,
+        successCallback,
+        'All records returned from store "' + _store.name + '"'
+      );
+    };
+    var onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryStoreGetAll(origin, _store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccess;
+    request.onerror = onerror;
+  }
+
+  function getRecordsB(query, { origin, successCallback, errorCallback }) {
+    var counter = 0;
+    var resultFiltered = [];
+    var request = null;
+
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+
+    sharedObj = {
+      counter: 0,
+      extMode: extMode,
+      event: resultFiltered,
+      resultFiltered: resultFiltered,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
+      cursorFunction: cursorGetRecords,
+      successCallback: successCallback
+    };
+
+    /// request callbacks
+    var onsucces = function(event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    };
+
+    var onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryOpenCursor(origin, _store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsucces;
+    request.onerror = onerror;
+  }
+
+  function getRecordsC({ origin, successCallback, errorCallback }) {
+    var request = null;
+
+    /// request callbacks
+    var onsuccesGetAll = function(event) {
+      successCallback(event.target.result, origin);
+      db.close();
+      logger(
+        'All records returned from index "' +
+          _index.name +
+          '" in store "' +
+          _index.objectStore.name +
+          '"'
+      );
+      _index = null;
+      done();
+    };
+    var onerrorFunction = function(event) {
+      _index = null;
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryIndexGetAll(origin, _index, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesGetAll;
+    request.onerror = onerrorFunction;
+  }
+
+  function getRecordsD(query, { origin, successCallback, errorCallback }) {
+    var resultFiltered = [];
+    var isIndexKeyValue = isKey(query);
+    var request = null;
+
+    if (!isIndexKeyValue) {
+      var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+      var extMode = conditionsBlocksArray[0].externalLogOperator;
+      var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+      sharedObj = {
+        counter: 0,
+        extMode: extMode,
+        event: resultFiltered,
+        resultFiltered: resultFiltered,
+        origin: origin,
+        query: query,
+        conditionsBlocksArray: conditionsBlocksArray,
+        exitsInFirstTrue: exitsInFirstTrue,
+        logFunction: queryLog,
+        cursorFunction: cursorGetRecords,
+        successCallback: successCallback
+      };
+    }
+
+    /// request callbacks
+    var onsuccesIndexGetKey = function(event) {
+      successCallback(event.target.result, origin, query);
+      db.close();
+      logger(
+        'Records with key "' +
+          query +
+          '" returned from index "' +
+          _index.name +
+          '" on object store "' +
+          _index.objectStore.name +
+          '"'
+      );
+      _index = null;
+      done();
+    };
+    var onsuccesCursor = function(event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    };
+    var onerror = function(event) {
+      _index = null;
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = !isIndexKeyValue
+      ? tryOpenCursor(origin, _index, errorCallback)
+      : tryIndexGetKey(origin, _index, query, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = isIndexKeyValue ? onsuccesIndexGetKey : onsuccesCursor;
+    request.onerror = onerror;
+  }
+
+  /**
+   * This thing goes through the registers and applies an aggregate function in one property.
+   * @private
+   * @param {string} storeName Store name.
+   * @param {string} [indexName] Index name. If it is null then no index is used (It is usually slower).
+   * @param {string | number} [query] Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
+   * @param  {string} property Represents the column to apply the aggregate function.
+   * @param  {function} aggregatefn Function of type aggregate. Receives as arguments: actualValue ,selectedValue and counter.<br>
+   * Example:<br>
+   * var myaggregateFunction = function(actualValue, selectedValue){
+   *     return actualValue + selectedValue;
+   *     };
+   * @param  {function} successCallback Receives as parameters the result (a number) and origin.
+   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function getaggregateFunction(
+    property,
+    aggregatefn,
+    successCallback = voidFn,
+    origin,
+    { query, errorCallback = voidFn }
+  ) {
+    logger(origin + logEnum.begin);
+
+    var commonArgs = {
+      origin: origin,
+      property: property,
+      aggregatefn: aggregatefn,
+      successCallback: successCallback,
+      errorCallback: errorCallback
+    };
+
+    if (!_index && !query) getaggregateFunctionA(_store, commonArgs);
+    else if (!_index && query) getAggregateFunctionB(_store, query, commonArgs);
+    else if (_index && !query) getaggregateFunctionA(_index, commonArgs);
+    else if (_index && query) getAggregateFunctionB(_index, query, commonArgs);
+  }
+
+  function getaggregateFunctionA(
+    _store,
+    { origin, property, aggregatefn, successCallback, errorCallback }
+  ) {
+    var request = null;
+    var actualValue = null;
+    var counter = 0;
+
+    /// request callbacks
+    var onsuccess = function(event) {
+      var cursor = event.target.result;
+
+      if (cursor) {
+        if (cursor.value[property]) {
+          counter++;
+          actualValue = aggregatefn(actualValue, cursor.value[property], counter);
+        }
+        cursor.continue();
+      } else {
+        successCallback(actualValue, origin);
+        db.close();
+        logger('Result of ' + origin + ' on property "' + property + '": ' + actualValue);
+        _index = null;
+        done();
+      }
+    };
+    var onerrorFunction = function(event) {
+      _index = null;
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccess;
+    request.onerror = onerrorFunction;
+  }
+
+  function getAggregateFunctionB(
+    _store,
+    query,
+    { origin, property, aggregatefn, successCallback, errorCallback }
+  ) {
+    var request = null;
+    //var actualValue = null;
+    var isIndexKeyValue = isKey(query);
+    if (isIndexKeyValue) query = _store.keyPath + '=' + query;
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+    sharedObj = {
+      counter: 0,
+      actualValue: null,
+      get event() {
+        return this.actualValue;
+      },
+      property: property,
+      aggregatefn: aggregatefn,
+      extMode: extMode,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: aggregateLog,
+      cursorFunction: cursorAggregate,
+      successCallback: successCallback
+    };
+
+    /// request callbacks
+    var onsuccesCursor = function(event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    };
+    var onerrorFunction = function(event) {
+      _index = null;
+      sharedObj = {};
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    /// request definition
+    request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesCursor;
+    request.onerror = onerrorFunction;
+  }
+
+  /**
+   * The conditionObject contains the three elements to test a condition.
+   * @private
+   * @typedef {Object} conditionObject
+   * @property {string} keyPath Indicates a key path to test.
+   * @property {string} cond A comparison operator ( "<" , ">" , "=" , "!=" , "<=" , ">=", "<>" ).
+   * @property {any} value Indicates the value to test.
+   * @example
+   *
+   * //Object to store in the object store
+   * var person = {
+   *     name: 'Peter',
+   *     age: 32
+   * }
+   *
+   * // Example of conditionObject
+   * var condition = { keyPath: 'age', cond: '<', value: 45};
+   */
+
+  /**
+   * Creates the new Database.
+   * @private
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function newDB(errorCallback = voidFn) {
+    var request = window.indexedDB.open(dbName);
+    var origin = 'add -> newDB(...)';
+    logger(origin + logEnum.begin);
+
+    // Boolean: Database doesn't exist (no database = noDb)
+    var noDb = false;
+
+    // if onupgradeneeded means is a new database
+    request.onupgradeneeded = function(event) {
+      noDb = true;
+    };
+
+    request.onsuccess = function(event) {
+      var db = event.target.result;
+      db.close();
+      if (noDb) {
+        logger('Database "' + dbName + '" created');
+      } else {
+        logger('Database "' + dbName + '" already exists');
+      }
+      done();
+    };
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+  }
+
+  /**
+   * Creates a new object store
+   * @private
+   * @param {string} dbName Database name
+   * @param {string} storeName Objects store name
+   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function newStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
+    var version;
+    var origin = 'add -> newStore(...)';
+    logger(origin + logEnum.begin);
+
+    // If store already exist then returns
+    if (db.objectStoreNames.contains(storeName)) {
+      db.close();
+      logger('Object store "' + storeName + '" already exists');
+      done();
+      return;
+    }
+
+    version = db.version;
+    db.close();
+    var newVersion = version + 1;
+    var store;
+
+    var request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+
+      try {
+        store = db.createObjectStore(storeName, {
+          keyPath: 'nId',
+          autoIncrement: true
+        });
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
+        return;
+      }
+
+      store.onerror = function(event) {
+        requestErrorAction(origin, event.target.error, errorCallback);
+      };
+    };
+
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'New object store "' + storeName + '" created'
+      );
+    };
+  }
+
+  /**
+   * Insert a new record/s in a object store
+   * @private
+   * @param {string} storeName Object store name
+   * @param {(object | object[])} obj An object or objects array to insert in object store
+   * @param {function} [successCallback] Function called on success. Receives as parameters event and origin.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function newRecord(obj, successCallback = voidFn, errorCallback = voidFn) {
+    var origin = 'add -> newRecord(...)';
+    logger(origin + logEnum.begin);
+    var args = { obj, origin, successCallback, errorCallback }; //shorthand properties es6
+
+    if (Array.isArray(obj)) {
+      newRecordA(args);
+    } else {
+      newRecordB(args);
+    }
+  }
+
+  function newRecordA({ obj, origin, successCallback, errorCallback }) {
+    var objSize = obj.length;
+    var counter = 0;
+
+    while (counter < objSize) {
+      var request = _store.add(obj[counter]);
+      counter++;
+      request.onerror = function(event) {
+        requestErrorAction(origin, request.error, errorCallback);
+      };
+    }
+    requestSuccessAction(
+      event,
+      origin,
+      successCallback,
+      'New record/s added to store "' + _store.name + '"'
+    );
+  }
+
+  function newRecordB({ obj, origin, successCallback, errorCallback }) {
+    var request = _store.add(obj);
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'New record/s added to store "' + _store.name + '"'
+      );
+    };
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, event.target.error, errorCallback);
+    };
+  }
+
+  /**
+   * Creates a new index in an object store.
+   * @private
+   * @param {string} storeName Object store name
+   * @param {string} indexName Index name
+   * @param {string} keyPath Key that the index use
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function newIndex(
+    storeName,
+    indexName,
+    keyPath,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
+    var version;
+    var origin = 'add -> newIndex(...)';
+    logger(origin + logEnum.begin);
+
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    var newVersion = version + 1;
+
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      var store = null;
+
+      var upgradeTransaction = event.target.transaction;
+
+      //// Gets store
+      try {
+        store = upgradeTransaction.objectStore(storeName);
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
+        return;
+      }
+
+      if (!store.indexNames.contains(indexName)) {
+        store.createIndex(indexName, keyPath);
+      } else {
+        db.close();
+        logger(
+          'The index "' + indexName + '" already exists in store "' + storeName + '"'
+        );
+        done();
+        return;
+      }
+    };
+
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Index "' + indexName + '" created in store "' + storeName + '"'
+      );
+    };
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+  }
+
+  /**
+   * Count the records
+   * @private
+   * @param  {string} storeName Store name.
+   * @param {string | null} indexName Index name. With null is not used.
+   * @param {string | null} query String that contains a query. Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * With null query, all records are counted.
+   * @param {function} [successCallback] Function called on success. Receives the result (number), origin and query as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function count(query, successCallback = voidFn, errorCallback = voidFn) {
+    var origin = 'get -> count(...)';
+    logger(origin + logEnum.begin);
+
+    if (!query) {
+      if (_index) query = _index.keyPath + '!= null';
+      else query = _store.keyPath + '!= -1';
+    }
+
+    var conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+    /// Object used by cursorLoop()
+    sharedObj = {
+      counter: 0,
+      get event() {
+        return this.counter;
+      },
+      extMode: extMode,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: countLog,
+      cursorFunction: cursorCount,
+      successCallback: successCallback
+    };
+
+    if (_index) {
+      initCursorLoop(_index, errorCallback);
+    } else {
+      initCursorLoop(_store, errorCallback);
+    }
+  }
+
+  /**
+   * Deletes an object store.
+   * @private
+   * @param {string} storeName Object store name
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function delStore(storeName, successCallback = voidFn, errorCallback = voidFn) {
+    var version;
+    var origin = 'del -> delStore(...)';
+    logger(origin + logEnum.begin);
+
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    var newVersion = version + 1;
+
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      db.deleteObjectStore(storeName);
+    };
+
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Object store "' + storeName + '" deleted'
+      );
+    };
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+  }
+
+  /**
+   * Deletes a Database
+   * @private
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function delDB(successCallback, errorCallback = voidFn) {
+    var origin = 'del -> delDB(...)';
+    logger(origin + logEnum.begin);
+
+    var request = window.indexedDB.deleteDatabase(dbName);
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    request.onsuccess = function(event) {
+      successCallback(event, origin);
+      logger('Database "' + dbName + '" deleted');
+      done();
+    };
+  }
+
+  /**
+   * Deletes one or more records from a store. Records are selected by the query.
+   * @private
+   * @param {string} storeName Object store name.
+   * @param {string | null} indexName Index name. If it is null then no index is used (It is usually slower).
+   * @param {string | number} query Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
+   * @param {function(event,origin)} [successCallback] Function called on success. Receives event, origin and query as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function delRecords(query, successCallback = voidFn, errorCallback = voidFn) {
+    var origin = 'del -> delRecords(...)';
+    logger(origin + logEnum.begin);
+    var request = null;
+
+    //// Gets isIndexKeyValue
+    //// True if query is a single value (an index key)
+    //
+    var isIndexKeyValue = isKey(query);
+
+    var conditionsBlocksArray;
+    if (isIndexKeyValue) {
+      // if is a number here is converted to string
+      query = _index.keyPath + '=' + query;
+    }
+    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+
+    sharedObj = {
+      counter: 0,
+      extMode: extMode,
+      event: event,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
+      cursorFunction: cursorDelRecords,
+      successCallback: successCallback
+    };
+
+    var onsuccesCursor = function(event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    }; // end onsuccesCursor
+
+    var onerrorFunction = function(event) {
+      _index = null;
+      sharedObj = {};
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+
+    if (_index) {
+      request = tryOpenCursor(origin, _index, errorCallback); //index.openCursor();
+    } else {
+      request = tryOpenCursor(origin, _store, errorCallback); //store.openCursor();
+    }
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = onsuccesCursor;
+    request.onerror = onerrorFunction;
+  }
+
+  /**
+   * Deletes an index
+   * @private
+   * @param {string} storeName Object store name
+   * @param {string} indexName Index name
+   * @param {function} [successCallback] Function called on success. Receives event and origin as parameters.
+   * @param {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function delIndex(
+    storeName,
+    indexName,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
+    var version;
+    var origin = 'del -> delIndex(...)';
+    logger(origin + logEnum.begin);
+
+    //// Gets the new version
+    //
+    version = db.version;
+    db.close();
+    var newVersion = version + 1;
+
+    //// The change of the database schema only can be performed in the onupgradedneeded event
+    //// so a new version number is needed to trigger that event.
+    //
+    request = window.indexedDB.open(dbName, newVersion);
+
+    request.onupgradeneeded = function(event) {
+      db = event.target.result;
+      var store = null;
+
+      var upgradeTransaction = event.target.transaction;
+
+      //// Gets store
+      try {
+        store = upgradeTransaction.objectStore(storeName);
+      } catch (e) {
+        requestErrorAction(origin, e, errorCallback);
+        return;
+      }
+
+      store.deleteIndex(indexName);
+    };
+
+    request.onsuccess = function(event) {
+      requestSuccessAction(
+        event,
+        origin,
+        successCallback,
+        'Index "' + indexName + '" deleted from object store "' + storeName + '"'
+      );
+    };
+
+    request.onerror = function(event) {
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+  }
+
+  /**
+   * Updates one or more records. Records are selected by the query and updated with the objectValues.
+   * @private
+   * @param  {string} storeName Object store name.
+   * @param  {string} [indexName] Index name. If is null then no index is used (It is usually slower)
+   * @param {string | number} query Example of valid queries:<br>
+   * property = value                           // Simple query<br>
+   * c > 10 & name='peter'                      // Query with 2 conditions<br>
+   * (c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>
+   * (a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>
+   * 'Peter'                                    // Single value always refers to the index keypath<br>
+   * A single value always refers to the index keypath so the index can not be null in this case.
+   * @param  {object} objectValues Object with the new values (ex: {property1: value, property3: value}).
+   * @param {function} [successCallback] Function called on success. Receives event, origin and query as parameters.
+   * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+   */
+  function updateRecords(
+    query,
+    objectValues,
+    successCallback = voidFn,
+    errorCallback = voidFn
+  ) {
+    var origin = 'update -> updateRecords(...)';
+    logger(origin + logEnum.begin);
+    var isIndexKeyValue = false;
+
+    //// Gets isIndexKeyValue
+    //// If true then is query is a single value (an index key)
+    isIndexKeyValue = isKey(query);
+
+    var conditionsBlocksArray;
+    if (isIndexKeyValue) {
+      // If query is a single number value then is mofied to be valid to the query system
+      query = _index.keyPath + '=' + query;
+    }
+    conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+    var extMode = conditionsBlocksArray
+      ? conditionsBlocksArray[0].externalLogOperator
+      : null;
+    var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+
+    sharedObj = {
+      counter: 0,
+      keys: Object.keys(objectValues),
+      newObjectValuesSize: Object.keys(objectValues).length,
+      extMode: extMode,
+      objectValues: objectValues,
+      event: event,
+      origin: origin,
+      query: query,
+      conditionsBlocksArray: conditionsBlocksArray,
+      exitsInFirstTrue: exitsInFirstTrue,
+      logFunction: queryLog,
+      cursorFunction: cursorUpdate,
+      successCallback: successCallback
+    };
+
+    if (_index) {
+      initCursorLoop(_index, errorCallback);
+    } else {
+      initCursorLoop(_store, errorCallback);
+    }
+  }
+
+  function initCursorLoop(store, errorCallback) {
+    var request = tryOpenCursor(sharedObj.origin, store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = function(event) {
+      var cursor = event.target.result;
+      cursorLoop(cursor);
+    };
+    request.onerror = function(event) {
+      _index = null;
+      requestErrorAction(origin, request.error, errorCallback);
+    };
+  }
+
+  //#endregion Private functions
+
+  //#region helper functions
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  function tryStoreGetAll(origin, store, errorCallback) {
+    var request = null;
+    try {
+      request = store.getAll();
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    }
+    return request;
+  }
+
+  function tryIndexGetAll(origin, index, errorCallback) {
+    var request = null;
+    try {
+      request = index.getAll();
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    }
+    return request;
+  }
+
+  function tryIndexGetKey(origin, index, key, errorCallback) {
+    var request = null;
+    try {
+      request = index.getAll(key);
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    }
+    return request;
+  }
+
+  function tryOpenCursor(origin, openerObj, errorCallback) {
+    var request = null;
+    try {
+      request = openerObj.openCursor();
+    } catch (e) {
+      reportCatch(origin, e, errorCallback);
+      return null;
+    }
+    return request;
+  }
+
+  function reportCatch(origin, e, errorCallback) {
+    errorSys.makeErrorObject(origin, 20, e);
+    taskQueue.shift();
+    db.close();
+    errorCallback(lastErrorObj);
+    logger(lastErrorObj, true);
+  }
+
+  /*
+  function invalidArgsAcction(errorCallback) {
+    taskQueue.shift(); // Delete actual task prevent problem if custom errorCallback creates a new task
+    db.close();
+    errorCallback(lastErrorObj);
+    logger(lastErrorObj, true);
+    checkTasks();
+  }*/
+
+  function requestErrorAction(origin, error, errorCallback) {
+    db.close();
+    errorSys.makeErrorObject(origin, 20, error);
+    logger(lastErrorObj, true);
+    taskQueue.shift();
+    errorCallback(lastErrorObj);
+    checkTasks();
+  }
+
+  function requestSuccessAction(event, origin, successCallback, message) {
+    successCallback(event, origin);
+    db.close();
+    logger(message);
+    done();
+  }
+
+  function testCursor(conditionsBlocksArray, exitsInFirst, cursor) {
+    var test = false;
+    var i = 0;
+    var size = conditionsBlocksArray.length;
+    for (i = 0; i < size; i++) {
+      var conditions = conditionsBlocksArray[i].conditionsArray;
+      var intMode = conditionsBlocksArray[i].internalLogOperator;
+      test = qrySys.testConditionBlock(cursor, conditions, intMode);
+      if (test == exitsInFirst) {
+        break;
+      }
+    }
+    return test;
+  }
+
+  function isKey(query) {
+    var isKey = false;
+    if (query) {
+      if (typeof query == 'number') {
+        isKey = true;
+      } else {
+        isKey = query.match(qrySys.operatorRgx) ? false : true;
+      }
+    }
+    return isKey;
+  }
+
+  function setStore(origin, storeName, rwMode) {
+    _store = null;
+    try {
+      _store = db.transaction(storeName, rwMode).objectStore(storeName);
+    } catch (e) {
+      errorSys.makeErrorObject(origin, 20, e);
+      logger(lastErrorObj, true);
+    }
+    done();
+  }
+
+  function setIndex(origin, indexName) {
+    _index = null;
+    try {
+      _index = _store.index(indexName);
+    } catch (e) {
+      errorSys.makeErrorObject(origin, 20, e);
+      logger(lastErrorObj, true);
+    }
+    done();
+  }
+
+  /// Cursor functions /////////////////////
+
+  function cursorUpdate(cursor) {
+    var updateData = cursor.value;
+    for (i = 0; i < sharedObj.newObjectValuesSize; i++) {
+      // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+      updateData[sharedObj.keys[i]] =
+        typeof sharedObj.objectValues[sharedObj.keys[i]] == 'function'
+          ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]])
+          : sharedObj.objectValues[sharedObj.keys[i]];
+    }
+
+    cursor.update(updateData);
+    sharedObj.counter++;
+  }
+
+  function cursorDelRecords(cursor) {
+    cursor.delete();
+    sharedObj.counter++;
+  }
+
+  function cursorGetRecords(cursor) {
+    sharedObj.resultFiltered.push(cursor.value);
+    sharedObj.counter++;
+  }
+
+  function cursorCount() {
+    sharedObj.counter++;
+  }
+
+  function cursorAggregate(cursor) {
+    if (cursor.value[sharedObj.property]) {
+      sharedObj.counter++;
+      sharedObj.actualValue = sharedObj.aggregatefn(
+        sharedObj.actualValue,
+        cursor.value[sharedObj.property],
+        sharedObj.counter
+      );
+    }
+  }
+
+  function cursorLoop(cursor) {
+    if (cursor) {
+      var test = testCursor(
+        sharedObj.conditionsBlocksArray,
+        sharedObj.exitsInFirstTrue,
+        cursor
+      );
+
+      if (test) {
+        sharedObj.cursorFunction(cursor);
+      }
+      cursor.continue();
+    } else {
+      successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
+      db.close();
+      //logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
+      sharedObj.logFunction();
+      _index = null;
+      sharedObj = {};
+      done();
+    }
+  }
+
+  /// Logger functions
+  function queryLog() {
+    logger(
+      'Processed query: "' +
+        sharedObj.query +
+        '" finished\n' +
+        sharedObj.counter +
+        ' records returned from object store "' +
+        _store.name +
+        '"'
+    );
+  }
+
+  function countLog() {
+    logger(
+      'Processed query finished: "' +
+        sharedObj.query +
+        '"\n' +
+        sharedObj.counter +
+        ' records counted from the query to store: "' +
+        _store.name +
+        '"'
+    );
+  }
+
+  function aggregateLog() {
+    logger(
+      'Result of ' +
+        sharedObj.origin +
+        ' on property "' +
+        sharedObj.property +
+        '": ' +
+        sharedObj.actualValue
+    );
+  }
+
+  //#endregion helper functions
 
   /**
    * Contains some util methods

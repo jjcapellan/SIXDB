@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#.customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#.avg">avg</a></li><li data-type='method'><a href="sixdb_get.html#.count">count</a></li><li data-type='method'><a href="sixdb_get.html#.sum">sum</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#.records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="sixdb_get.html#count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -59,7 +59,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2144">line 2144</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line706">line 706</a>
     </li></ul></dd>
     
 
@@ -125,7 +125,7 @@
 
     
 
-    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(successCallback<span class="signature-attributes">opt</span>, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="db"><span class="type-signature"></span>db<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -137,7 +137,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2152">line 2152</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line715">line 715</a>
     </li></ul></dd>
     
 
@@ -192,6 +192,60 @@
 
     <h5>Parameters:</h5>
     
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
 
 <table class="params">
     <thead>
@@ -283,6 +337,13 @@
     </tbody>
 </table>
 
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
 
 
 
@@ -303,7 +364,7 @@
 
     
 
-    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(storeName, indexName, successCallback<span class="signature-attributes">opt</span>, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="index"><span class="type-signature"></span>index<span class="signature">(storeName, indexName, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -315,7 +376,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2246">line 2246</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line811">line 811</a>
     </li></ul></dd>
     
 
@@ -457,6 +518,60 @@
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>successCallback</code></td>
             
 
@@ -523,6 +638,13 @@
     </tbody>
 </table>
 
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
 
 
 
@@ -543,7 +665,7 @@
 
     
 
-    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(storeName, indexName, query, successCallback<span class="signature-attributes">opt</span>, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="records"><span class="type-signature"></span>records<span class="signature">(storeName, query, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -555,7 +677,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2223">line 2223</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line786">line 786</a>
     </li></ul></dd>
     
 
@@ -608,7 +730,7 @@
 
     <h5>Example</h5>
     
-    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// An example of object stored in the object store//var person = {    name: 'Peter',    age: 32,    salary: 1200}//// Deletes records where age is 40 using the index named 'ages' with the keypath 'age' as query.//mydb.del.record('objectStoreName', 'ages', 40);//// Deletes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.//mydb.del.records(   'objectStoreName',             null,                       // If we had an index with keypath "age" or "salary", use it could improve performance.   'age &lt; 20 &amp; salary > 1500'      );mydb.execTasks();</code></pre>
+    <pre class="prettyprint"><code>var mydb = new sixdb('myDatabase');// An example of object stored in the object store//var person = {    name: 'Peter',    age: 32,    salary: 1200}//// Deletes records where age is 40 using the index named 'ages' with the keypath 'age' as query.//mydb.del.record('objectStoreName', 40, {indexName: 'ages'});//// Deletes records with age &lt; 20 and salary > 1500 using a conditionObject array as query.//mydb.del.records(   'objectStoreName',                     'age &lt; 20 &amp; salary > 1500');mydb.execTasks();</code></pre>
 
 
 
@@ -671,40 +793,6 @@
 
         <tr>
             
-                <td class="name"><code>indexName</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-|
-
-<span class="param-type">null</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last">Index name. If it is null then no index is used (It is usually slower).</td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>query</code></td>
             
 
@@ -733,6 +821,93 @@
             
 
             <td class="description last">Example of valid queries:<br>property = value                           // Simple query<br>c > 10 & name='peter'                      // Query with 2 conditions<br>(c > 10 && name = 'peter')                 // Same effect that prev query (&=&& and |=||)<br>(a > 30 & c <= 10) || (b = 100 || d < 50)  // 2 conditions blocks<br>'Peter'                                    // Single value always refers to the index keypath<br></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>indexName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Index name. If it is null then no index is used (It is usually slower).</td>
         </tr>
 
     
@@ -805,6 +980,13 @@
     </tbody>
 </table>
 
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
 
 
 
@@ -825,7 +1007,7 @@
 
     
 
-    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(storeName, successCallback<span class="signature-attributes">opt</span>, errorCallback<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="store"><span class="type-signature"></span>store<span class="signature">(storeName, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
 
     
 
@@ -837,7 +1019,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line2170">line 2170</a>
+        <a href="sixdb.js.html">sixdb.js</a>, <a href="sixdb.js.html#line734">line 734</a>
     </li></ul></dd>
     
 
@@ -948,6 +1130,60 @@
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>successCallback</code></td>
             
 
@@ -1014,6 +1250,13 @@
     </tbody>
 </table>
 
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
 
 
 
@@ -1047,7 +1290,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Nov 19 2018 19:46:02 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Nov 26 2018 22:26:33 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

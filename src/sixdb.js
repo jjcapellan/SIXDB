@@ -1026,21 +1026,7 @@ var sixdb = function(_dbName) {
     var exitsInFirstTrue = (extMode == null || extMode == 'and') ? false : true; 
 
 
-    sharedObj = {
-      counter: 0,
-      keys: Object.keys(objectValues),
-      newObjectValuesSize: Object.keys(objectValues).length,
-      extMode: extMode,
-      objectValues: objectValues,
-      event: event,
-      origin: origin,
-      query: query,
-      conditionsBlocksArray: conditionsBlocksArray,
-      exitsInFirstTrue: exitsInFirstTrue,
-      logFunction: queryLog,
-      cursorFunction: cursorUpdate,
-      successCallback: successCallback
-    };
+    sharedObj = { counter: 0, keys: Object.keys(objectValues), newObjectValuesSize: Object.keys(objectValues).length, extMode: extMode, objectValues: objectValues, event: event, origin: origin, query: query, conditionsBlocksArray: conditionsBlocksArray, exitsInFirstTrue: exitsInFirstTrue, logFunction: queryLog, cursorFunction: cursorUpdate, successCallback: successCallback };
 
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
@@ -1327,93 +1313,6 @@ var sixdb = function(_dbName) {
       // Logical operators between blocks, all must be the same type
       var extLogOperator = (query.match(t.blockOperatorRgx)) ? query.match(t.blockOperatorRgx) : null;
 
-      
-
-      /*var pushConditionBlockToArray = function (qry, extLogOperator) {
-
-        //// Gets left operands
-        //
-        var leftOperands = qry.match(t.leftOperandRgx);
-
-        //// Gets right operands
-        //
-        var rightOperands = qry.match(t.rightOperandRgx);
-        var i=0;
-        for(i=0;i<rightOperands.length;i++){
-          // Delete the operator
-          while(rightOperands[i][0].match(/[=><!\^\$~]/g)){
-            rightOperands[i]=rightOperands[i].substr(1);
-          }
-          // Delete quotes and trim white spaces
-          rightOperands[i] = rightOperands[i].replace(/["']/g, '').trim();
-        }
-
-        //// Gets operators
-        //// Removing righ operands (values) before extract comparison operators avoids 
-        //// problems with literal values that include comparisson symbols(= , >,...) quoted.
-        //
-        for(i=0;i<rightOperands.length;i++){
-          qry=qry.replace(rightOperands[i],'');
-        }
-        var operators = qry.match(t.operatorRgx);
-
-        
-        var conditionsArray = [];
-
-        // If query is like: " c = 15 "
-        if (leftOperands.length == 1) {
-
-          conditionsArray.push(
-            {
-              keyPath: leftOperands[0],   // property
-              cond: operators[0],         // =, >, <, ...
-              value: rightOperands[0]     // value
-            }
-          );
-
-          conditionsBlocksArray.push(
-            {
-              conditionsArray: conditionsArray,
-              internalLogOperator: null,
-              externalLogOperator: extLogOperator
-            }
-          );
-
-          conditionsArray = null;
-
-        } else {
-
-          // if query is like: " c = 15 & a > 30 "
-          var logOperatorsType = qry.match(/[\&\|]+/g)[0];
-
-          if (logOperatorsType == '&' || logOperatorsType == '&&') {
-            logOperatorsType = 'and';
-          } else {
-            logOperatorsType = 'or';
-          }
-
-          
-          for (i = 0; i < operators.length; i++) {
-            conditionsArray.push(
-              {
-                keyPath: leftOperands[i],
-                cond: operators[i],
-                value: rightOperands[i]
-              }
-            );
-          }
-
-          conditionsBlocksArray.push(
-            {
-              conditionsArray: conditionsArray,
-              internalLogOperator: logOperatorsType,
-              externalLogOperator: extLogOperator
-            }
-          );
-          conditionsArray = null;
-        } // end if else
-      };*/
-
 
       // If condition is a single sentence like: " a = 10 & b > 5 "
       if (!blocks) {
@@ -1549,48 +1448,48 @@ var sixdb = function(_dbName) {
       switch (condition) {
         case "=":
           result = value1 == value2 ? true : false;
-          return result;
+          break;
 
         case ">":
           result = value1 > value2 ? true : false;
-          return result;
+          break;
 
         case "<":
           result = value1 < value2 ? true : false;
-          return result;
+          break;
 
         case ">=":
           result = value1 >= value2 ? true : false;
-          return result;
+          break;
 
         case "<=":
           result = value1 <= value2 ? true : false;
-          return result;
+          break;
 
         case "!=":
           result = value1 != value2 ? true : false;
-          return result;
+          break;
 
         case "<>":                        // string value1 contains substring value2
         if(typeof(value1)!='string'){
           return false;
         }
         result=(value1.indexOf(value2)!=-1);
-        return result;
+        break;
 
         case "^":
           if (typeof (value1) != 'string') {
             return false;
           }
           result = (value1.indexOf(value2) == 0);
-          return result;
+          break;
 
         case "$":
         if(typeof(value1)!='string'){
           return false;
         }
         result=(value1.indexOf(value2)==value1.length-value2.length);
-        return result;
+        break;
 
         case "~~":
         try{
@@ -1598,11 +1497,12 @@ var sixdb = function(_dbName) {
         } catch(e){
           result = false;
         }
-        return result;
+        break;
 
         default:
           break;
       }
+      return result;
     }
   }; // end qrySys
 

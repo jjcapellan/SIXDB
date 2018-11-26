@@ -1,3 +1,17 @@
+## v2.0.0
+### New features
+* Added function get.aggregateFn(). Applies an aggregate function to a property.  
+Accepts as arguments predefined functions:  
+  * aggregateFuncs.sum. Sums the values of a property.
+  * aggregateFuncs.avg. Calculates the average of a property.
+  * aggregateFuncs.max. Maximum value of a property.
+  * aggregateFuncs.min. Minimum value of a property
+* Custom aggregate functions. get.aggregateFn() accepts custom functions.
+* Added function get.count(). Returns number of records of a query.
+### Minor improvements and fixes
+* Optional arguments now are grouped in an object.
+* Default values in some arguments to avoid null errors.
+* Less size of the minified file.
 ## v1.9.0
 * Added function get.sum(). Sums the values of a property.
 * Added function get.avg(). Calculates the average of a property.

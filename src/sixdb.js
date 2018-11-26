@@ -841,26 +841,10 @@ var sixdb = function(_dbName) {
     };
 
     if (_index) {
-      countA(_index, errorCallback);
+      initCursorLoop(_index, errorCallback);
     } else {
-      countA(_store, errorCallback);
+      initCursorLoop(_store, errorCallback);
     }
-  }
-
-  function countA(store, errorCallback) {
-    var request = tryOpenCursor(sharedObj.origin, store, errorCallback);
-    if (!request) {
-      checkTasks();
-      return;
-    }
-    request.onsuccess = function (event) {
-      var cursor = event.target.result;
-      cursorLoop(cursor);
-    };
-    request.onerror = function (event) {
-      _index = null;
-      requestErrorAction(origin, request.error, errorCallback);
-    };
   }
 
   /**
@@ -1086,7 +1070,6 @@ var sixdb = function(_dbName) {
     var origin = 'update -> updateRecords(...)';
     logger(origin + logEnum.begin);
     var isIndexKeyValue = false;
-    var request = null;
 
     //// Gets isIndexKeyValue
     //// If true then is query is a single value (an index key)
@@ -1120,33 +1103,27 @@ var sixdb = function(_dbName) {
       successCallback: successCallback
     };
 
-    var onsuccesCursor = function(event) {
+    if (_index) {
+      initCursorLoop(_index, errorCallback);
+    } else {
+      initCursorLoop(_store, errorCallback);
+    }
+  }
+
+  function initCursorLoop(store, errorCallback){
+    var request = tryOpenCursor(sharedObj.origin, store, errorCallback);
+    if (!request) {
+      checkTasks();
+      return;
+    }
+    request.onsuccess = function (event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-
-    var onerrorFunction = function(event) {
+    request.onerror = function (event) {
       _index = null;
-      sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
     };
-
-    if (_index) {
-      request = tryOpenCursor(origin, _index, errorCallback); // index.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-    } else {
-      request = tryOpenCursor(origin, _store, errorCallback); // store.openCursor();
-      if (!request) {
-        checkTasks();
-        return;
-      }
-    }
-
-    request.onsuccess = onsuccesCursor;
-    request.onerror = onerrorFunction;
   }
 
   //#endregion Private functions

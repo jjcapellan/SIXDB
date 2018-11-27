@@ -76,7 +76,7 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
 
   // void function
   var voidFn = function() {
-    return;
+    return 0;
   };
 
   var _store = null;
@@ -101,6 +101,8 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
 
   /**
    * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
+   * @public
+   * @instance
    * @param  {function} compareFunction Function to compare a property value with a test value.<br>
    * @return {void}
    * @example
@@ -125,6 +127,22 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
       }
     }
   };
+
+  //#region Logger system
+  /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  var logEnum = {
+    begin: '//--------------------------------------->'
+  };
+
+  function logger(message, isError) {
+    if (consoleOff && !isError) return;
+
+    if (!isError) console.log(message);
+    else console.error(message);
+  }
+
+  //#endregion Logger system
 
   //#region Query system
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -478,6 +496,28 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
   this.execTasks = function() {
     if (idle) {
       checkTasks();
+    }
+  };
+
+  var setHelpTask = {
+    
+    setStore: function(origin, storeName, rwMode) {
+      var args = [origin, storeName, rwMode];
+      var task = {
+        args: args,
+        fn: setStore
+      };
+
+      taskQueue.push(task);
+    },
+    setIndex: function(origin, indexName) {
+      var args = [origin, indexName];
+      var task = {
+        args: args,
+        fn: setIndex
+      };
+
+      taskQueue.push(task);
     }
   };
 
@@ -1218,28 +1258,6 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
     }
   };
 
-  var setHelpTask = {
-    
-    setStore: function(origin, storeName, rwMode) {
-      var args = [origin, storeName, rwMode];
-      var task = {
-        args: args,
-        fn: setStore
-      };
-
-      taskQueue.push(task);
-    },
-    setIndex: function(origin, indexName) {
-      var args = [origin, indexName];
-      var task = {
-        args: args,
-        fn: setIndex
-      };
-
-      taskQueue.push(task);
-    }
-  };
-
   function makeAggregateTask({
     storeName,
     property,
@@ -1271,22 +1289,6 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
   }
 
   //#endregion Task queue system
-
-  //#region Logger system
-  /////////////////////////////////////////////////////////////////////////////////////////////////////
-
-  var logEnum = {
-    begin: '//--------------------------------------->'
-  };
-
-  function logger(message, isError) {
-    if (consoleOff && !isError) return;
-
-    if (!isError) console.log(message);
-    else console.error(message);
-  }
-
-  //#endregion Logger system
 
   //#region Error handler
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1342,9 +1344,9 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
       if (fn) {
         if (typeof fn != 'function') {
           isFunction = false;
-        }
-        return isFunction;
+        }        
       }
+      return isFunction;
     },
 
     /**
@@ -1998,7 +2000,6 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
           'The index "' + indexName + '" already exists in store "' + storeName + '"'
         );
         done();
-        return;
       }
     };
 

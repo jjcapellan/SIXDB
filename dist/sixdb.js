@@ -34,7 +34,7 @@
  * @class
  * @param  {string} _dbName Name for the new database.
  */
-var sixdb = function(_dbName) {
+var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
   var db; // current instance of the opened database
 
   /**
@@ -158,7 +158,7 @@ var sixdb = function(_dbName) {
    * var condition = { keyPath: 'age', cond: '<', value: 45};
    */
 
-     /**
+    /**
      * @private
      * @typedef conditionsBlock
      * @type {object}
@@ -175,8 +175,8 @@ var sixdb = function(_dbName) {
       this.blockRgx = /\(.*?(?=\))/g;
       this.blockOperatorRgx = /[\&\|]+(?=(\s*\())/g;
       this.operatorRgx = /(=|>|<|>=|<=|!=|<>|\^|\$|~~)+/g;
-      this.rightOperandRgx = /(?:([=><\^\$~]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><\^\$~])\s*["']?[^"']+["']?(?=$)/g;
-      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!|\^|\$~])/g;
+      this.rightOperandRgx = /(?:([=><\^\$~]))\s*["']?[^"']+["']?\s*(?=[&\|])|(?:[=><\^\$~])\s*["']?[^"']+["']?(?=$)/g; 
+      this.leftOperandRgx = /([^"'\s])(\w+)(?=\s*[=|>|<|!|\^|\$~])/g;                                                   
     },
     /**
      * Transforms a query string into an array of objects that is used by SIXDB to process the query.
@@ -343,7 +343,7 @@ var sixdb = function(_dbName) {
      * @param {string | number} value2 Second value to compare
      * @returns {boolean} Result after evaluating the condition
      */
-    testCondition: function(value1, condition, value2) {
+    testCondition: function (value1, condition, value2) {
       var result;
       switch (condition) {
         case '=':
@@ -403,7 +403,8 @@ var sixdb = function(_dbName) {
           break;
       }
       return result;
-    } }; // end qrySys
+    }
+  }; // end qrySys
 
   //#endregion Query system
 
@@ -1387,7 +1388,7 @@ var sixdb = function(_dbName) {
   function openDb() {
     var request = window.indexedDB.open(dbName);
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       alert('Error. You must allow web app to use indexedDB.');
     };
 
@@ -1440,7 +1441,7 @@ var sixdb = function(_dbName) {
       );
     };
 
-    var onerrorFunction = function(event) {
+    var onerrorFunction = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
 
@@ -1510,7 +1511,7 @@ var sixdb = function(_dbName) {
         'All records returned from store "' + _store.name + '"'
       );
     };
-    var onerror = function(event) {
+    var onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
 
@@ -1525,7 +1526,6 @@ var sixdb = function(_dbName) {
   }
 
   function getRecordsB(query, { origin, successCallback, errorCallback }) {
-    var counter = 0;
     var resultFiltered = [];
     var request = null;
 
@@ -1556,7 +1556,7 @@ var sixdb = function(_dbName) {
       cursorLoop(cursor);
     };
 
-    var onerror = function(event) {
+    var onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
 
@@ -1587,7 +1587,7 @@ var sixdb = function(_dbName) {
       _index = null;
       done();
     };
-    var onerrorFunction = function(event) {
+    var onerrorFunction = function() {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -1646,7 +1646,7 @@ var sixdb = function(_dbName) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-    var onerror = function(event) {
+    var onerror = function() {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -1731,7 +1731,7 @@ var sixdb = function(_dbName) {
         done();
       }
     };
-    var onerrorFunction = function(event) {
+    var onerrorFunction = function() {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -1784,7 +1784,7 @@ var sixdb = function(_dbName) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-    var onerrorFunction = function(event) {
+    var onerrorFunction = function() {
       _index = null;
       sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
@@ -1815,7 +1815,7 @@ var sixdb = function(_dbName) {
     var noDb = false;
 
     // if onupgradeneeded means is a new database
-    request.onupgradeneeded = function(event) {
+    request.onupgradeneeded = function() {
       noDb = true;
     };
 
@@ -1830,7 +1830,7 @@ var sixdb = function(_dbName) {
       done();
     };
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -1917,7 +1917,7 @@ var sixdb = function(_dbName) {
     while (counter < objSize) {
       var request = _store.add(obj[counter]);
       counter++;
-      request.onerror = function(event) {
+      request.onerror = function() {
         requestErrorAction(origin, request.error, errorCallback);
       };
     }
@@ -1974,7 +1974,7 @@ var sixdb = function(_dbName) {
     //// The change of the database schema only can be performed in the onupgradedneeded event
     //// so a new version number is needed to trigger that event.
     //
-    request = window.indexedDB.open(dbName, newVersion);
+    var request = window.indexedDB.open(dbName, newVersion);
 
     request.onupgradeneeded = function(event) {
       db = event.target.result;
@@ -2011,7 +2011,7 @@ var sixdb = function(_dbName) {
       );
     };
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -2086,7 +2086,7 @@ var sixdb = function(_dbName) {
     //// The change of the database schema only can be performed in the onupgradedneeded event
     //// so a new version number is needed to trigger that event.
     //
-    request = window.indexedDB.open(dbName, newVersion);
+    var request = window.indexedDB.open(dbName, newVersion);
 
     request.onupgradeneeded = function(event) {
       db = event.target.result;
@@ -2102,7 +2102,7 @@ var sixdb = function(_dbName) {
       );
     };
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -2119,7 +2119,7 @@ var sixdb = function(_dbName) {
 
     var request = window.indexedDB.deleteDatabase(dbName);
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
 
@@ -2182,7 +2182,7 @@ var sixdb = function(_dbName) {
       cursorLoop(cursor);
     }; // end onsuccesCursor
 
-    var onerrorFunction = function(event) {
+    var onerrorFunction = function() {
       _index = null;
       sharedObj = {};
       requestErrorAction(origin, request.error, errorCallback);
@@ -2228,7 +2228,7 @@ var sixdb = function(_dbName) {
     //// The change of the database schema only can be performed in the onupgradedneeded event
     //// so a new version number is needed to trigger that event.
     //
-    request = window.indexedDB.open(dbName, newVersion);
+    var request = window.indexedDB.open(dbName, newVersion);
 
     request.onupgradeneeded = function(event) {
       db = event.target.result;
@@ -2256,7 +2256,7 @@ var sixdb = function(_dbName) {
       );
     };
 
-    request.onerror = function(event) {
+    request.onerror = function() {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -2337,7 +2337,7 @@ var sixdb = function(_dbName) {
       var cursor = event.target.result;
       cursorLoop(cursor);
     };
-    request.onerror = function(event) {
+    request.onerror = function() {
       _index = null;
       requestErrorAction(origin, request.error, errorCallback);
     };
@@ -2528,9 +2528,8 @@ var sixdb = function(_dbName) {
       }
       cursor.continue();
     } else {
-      successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
+      sharedObj.successCallback(sharedObj.event, sharedObj.origin, sharedObj.query);
       db.close();
-      //logger('Processed query: "' + sharedObj.query + '" finished\n' + sharedObj.counter + ' records returned from object store "' + _store.name + '"');
       sharedObj.logFunction();
       _index = null;
       sharedObj = {};

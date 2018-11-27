@@ -1,3 +1,5 @@
+## v2.0.1
+* Fix: succesCallback null in cursorLoop().
 ## v2.0.0
 ### New features
 * Added function get.aggregateFn(). Applies an aggregate function to a property.  

@@ -38,7 +38,7 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
   var db; // current instance of the opened database
 
   /**
-   * Data base name.
+   * Data base.
    * @private
    * @type {string}
    * @readonly
@@ -2159,7 +2159,6 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
       query = _index.keyPath + '=' + query;
     }
     conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
-
     var extMode = conditionsBlocksArray
       ? conditionsBlocksArray[0].externalLogOperator
       : null;
@@ -2181,7 +2180,7 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
     var onsuccesCursor = function(event) {
       var cursor = event.target.result;
       cursorLoop(cursor);
-    }; // end onsuccesCursor
+    };
 
     var onerrorFunction = function() {
       _index = null;

@@ -38,7 +38,7 @@ var sixdb = function(_dbName) { // eslint-disable-line no-unused-vars
   var db; // current instance of the opened database
 
   /**
-   * Data base.
+   * Data base name.
    * @private
    * @type {string}
    * @readonly

@@ -18,7 +18,6 @@
 
 // An object to save in the database
 var employee = {
-  id: 1,
   name: 'Peter',
   department: 'manufacturing',
   age: 32,
@@ -28,56 +27,48 @@ var employee = {
 // An array of objects to save in the database
 var employeesArray = [
   {
-    id: 2,
     name: 'Paul',
     department: 'manufacturing',
     age: 27,
     salary: 900
   },
   {
-    id: 3,
     name: 'Adam',
     department: 'manufacturing',
     age: 38,
     salary: 1260
   },
   {
-    id: 4,
     name: 'Alice',
     department: 'accounting',
     age: 41,
     salary: 1400
   },
   {
-    id: 5,
     name: 'Alex',
     department: 'manufacturing',
     age: 33,
     salary: 1250
   },
   {
-    id: 6,
     name: 'Kathy',
     department: 'manufacturing',
     age: 28,
     salary: 1150
   },
   {
-    id: 7,
     name: 'David',
     department: 'accounting',
     age: 32,
     salary: 1380
   },
   {
-    id: 8,
     name: 'Mike',
     department: 'accounting',
     age: 61,
     salary: 1500
   },
   {
-    id: 9,
     name: 'Juliana',
     department: 'manufacturing',
     age: 44,
@@ -88,11 +79,9 @@ var employeesArray = [
 // HTML element to show the resuls
 var tableResults = document.getElementById('tbl_results');
 
-//Object store name
-var store = /*'southFactory'*/ 'southFactory';
 
-// Index name
-var index = 'IDs';
+
+
 
 // True if there are not errors
 var failed = false;
@@ -102,6 +91,66 @@ var failed = false;
 //
 var mydb = new sixdb('companyDB');
 
+// Creates a new object store named "southFactory"
+mydb.newStore('southFactory', {keyPath: 'id', autoIncrement: true, successCallback: successCallback, errorCallback: errorCallback});
+
+// Stores "southFactory" in a variable
+var myStore = mydb.openStore('southFactory');
+
+// Creates a new index named "Names" with keyPath "name"
+myStore.newIndex('Names','name', {successCallback:successCallback, errorCallback:errorCallback});
+
+// Inserts one object in store "southFactory"
+myStore.add(employee, {successCallback: successCallback, errorCallback:errorCallback});
+
+// Inserts an array of objects in the store
+myStore.add(employeesArray, {successCallback: successCallback, errorCallback:errorCallback});
+
+// Gets all records
+myStore.getAll(successCallback, errorCallback);
+
+// Gets records with salary > 1200
+myStore.get('salary > 1200', successCallback, errorCallback);
+
+// Gets record with primary key = 4
+myStore.get(4, successCallback, errorCallback);
+
+// Counts records in manufacturing department
+myStore.count(successCallback, {query:'department = manufacturing', errorCallback: errorCallback});
+
+// Counts all records in the store
+myStore.count(successCallback);
+
+mydb.customTask(showInfo, this, 'Sum of salaries');
+// Sum of salaries
+myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{errorCallback: errorCallback});
+
+mydb.customTask(showInfo, this, 'Sum of salaries from manufacturing department');
+// Sum of salaries of manufacturing department
+myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
+
+// Deletes record with primary key = 3;
+myStore.del(3,{successCallback: successCallback, errorCallback: errorCallback});
+
+// Gets all records
+myStore.getAll(successCallback, errorCallback);
+
+// Deletes records with salary > 1500
+myStore.del('salary > 1500', {successCallback: successCallback, errorCallback: errorCallback});
+
+// Gets all records
+myStore.getAll(successCallback, errorCallback);
+
+// Deletes index "Names" from store
+myStore.delIndex('Names', {successCallback: successCallback});
+
+mydb.execTasks();
+
+
+
+
+
+/*
 // Example of custom comparison operator (represented in querys by "~~")
 mydb.setCustomOperator(function(value1, value2) {
   return value1.length == value2.length;
@@ -110,17 +159,6 @@ mydb.setCustomOperator(function(value1, value2) {
 // Activate this line to turn off the console output
 // mydb.setConsoleOff(true);
 
-// Creates a store named 'southFactory'
-mydb.add.store(store, {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
-
-// Creates an index named 'IDs'
-mydb.add.index(store, index, 'id', {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
 
 // Insert one object
 mydb.add.records(store, employee, {
@@ -128,11 +166,11 @@ mydb.add.records(store, employee, {
   errorCallback: errorCallback
 });
 
-/*Insert a totally different object
+Insert a totally different object
 mydb.add.records(store, {
     model: 'large',
     power: 500
-}, successCallback, errorCallback);*/
+}, successCallback, errorCallback);
 
 // Gets the record with id = 1
 mydb.get.records(store, successCallback, {
@@ -371,7 +409,7 @@ mydb.add.customTask(checkTest, this);
 
 // Execs all pending task
 mydb.execTasks();
-
+*/
 //
 //Custom Functions
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -382,9 +420,7 @@ function successCallback(result, origin, query) {
   showInfo(message);
 
   if (
-    /*origin == "get -> lastRecords(...)" || origin == "get -> getRecords(...)" || */ origin.indexOf(
-      'get'
-    ) == 0
+    (origin.indexOf('get') > 0) || (origin.indexOf('count') > 0 || (origin.indexOf('aggregate') > 0))
   ) {
     showResults(result);
   }

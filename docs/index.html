@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="sixdb.html#execTasks">execTasks</a></li><li data-type='method'><a href="sixdb.html#getName">getName</a></li><li data-type='method'><a href="sixdb.html#setConsoleOff">setConsoleOff</a></li><li data-type='method'><a href="sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="sixdb_add.html">add</a><ul class='methods'><li data-type='method'><a href="sixdb_add.html#customTask">customTask</a></li><li data-type='method'><a href="sixdb_add.html#index">index</a></li><li data-type='method'><a href="sixdb_add.html#records">records</a></li><li data-type='method'><a href="sixdb_add.html#store">store</a></li></ul></li><li><a href="sixdb_del.html">del</a><ul class='methods'><li data-type='method'><a href="sixdb_del.html#db">db</a></li><li data-type='method'><a href="sixdb_del.html#index">index</a></li><li data-type='method'><a href="sixdb_del.html#records">records</a></li><li data-type='method'><a href="sixdb_del.html#store">store</a></li></ul></li><li><a href="sixdb_get.html">get</a><ul class='methods'><li data-type='method'><a href="sixdb_get.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="sixdb_get.html#count">count</a></li><li data-type='method'><a href="sixdb_get.html#lastRecords">lastRecords</a></li><li data-type='method'><a href="sixdb_get.html#records">records</a></li></ul></li><li><a href="sixdb_update.html">update</a><ul class='methods'><li data-type='method'><a href="sixdb_update.html#records">records</a></li></ul></li><li><a href="sixdb_utils.html">utils</a><ul class='methods'><li data-type='method'><a href="sixdb_utils.html#pageFromArray">pageFromArray</a></li></ul></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="window.sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="window.sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.sixdb.html#name">name</a></li><li data-type='method'><a href="window.sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.sixdb.sixdb_aggregateFuncs.html">sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul>
 </nav>
 
 <div id="main">
@@ -52,7 +52,7 @@
 <img src="https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master" alt="Docs status">
 <img src="https://img.shields.io/github/license/jjcapellan/SIXDB.svg" alt="GitHub license"></p>
 <p>SIXDB is a basic and very easy to use library wrapper for indexedDB.<br>IndexedDB is the recommended solution for the persistent storage of large volumes of structured data in the browser.<br>But, IndexedDB lacks a query language, is asynchronous and can be complex to manage.<br>SIXDB adds an abstraction layer over indexedDB that hides that complexity.  </p>
-<p>You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).<br>Complete SIXDB documentation available <a href="https://jjcapellan.github.io/SIXDB/">here</a></p>
+<p>You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).<br><strong>Complete SIXDB documentation available <a href="https://jjcapellan.github.io/SIXDB/">here</a></strong></p>
 <h2>In this document ...</h2><hr>
 <ul>
 <li><a href="#Features">Features</a></li>
@@ -77,6 +77,7 @@
 <li><a href="#Task-queue">Task queue</a> system that manages all asynchronous operations.</li>
 <li>Natural and intuitive <a href="#Query-system">Query language</a>.</li>
 <li>Simple and flexible methods to perform CRUD operations.</li>
+<li>In addition to the predefined aggregate functions (sum, max, min, avg) you can use your own functions.</li>
 <li>Insertion operations allow several entries to be entered at the same time.</li>
 <li>Update operations accept <a href="#Using-functions">functions as value</a> to modify the current value of the record.</li>
 <li>Lightweight. SIXDB takes less than 100Kb minified and less than 10Kb compressed with gzip.</li>
@@ -86,8 +87,8 @@
 <h2><a name="Installation"></a>Installation</h2><hr>
 <p>There are two alternatives:</p>
 <ul>
-<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
-<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@1.9.0/dist/sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Download the file <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.js">sixdb.js</a> or the minified version <a href="https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.min.js">sixdb.min.js</a> to your proyect folder and add a reference in your html:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;sixdb.min.js&quot;>&lt;/script></code></pre></li>
+<li>Point a script tag to the CDN link:<pre class="prettyprint source lang-html"><code>&lt;script src = &quot;https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@2.0.0/dist/sixdb.min.js&quot;>&lt;/script></code></pre></li>
 </ul>
 <h2><a name="Tutorial"></a>Tutorial</h2><hr>
 <p>For the tutorial we will use an employees list from a supposed factory:</p>
@@ -167,7 +168,7 @@ var mydb = new sixdb('companyDB');
 // SIXDB adds an autoincrement primary key (named &quot;nid&quot;) to each store.
 // To create it we need the method add.store():
 //
-//     add.store( storeName, errorCallback)
+//     add.store(storeName, { successCallback, errorCallback } = {})
 //
 // In this case one object store named &quot;southFactory&quot; is created.
 // 
@@ -181,7 +182,7 @@ mydb.add.store('southFactory');
 // Using an index we can avoid querying all the object store and losing performance.
 // To create a new index we use add.index():
 //
-//     add.index( storeName, indexName, keyPath, errorCallback)
+//     add.index(storeName, indexName, keyPath, { successCallback, errorCallback }={})
 //
 // In this case we create a single index named &quot;IDs&quot; with the keypath &quot;ID&quot;
 //
@@ -203,7 +204,7 @@ var mydb = new sixdb('companyDB');
 //
 // To insert one or more records is used add.records():
 //
-//     add.records( storeName, obj, errorCallback)
+//     add.records(storeName, obj, { successCallback, errorCallback }={})
 //
 // Inserts one record in &quot;southFactory&quot; object store.
 //
@@ -243,7 +244,7 @@ var mydb = new sixdb('companyDB');
 //
 // To get the last records we use get.lastRecords():
 //
-//     get.lastRecords( storeName, maxResults, successCallback, errorCallback)
+//     get.lastRecords (storeName, maxResults, successCallback, errorCallback)
 //
 // Reads the 5 last records from &quot;southFactory&quot; object store.
 // The third parameter is a function that will receive the result of the query.
@@ -268,28 +269,26 @@ mydb.get.lastRecords(
 //
 // The method get.records() lets us use querys:
 //
-//     get.records( storeName, indexName, query, successCallback, errorCallback)
+//     get.records (storeName, successCallback, { errorCallback, indexName, query } = {})
 //
 // Gets the record with ID &quot;2&quot; from the index &quot;IDs&quot; in store &quot;southFactory&quot;.
-// If you replace 'Adam' with null then the query sends all index records to the function readerCallback
+// If you don't use query then the function sends all index records to the function readerCallback
 //
 mydb.get.records(
-    'southFactory',         // Object store name
-    'IDs',                  // Index name
-    2,                      // Query. A single value refers to the index keyPath.
-    readerCallback
+    'southFactory',                   
+    readerCallback,
+    {indexName: 'IDs', query: 2}    // A single value of the query refers to the index keyPath.
 );
 
 
 //
 // Gets employees records from manufacturing department with a salary higher than 1200.
-// Here the third parameter (query) is an conditional expression that filters the records.
 // The query can't be a single value if the index is null.
 //
 mydb.get.records(
     'southFactory', 
-    null,
-    'department = &quot;manufacturing&quot; & salary > 1200'
+    readerCallback,
+    { query: 'department = &quot;manufacturing&quot; & salary > 1200' }
 );
 
 
@@ -336,29 +335,26 @@ var mydb = new sixdb('companyDB');
 //
 // We only need one method to update one or more records:
 //
-//     update.records( storeName, indexName, query, objectValues, errorCallback)
+//     update.recordsfunction(storeName, query, objectValues, { indexName, successCallback, errorCallback } = {})
 //
 // This simple example changes the salary and age of an employee with ID 2 using the index 'IDs'.
 //
 mydb.update.records(
-    'southFactory',             // Object store name
-    'IDs',                      // Index name
-    2,                          // Here the query is a single value that refers to the index keyPath
-    {salary: 1290, age: 39},    // Object with the new values
-    myErrorCallback             // Optional function to handle errors
+    'southFactory',                                                // Object store name
+    {salary: 1290, age: 39},                                       // Object with the new values
+    {indexName: 'IDs', query: 2, errorCallback: myErrorCallback}   // Optional arguments
 );
 
 
 //
-// Updates the salary of all records where department is manufacturing and age > 30.
+// Updates the salary of all records where department is manufacturing and age > 30 to a new salary of 1300.
 // Here a conditional expression is used as query. The index is null so all the store object is queried.
 //
 mydb.update.records(
-    'southFactory',                                                     // Object store name
-    null,                                                               // Index name is null so query can't be a single value
-    'department = &quot;manufacturing&quot; & age > 30',                          // query
-    {salary: 1300},                                                     // Object with the new values
-    myErrorCallback                                                     // Optional function to handle errors
+    'southFactory',                                       // Object store name
+    { salary: 1300 },                                     // Object with the new values
+    { query: 'department = &quot;manufacturing&quot; & age > 30',   // Optional arguments
+    errorCallback: myErrorCallback }   
 );
 
 
@@ -368,10 +364,9 @@ mydb.update.records(
 //
 mydb.update.records(
     'southFactory',
-    null,
-    'age > 40 | salary &lt; 600',                                          // Query
-    {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
-    myErrorCallback
+    { salary: function(oldSalary) { return oldSalary + 300;} },           // A function is used as new value
+    { query: 'age > 40 | salary &lt; 600',                                   // Optional arguments
+    errorCallback: myErrorCallback }
 );
 
 
@@ -397,15 +392,15 @@ var mydb = new sixdb('companyDB');
 //
 // To delete one or more records there is the method del.records():
 //
-//     del.records( storeName, indexName, query, errorCallback)
+//     del.records (storeName, query, { indexName, successCallback, errorCallback } = {})
 //
-// For eample, this deletes the record with ID 5 from the object store &quot;southFactory&quot;
+// For eample, this deletes the record with ID 5 from the object store &quot;southFactory&quot;.
 //
 mydb.del.records(
-    'southFactory',     // Object store name
-    'IDs',              // Index name
-    5,                  // Query. A single value refers to the index keypath.
-    myErrorCallback     // Optional parameter. Function to handle errors.                     
+    'southFactory',                   // Object store name
+    5,                                // Query. A single value refers to the index keypath.
+    { indexName: 'IDs', 
+    errorCallback: myErrorCallback }                    
 );
 
 
@@ -414,7 +409,6 @@ mydb.del.records(
 //
 mydb.del.records(
     'southFactory',
-    null,
     '(department=&quot;manufacturing&quot;) & (salary > 1200 | age > 60)'             // Query with 2 groups of conditions
 );
 
@@ -445,10 +439,10 @@ salary > 1000 & name != 'Peter' | age > 34      // This is wrong</code></pre></l
 <li>Only one type of logical operator can be used between groups of conditions<pre class="prettyprint source lang-javascript"><code>(a = 2 & c &lt; 10) | (d != 1) | (d = 10 & e >= 12)  // This is correct
 (a = 2 & c &lt; 10) | (d != 1) & (d = 10 & e >= 12)  // This is wrong</code></pre></li>
 <li>Some functions accepts a single value as a query when the value refers to the keypath of an existing index<pre class="prettyprint source lang-javascript"><code>mydb.del.records(
-  'southFactory',     // Object store name
-  'IDs',              // Index name. Contains all objects with ID property in the object store &quot;southFactory&quot;
-  5,                  // Query. A single value refers to the index keypath.
-  myErrorCallback     // Optional parameter. Function to handle errors.                     
+  'southFactory',                   // Object store name     
+  5,                                // Query. A single value refers to the index keypath.
+  { indexName: 'IDs',               // Index. Contains all objects with ID property in the object store &quot;southFactory&quot;
+  errorCallback: myErrorCallback }  // Function to handle errors.                     
 );</code></pre></li>
 <li>Spaces or symbols in the value of a condition must be enclosed in quotation marks. Parentheses and nested quotes are not supported.<pre class="prettyprint source lang-javascript"><code>name = 'John Smith'     // This is correct
 equation = 'e = v / t'  // This is correct
@@ -478,10 +472,9 @@ mydb.setCustomOperator(compareFunction);</code></pre><h2><a name="Using-function
 //
 mydb.update.records(
     'southFactory',
-    null,
-    'department = &quot;manufacturing&quot;',
-    {salary: function(oldSalary){return oldSalary + 300;}},             // A function is used as new value
-    myErrorCallback
+    { salary: function(oldSalary) { return oldSalary + 300;} },           // A function is used as new value
+    { query: 'department = &quot;manufacturing&quot;',                              // Optional arguments
+    errorCallback: myErrorCallback }
 );</code></pre><h2><a name="Task-queue"></a><strong>The SIXDB task queue</strong></h2><hr>
 <p>SIXDB is based on a <strong>task queue</strong> to manage the creation, insertion, reading, and deletion orders.<br>The task queue is a list that uses the method FIFO (first in first out) to decide which task is executed.<br>When a task finishes it is deleted from the list and the queue is checked to execute pending tasks.<br>The result is that the orders are executed sequentially.<br>The method <em>add.customTask</em> allows us to add our own task to the queue. 
 Here a quick example:</p>
@@ -514,11 +507,10 @@ mydb.add.customTask(
 
 
 
-// Reads all records from &quot;southFactory&quot; object store. 
+// Reads all records from &quot;southFactory&quot; object store. (Without query parameter, get.records() returns all records)
 //
-mydb.get.lastRecords(
+mydb.get.records(
     store, 
-    null, 
     readerCallback
 );
 
@@ -547,7 +539,7 @@ mydb.execTasks();</code></pre><h2><a name="Error-handling"></a><strong>The SIXDB
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Nov 26 2018 22:26:33 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Dec 05 2018 21:10:19 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

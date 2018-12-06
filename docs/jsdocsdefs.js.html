@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>jsdocsdefs.js - Documentation</title>
+
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="store.html">store</a><ul class='methods'><li data-type='method'><a href="store.html#add">add</a></li><li data-type='method'><a href="store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="store.html#count">count</a></li><li data-type='method'><a href="store.html#del">del</a></li><li data-type='method'><a href="store.html#delIndex">delIndex</a></li><li data-type='method'><a href="store.html#get">get</a></li><li data-type='method'><a href="store.html#getAll">getAll</a></li><li data-type='method'><a href="store.html#newIndex">newIndex</a></li></ul></li><li><a href="window.sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="window.sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.sixdb.html#name">name</a></li><li data-type='method'><a href="window.sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.sixdb.sixdb_aggregateFuncs.html">sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">jsdocsdefs.js</h1>
+    
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Some SIXDB methods receive as parameter to select records a string with an expression that represents the query.&lt;br>
+ * A single value is interpreted as a key.&lt;br>
+ * Write a query is very intuitive. Is similar to write the condition in an "if" sentence.&lt;br>
+ * A simple query would be: &lt;code>recordProperty = value&lt;/code>&lt;br>
+ * There are some rules:&lt;br>
+ * You can use these normal comparisson operators:&lt;br>  
+ * &lt;code>= , >, &lt;, >=, &lt;=, !=&lt;/code>&lt;br>&lt;br>
+ * 
+ * There are too "special" operators:&lt;br>
+ * &lt;code> &lt;> &lt;/code>  : "Contains" operator. Valid for strings.&lt;br>
+ * &lt;code>name &lt;> ul // The property name contains the substring "ul". (quotes are optional)&lt;/code>&lt;br>
+ * &lt;code> ^ &lt;/code>: "Starts with" operator. Valid for strings. Is case sensitive.&lt;br>
+ * &lt;code>name ^ Pe // Means the property name starts with the substring "Pe" (quotes are optional).&lt;/code>&lt;br>&lt;br>
+ * 
+ * The valid logical operators are:&lt;br> 
+ * &lt;code>&amp;, &amp;&amp;, |, ||&lt;/code>&lt;br>
+ * &lt;b>&amp;&lt;/b> ("and") has same effect than &lt;b>&amp;&amp;&lt;/b>, and the same to &lt;b>|&lt;/b> ("or") and &lt;b>||&lt;/b>.&lt;br>&lt;br>
+ * Only one type of logical operator can be used in a group of conditions.&lt;br>
+ * &lt;code>salary > 1000 &amp; name != 'Peter' &amp; age > 34      // This is correct&lt;br>
+ * salary > 1000 &amp; name != 'Peter' | age > 34      // This is wrong&lt;/code>&lt;br>&lt;br>
+ * Groups of conditions within other groups are not allowed.&lt;br>
+ * &lt;code>(salary > 1000 &amp; name != 'Peter') | (name = 'Adam' &amp; salary &lt; 900)            // This is correct&lt;br>
+ * ((salary > 1000 &amp; name != 'Peter') | ID = 5) | (name = 'Adam' &amp; salary &lt; 900) // This is wrong&lt;/code>&lt;br>&lt;br>
+ * 
+ * Outside of a conditions group there can't be another without parentheses.&lt;br>
+ * &lt;code>(salary > 1000 &amp; name != 'Peter') | (name = 'Adam')   // This is correct&lt;br>
+ * (salary > 1000 &amp; name != 'Peter') | name = 'Adam'     // This is wrong&lt;/code>&lt;br>&lt;br>
+ * 
+ * Only one type of logical operator can be used between groups of conditions&lt;br>
+ * &lt;code>(a = 2 &amp; c &lt; 10) | (d != 1) | (d = 10 &amp; e >= 12)  // This is correct&lt;br>
+ * (a = 2 &amp; c &lt; 10) | (d != 1) &amp; (d = 10 &amp; e >= 12)  // This is wrong&lt;/code>&lt;br>&lt;br>
+ * 
+ * A single value as query refers to a key&lt;br>
+ * &lt;code>let mydb = new sixdb('myDatabase');&lt;br>
+ * let store = mydb.openStore('myStore');&lt;br>
+ * store.get('Paul', mySuccesCallback); // Gets the record with key 'Paul' in the store keyPath&lt;/code>&lt;br>&lt;br>
+ * 
+ * Spaces or symbols in the value of a condition must be enclosed in quotation marks.&lt;br> Parentheses and nested quotes are not supported.&lt;br>
+ * &lt;code>name = 'John Smith'     // This is correct&lt;br>
+ * equation = 'e = v / t'  // This is correct&lt;br>
+ * equation = e = v / t    // This is very wrong. The query system can't parse that "=" without quotes.&lt;br>
+ * message = 'This is my "message"'    // This is wrong&lt;br>
+ * message = 'This (is) my message'    // This is wrong &lt;/code>
+ * @typedef {string} query
+ */
+
+/**
+ * Applies an operation to two values sent from one of the interactions of a cursor's loop in the records of the database.&lt;br>
+ * The sixdb object aggregateFuncs contains some predefined aggregate functions: sum, avg, max, min.&lt;br>
+ * @typedef {function} aggregateFunction
+ * @param  {any} actualValue This value is the result of the previous operations in the loop.&lt;br>
+ * In next iteration actualValue will be this returned result.
+ * @param  {any} selectedValue Property value selected in the current iteration of the aggregate method loop.
+ * @param  {number} counter Interaction number of the aggregate method loop.
+ * @returns {any} Result of the operation.
+ * @example
+ * const mydb = new sixdb('myDatabase');
+ * 
+ * let store = mydb.openStore('southFactory');
+ * 
+ * // This function is the same than sixdb.aggregateFuncs.sum.
+ * //
+ * let myaggregateFunction = function(actualValue, selectedValue){
+ *     return actualValue + selectedValue;
+ * };
+ * 
+ * // Sends to mySuccesCallback the sum of all salaries in the store "southFactory"
+ * //
+ * store.aggregateFn('salary', myaggregateFunction, mySuccessCallback);
+ * 
+ * // This gets the same result than previous sentence
+ * //
+ * store.aggregateFn('salary', mydb.aggregateFuncs.sum, mySuccessCallback);
+ * 
+ * mydb.execTasks();
+ */
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Thu Dec 06 2018 19:05:53 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+</body>
+</html>

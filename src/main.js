@@ -335,7 +335,7 @@ sixdb.prototype.execTasks = function() {
  * @method window.sixdb#newStore
  * @instance
  * @param  {string} storeName The store name.
- * @param  {object} options
+ * @param  {object} [options]
  * @param  {string} [options.keyPath] The key path to be used by the new object store. 
  * <br>If empty or not specified, the object store is created without a key path and uses out-of-line keys. 
  * <br>You can also pass in an array as a keyPath.

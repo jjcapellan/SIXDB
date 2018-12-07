@@ -21,6 +21,7 @@ import {
   isKey
 } from './helpers';
 import { _qrySys } from './qrySys.js';
+import { Index } from './sixdbIndex';
 
 //// Private variables //////////////////////////////
 let _store;
@@ -548,12 +549,13 @@ export /**
  * @param  {string} storeName Name of the object store
  * @return {object}
  */
-let store = function(storeName) {
+let Store = function(storeName) {
   //// Public properties ////////////////////////////
   this.name = storeName;
 
   //// Public Methods declaration ///////////////////
   this.newIndex;
+  this.openIndex;
   this.delIndex;
   this.add;
   this.getAll;
@@ -565,7 +567,7 @@ let store = function(storeName) {
 
 /**
  * Creates a new index in the object store.
- * @method store#newIndex
+ * @method Store#newIndex
  * @instance
  * @param  {string} indexName Name of the new index.
  * @param  {string} keyPath Name of the property used as key.
@@ -574,7 +576,7 @@ let store = function(storeName) {
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-store.prototype.newIndex = function(
+Store.prototype.newIndex = function(
   indexName,
   keyPath,
   { unique, successCallback, errorCallback } = {}
@@ -597,9 +599,13 @@ store.prototype.newIndex = function(
   tasks.push(task);
 };
 
+Store.prototype.openIndex = function(indexName){
+  return new Index(this.name, indexName);
+}
+
 /**
  * Adds one or more records to the object store.
- * @method store#add
+ * @method Store#add
  * @instance
  * @param  {object | object[]} obj A single object or an array of objects wich represents the records.
  * @param  {object} [options]
@@ -635,7 +641,7 @@ store.prototype.newIndex = function(
  * //
  * mydb.execTasks();
  */
-store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
+Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
   let args = [ obj, { successCallback, errorCallback } ];
   let task = { args: args, fn: addRecord };
 
@@ -646,7 +652,7 @@ store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
 
 /**
  * Gets all records from the object store.
- * @method store#getAll
+ * @method Store#getAll
  * @instance
  * @param  {function} successCallback Function called on success. Receives event and origin as parameters.
  * @param  {function} [errorCallback] Function to handle errors. Receives an error object as argument.
@@ -690,7 +696,7 @@ store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
+Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
   let args = [successCallback, errorCallback];
   let task = {
     args: args,
@@ -703,7 +709,7 @@ store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
 
 /**
  * Gets one or more records from store using a query.
- * @method store#get
+ * @method Store#get
  * @instance
  * @param  {query} query The query to select the records.
  * @param  {function} successCallback Function called on success. Receives event and origin as parameters.
@@ -730,7 +736,7 @@ store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
  * mydb.execTasks();
  * 
  */
-store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
+Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
   let args = [ query, successCallback, errorCallback ];
   let task = {
     args: args,
@@ -743,14 +749,14 @@ store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
 
 /**
  * Deletes one or more records from the store using a query.
- * @method store#del
+ * @method Store#del
  * @instance
  * @param  {query} query 
  * @param  {object} [options]
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-store.prototype.del = function(
+Store.prototype.del = function(
   query,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
@@ -767,14 +773,14 @@ store.prototype.del = function(
 
 /**
  * Counts the records in the store.
- * @method store#count
+ * @method Store#count
  * @instance
  * @param  {function} successCallback Function called on success. Receives result (number), origin and query as parameters.
  * @param  {object} [options] 
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-store.prototype.count = function(successCallback, { query, errorCallback = voidFn }={}) {
+Store.prototype.count = function(successCallback, { query, errorCallback = voidFn }={}) {
   var args = [query, successCallback, errorCallback];
   var task = {
     args: args,
@@ -788,14 +794,14 @@ store.prototype.count = function(successCallback, { query, errorCallback = voidF
 
 /**
  * Deletes an Index from the store.
- * @method store#delIndex
+ * @method Store#delIndex
  * @instance
  * @param  {string} indexName Name of the index.
  * @param  {object} [options] 
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-store.prototype.delIndex = function(indexName, { successCallback = voidFn, errorCallback=voidFn }={}) {
+Store.prototype.delIndex = function(indexName, { successCallback = voidFn, errorCallback=voidFn }={}) {
   let args = [this.name, indexName, successCallback, errorCallback];
   let task = {
     args: args,
@@ -808,7 +814,7 @@ store.prototype.delIndex = function(indexName, { successCallback = voidFn, error
 
 /**
  * Iterates the store by applying a function to each record in a specified property.
- * @method store#aggregateFn
+ * @method Store#aggregateFn
  * @instance
  * @param  {string} property Represents the column to apply the aggregate function.
  * @param  {aggregateFunction} aggregatefn Function applied over the records. 
@@ -837,7 +843,7 @@ store.prototype.delIndex = function(indexName, { successCallback = voidFn, error
  * 
  * mydb.execTasks();
  */
-store.prototype.aggregateFn = function(
+Store.prototype.aggregateFn = function(
   property,
   aggregatefn,
   successCallback,

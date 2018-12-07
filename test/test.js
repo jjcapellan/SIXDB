@@ -100,6 +100,8 @@ var myStore = mydb.openStore('southFactory');
 // Creates a new index named "Names" with keyPath "name"
 myStore.newIndex('Names','name', {successCallback:successCallback, errorCallback:errorCallback});
 
+var myIndex = myStore.openIndex('Names');
+
 // Inserts one object in store "southFactory"
 myStore.add(employee, {successCallback: successCallback, errorCallback:errorCallback});
 
@@ -109,8 +111,14 @@ myStore.add(employeesArray, {successCallback: successCallback, errorCallback:err
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
 
+// Gets all records in index "Names"
+myIndex.getAll(successCallback, errorCallback);
+
 // Gets records with salary > 1200
 myStore.get('salary > 1200', successCallback, errorCallback);
+
+// Gets records with salary > 1200 in index "Names"
+myIndex.get('salary > 1200', successCallback, errorCallback);
 
 // Gets record with primary key = 4
 myStore.get(4, successCallback, errorCallback);
@@ -121,13 +129,23 @@ myStore.count(successCallback, {query:'department = manufacturing', errorCallbac
 // Counts all records in the store
 myStore.count(successCallback);
 
+// Counts all records in the index
+myIndex.count(successCallback);
+
+// Counts records in manufacturing department in index
+myIndex.count(successCallback, {query:'department = manufacturing', errorCallback: errorCallback});
+
 mydb.customTask(showInfo, this, 'Sum of salaries');
 // Sum of salaries
 myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{errorCallback: errorCallback});
+// Sum of salaries in index 'Names'
+myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{errorCallback: errorCallback});
 
 mydb.customTask(showInfo, this, 'Sum of salaries from manufacturing department');
 // Sum of salaries of manufacturing department
 myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
+// Sum of salaries of manufacturing department
+myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
 
 // Deletes record with primary key = 3;
 myStore.del(3,{successCallback: successCallback, errorCallback: errorCallback});

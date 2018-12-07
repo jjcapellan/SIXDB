@@ -2,7 +2,7 @@ import { _qrySys } from './qrySys.js';
 import { tasks, done, execTasks } from './taskQueue';
 import { logEnum, logger } from './logger.js';
 import { requestSuccessAction, requestErrorAction } from './helpers';
-import { store } from './sixdbStore';
+import { Store } from './sixdbStore';
 
 let db = null;
 let consoleOff = false;
@@ -99,7 +99,7 @@ window.sixdb = function(_dbName) {
   // Query system from qrySys.js
   let qrySys = _qrySys;
 
-  //// private functions ////////////////////////////
+  
 
   // Creates or opens the database
   function newDB(errorCallback = voidFn) {
@@ -292,7 +292,8 @@ sixdb.prototype.aggregateFuncs = {
 };
 
 /**
-   * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.
+   * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.<br>
+   * This operator will be represented by <b>~~</b>.
    * @method window.sixdb#setCustomOperator
    * @instance
    * @param  {function} compareFunction Function to compare a property value with a test value.<br>
@@ -372,7 +373,7 @@ sixdb.prototype.newStore = function(
  * @return {object}
  */
 sixdb.prototype.openStore = function(storeName) {
-  return new store(storeName);
+  return new Store(storeName);
 };
 
 export { consoleOff, db, _newStore, dbName, tkOpen, setDb, voidFn };

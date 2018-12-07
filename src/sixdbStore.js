@@ -544,7 +544,7 @@ function makeAggregateTask({
 }
 
 export /**
- * Constructs a sixdbStore instance. This constructor is used via sixdb.openStore() method.
+ * Constructs a sixdb Store instance. This constructor is used via sixdb.openStore() method.
  * @class
  * @param  {string} storeName Name of the object store
  * @return {object}

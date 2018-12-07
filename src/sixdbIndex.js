@@ -123,6 +123,29 @@ function get(query, successCallback, errorCallback) {
   };
 }
 
+// Gets records with key as query
+function getBykey(query, successCallback, errorCallback) {
+  let origin = 'Index.getByKey()';
+  logger(origin + logEnum.begin);
+
+  let request = tryGetByKey(origin, _index, query, errorCallback);
+  if (!request) {
+    checkTasks();
+    return;
+  }
+
+  request.onsuccess = function(event) {
+    successCallback(event.target.result, origin, query);
+    db.close();
+    logger(`Records with key "${query}" returned from index "${_indexName}"`);
+    done();
+  };
+
+  request.onerror = function() {
+    requestErrorAction(origin, request.error, errorCallback);
+  };
+}
+
 function count(query, successCallback, errorCallback) {
   let origin = 'Index.count()';
   logger(origin + logEnum.begin);

@@ -123,7 +123,19 @@ export function cursorCount() {
   sharedObj.counter++;
 }
 
+export function cursorUpdate(cursor) {
+  let updateData = cursor.value;
+  for (let i = 0, j = sharedObj.newObjectValuesSize; i < j; i++) {
+    // If the new value for the property keys[i] is a function then the new value is function(oldValue)
+    updateData[sharedObj.keys[i]] =
+      typeof sharedObj.objectValues[sharedObj.keys[i]] == 'function'
+        ? sharedObj.objectValues[sharedObj.keys[i]](updateData[sharedObj.keys[i]])
+        : sharedObj.objectValues[sharedObj.keys[i]];
+  }
 
+  cursor.update(updateData);
+  sharedObj.counter++;
+}
 
 export function countLog() {
   logger(
@@ -174,5 +186,3 @@ export function initCursorLoop(source, errorCallback) {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
-
-

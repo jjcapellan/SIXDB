@@ -147,6 +147,12 @@ myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'de
 // Sum of salaries of manufacturing department
 myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
 
+// Updates salary an age of the record with id = 4
+myStore.update(4,{age: 42, salary: 1450}, {successCallback: successCallback, errorCallback: errorCallback});
+
+// Gets all records from store
+myStore.getAll(successCallback, errorCallback);
+
 // Deletes record with primary key = 3;
 myStore.del(3,{successCallback: successCallback, errorCallback: errorCallback});
 

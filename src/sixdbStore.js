@@ -1,7 +1,7 @@
 import { db, dbName, tkOpen, setDb, voidFn } from './main';
 import { logger, logEnum } from './logger';
-import { done, tasks, checkTasks} from './taskQueue';
-import { makeErrorObject, lastErrorObj} from './errorSys';
+import { done, tasks, checkTasks } from './taskQueue';
+import { makeErrorObject, lastErrorObj } from './errorSys';
 import {
   requestErrorAction,
   requestSuccessAction,
@@ -11,6 +11,7 @@ import {
   cursorGetRecords,
   cursorDelRecords,
   cursorCount,
+  cursorUpdate,
   countLog,
   aggregateLog,
   initCursorLoop,
@@ -40,7 +41,7 @@ function setStore(origin, storeName, rwMode) {
 
 // Puts setStore() in task queue
 function initStore(origin, storeName, rwMode) {
-  let args = [ origin, storeName, rwMode];
+  let args = [ origin, storeName, rwMode ];
   let task = {
     args: args,
     fn: setStore
@@ -357,22 +358,22 @@ function count(query, successCallback, errorCallback) {
 
   setSharedObj(obj);
 
-    initCursorLoop(_store, errorCallback);
+  initCursorLoop(_store, errorCallback);
 }
 // Counts all records in the store
-function countAll(successCallback, errorCallback){
+function countAll(successCallback, errorCallback) {
   let origin = 'store.countAll()';
   logger(origin + logEnum.begin);
   let request = _store.count();
-  
-  request.onsuccess = function(event){
-    let message = `${event.target.result} records in store "${_store.name}"`;
-    requestSuccessAction(event.target.result, origin, successCallback, message)
-  }
 
-  request.onerror = function(){
+  request.onsuccess = function(event) {
+    let message = `${event.target.result} records in store "${_store.name}"`;
+    requestSuccessAction(event.target.result, origin, successCallback, message);
+  };
+
+  request.onerror = function() {
     requestErrorAction(origin, request.error, errorCallback);
-  }
+  };
 }
 // Deletes an index
 function delIndex(storeName, indexName, successCallback, errorCallback) {
@@ -422,15 +423,14 @@ function delIndex(storeName, indexName, successCallback, errorCallback) {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
-// Apply a function (aggregatefn) to the values of a property. 
+// Apply a function (aggregatefn) to the values of a property.
 function getaggregateFunction(
   property,
   aggregatefn,
   successCallback = voidFn,
   origin,
-  {query,
-  errorCallback = voidFn}
-) {  
+  { query, errorCallback = voidFn }
+) {
   logger(origin + logEnum.begin);
 
   var commonArgs = {
@@ -444,9 +444,13 @@ function getaggregateFunction(
   if (!query) getaggregateFunctionA(commonArgs);
   else getAggregateFunctionB(query, commonArgs);
 }
-function getaggregateFunctionA(
-  { origin, property, aggregatefn, successCallback, errorCallback }
-) {
+function getaggregateFunctionA({
+  origin,
+  property,
+  aggregatefn,
+  successCallback,
+  errorCallback
+}) {
   let actualValue = null;
   let counter = 0;
 
@@ -531,25 +535,64 @@ function makeAggregateTask({
   origin,
   query,
   errorCallback
-}) { 
-
+}) {
   let options = {
     query: query,
     errorCallback: errorCallback
   };
 
-  let args = [property, aggregatefn, successCallback, origin, options];
-  
-  tasks.push({args: args, fn: getaggregateFunction});
+  let args = [ property, aggregatefn, successCallback, origin, options ];
+
+  tasks.push({ args: args, fn: getaggregateFunction });
 }
 
-export /**
+function update(query, objectValues, { successCallback, errorCallback }) {
+  let origin = 'Store.update()';
+  logger(origin + logEnum.begin);
+
+  //// Gets isIndexKeyValue
+  //// If true then is query is a single value (an index key)
+  let isIndexKeyValue = isKey(query);
+
+  if (isIndexKeyValue) {
+    // If query is a single number value then is mofied to be valid to the query system
+    query = _store.keyPath + '=' + query;
+  }
+  let conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+  var extMode = conditionsBlocksArray
+    ? conditionsBlocksArray[0].externalLogOperator
+    : null;
+  var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+
+  let obj = {
+    counter: 0,
+    keys: Object.keys(objectValues),
+    newObjectValuesSize: Object.keys(objectValues).length,
+    extMode: extMode,
+    objectValues: objectValues,
+    event: event,
+    origin: origin,
+    query: query,
+    conditionsBlocksArray: conditionsBlocksArray,
+    exitsInFirstTrue: exitsInFirstTrue,
+    logFunction: queryLog,
+    cursorFunction: cursorUpdate,
+    successCallback: successCallback
+  };
+
+  setSharedObj(obj);
+
+  initCursorLoop(_store, errorCallback);
+}
+
+/**
  * Constructs a sixdb Store instance. This constructor is used via sixdb.openStore() method.
  * @class
  * @param  {string} storeName Name of the object store
  * @return {object}
  */
-let Store = function(storeName) {
+export let Store = function(storeName) {
   //// Public properties ////////////////////////////
   this.name = storeName;
 
@@ -563,6 +606,7 @@ let Store = function(storeName) {
   this.del;
   this.count;
   this.aggregateFn;
+  this.update;
 };
 
 /**
@@ -599,9 +643,9 @@ Store.prototype.newIndex = function(
   tasks.push(task);
 };
 
-Store.prototype.openIndex = function(indexName){
+Store.prototype.openIndex = function(indexName) {
   return new Index(this.name, indexName);
-}
+};
 
 /**
  * Adds one or more records to the object store.
@@ -696,8 +740,8 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
-  let args = [successCallback, errorCallback];
+Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
+  let args = [ successCallback, errorCallback ];
   let task = {
     args: args,
     fn: getAll
@@ -780,8 +824,11 @@ Store.prototype.del = function(
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.count = function(successCallback, { query, errorCallback = voidFn }={}) {
-  var args = [query, successCallback, errorCallback];
+Store.prototype.count = function(
+  successCallback,
+  { query, errorCallback = voidFn } = {}
+) {
+  var args = [ query, successCallback, errorCallback ];
   var task = {
     args: args,
     fn: count
@@ -790,7 +837,7 @@ Store.prototype.count = function(successCallback, { query, errorCallback = voidF
   tasks.push(tkOpen);
   initStore('store.count()', this.name, 'readonly');
   tasks.push(task);
-}
+};
 
 /**
  * Deletes an Index from the store.
@@ -801,8 +848,11 @@ Store.prototype.count = function(successCallback, { query, errorCallback = voidF
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.delIndex = function(indexName, { successCallback = voidFn, errorCallback=voidFn }={}) {
-  let args = [this.name, indexName, successCallback, errorCallback];
+Store.prototype.delIndex = function(
+  indexName,
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let args = [ this.name, indexName, successCallback, errorCallback ];
   let task = {
     args: args,
     fn: delIndex
@@ -810,7 +860,7 @@ Store.prototype.delIndex = function(indexName, { successCallback = voidFn, error
 
   tasks.push(tkOpen);
   tasks.push(task);
-}
+};
 
 /**
  * Iterates the store by applying a function to each record in a specified property.
@@ -860,7 +910,23 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore('initStore',this.name, 'readonly');
+  initStore('initStore', this.name, 'readonly');
   makeAggregateTask(args);
-  
-}
+};
+
+Store.prototype.update = function(
+  query,
+  objectValues,
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let options = { successCallback, errorCallback };
+  let args = [ query, objectValues, options ];
+  let task = {
+    args: args,
+    fn: update
+  };
+
+  tasks.push(tkOpen);
+  initStore('initStore()', this.name, 'readwrite');
+  tasks.push(task);
+};

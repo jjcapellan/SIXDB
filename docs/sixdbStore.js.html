@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li></ul></li><li><a href="window.sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="window.sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.sixdb.html#name">name</a></li><li data-type='method'><a href="window.sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.sixdb.sixdb_aggregateFuncs.html">sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="window.sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.sixdb.html#name">name</a></li><li data-type='method'><a href="window.sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.sixdb.sixdb_aggregateFuncs.html">sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -40,8 +40,8 @@
         <article>
             <pre class="prettyprint source linenums"><code>import { db, dbName, tkOpen, setDb, voidFn } from './main';
 import { logger, logEnum } from './logger';
-import { done, tasks, checkTasks} from './taskQueue';
-import { makeErrorObject, lastErrorObj} from './errorSys';
+import { done, tasks, checkTasks } from './taskQueue';
+import { makeErrorObject, lastErrorObj } from './errorSys';
 import {
   requestErrorAction,
   requestSuccessAction,
@@ -51,6 +51,7 @@ import {
   cursorGetRecords,
   cursorDelRecords,
   cursorCount,
+  cursorUpdate,
   countLog,
   aggregateLog,
   initCursorLoop,
@@ -80,7 +81,7 @@ function setStore(origin, storeName, rwMode) {
 
 // Puts setStore() in task queue
 function initStore(origin, storeName, rwMode) {
-  let args = [ origin, storeName, rwMode];
+  let args = [ origin, storeName, rwMode ];
   let task = {
     args: args,
     fn: setStore
@@ -397,22 +398,22 @@ function count(query, successCallback, errorCallback) {
 
   setSharedObj(obj);
 
-    initCursorLoop(_store, errorCallback);
+  initCursorLoop(_store, errorCallback);
 }
 // Counts all records in the store
-function countAll(successCallback, errorCallback){
+function countAll(successCallback, errorCallback) {
   let origin = 'store.countAll()';
   logger(origin + logEnum.begin);
   let request = _store.count();
-  
-  request.onsuccess = function(event){
-    let message = `${event.target.result} records in store "${_store.name}"`;
-    requestSuccessAction(event.target.result, origin, successCallback, message)
-  }
 
-  request.onerror = function(){
+  request.onsuccess = function(event) {
+    let message = `${event.target.result} records in store "${_store.name}"`;
+    requestSuccessAction(event.target.result, origin, successCallback, message);
+  };
+
+  request.onerror = function() {
     requestErrorAction(origin, request.error, errorCallback);
-  }
+  };
 }
 // Deletes an index
 function delIndex(storeName, indexName, successCallback, errorCallback) {
@@ -462,15 +463,14 @@ function delIndex(storeName, indexName, successCallback, errorCallback) {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
-// Apply a function (aggregatefn) to the values of a property. 
+// Apply a function (aggregatefn) to the values of a property.
 function getaggregateFunction(
   property,
   aggregatefn,
   successCallback = voidFn,
   origin,
-  {query,
-  errorCallback = voidFn}
-) {  
+  { query, errorCallback = voidFn }
+) {
   logger(origin + logEnum.begin);
 
   var commonArgs = {
@@ -484,9 +484,13 @@ function getaggregateFunction(
   if (!query) getaggregateFunctionA(commonArgs);
   else getAggregateFunctionB(query, commonArgs);
 }
-function getaggregateFunctionA(
-  { origin, property, aggregatefn, successCallback, errorCallback }
-) {
+function getaggregateFunctionA({
+  origin,
+  property,
+  aggregatefn,
+  successCallback,
+  errorCallback
+}) {
   let actualValue = null;
   let counter = 0;
 
@@ -571,25 +575,65 @@ function makeAggregateTask({
   origin,
   query,
   errorCallback
-}) { 
-
+}) {
   let options = {
     query: query,
     errorCallback: errorCallback
   };
 
-  let args = [property, aggregatefn, successCallback, origin, options];
-  
-  tasks.push({args: args, fn: getaggregateFunction});
+  let args = [ property, aggregatefn, successCallback, origin, options ];
+
+  tasks.push({ args: args, fn: getaggregateFunction });
 }
 
-export /**
+// Updates one or more records 
+function update(query, objectValues, { successCallback, errorCallback }) {
+  let origin = 'Store.update()';
+  logger(origin + logEnum.begin);
+
+  //// Gets isIndexKeyValue
+  //// If true then is query is a single value (an index key)
+  let isIndexKeyValue = isKey(query);
+
+  if (isIndexKeyValue) {
+    // If query is a single number value then is mofied to be valid to the query system
+    query = _store.keyPath + '=' + query;
+  }
+  let conditionsBlocksArray = qrySys.makeConditionsBlocksArray(query);
+
+  var extMode = conditionsBlocksArray
+    ? conditionsBlocksArray[0].externalLogOperator
+    : null;
+  var exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
+
+  let obj = {
+    counter: 0,
+    keys: Object.keys(objectValues),
+    newObjectValuesSize: Object.keys(objectValues).length,
+    extMode: extMode,
+    objectValues: objectValues,
+    event: event,
+    origin: origin,
+    query: query,
+    conditionsBlocksArray: conditionsBlocksArray,
+    exitsInFirstTrue: exitsInFirstTrue,
+    logFunction: queryLog,
+    cursorFunction: cursorUpdate,
+    successCallback: successCallback
+  };
+
+  setSharedObj(obj);
+
+  initCursorLoop(_store, errorCallback);
+}
+
+/**
  * Constructs a sixdb Store instance. This constructor is used via sixdb.openStore() method.
  * @class
  * @param  {string} storeName Name of the object store
  * @return {object}
  */
-let Store = function(storeName) {
+export let Store = function(storeName) {
   //// Public properties ////////////////////////////
   this.name = storeName;
 
@@ -603,6 +647,7 @@ let Store = function(storeName) {
   this.del;
   this.count;
   this.aggregateFn;
+  this.update;
 };
 
 /**
@@ -639,9 +684,9 @@ Store.prototype.newIndex = function(
   tasks.push(task);
 };
 
-Store.prototype.openIndex = function(indexName){
+Store.prototype.openIndex = function(indexName) {
   return new Index(this.name, indexName);
-}
+};
 
 /**
  * Adds one or more records to the object store.
@@ -736,8 +781,8 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
-  let args = [successCallback, errorCallback];
+Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
+  let args = [ successCallback, errorCallback ];
   let task = {
     args: args,
     fn: getAll
@@ -820,8 +865,11 @@ Store.prototype.del = function(
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.count = function(successCallback, { query, errorCallback = voidFn }={}) {
-  var args = [query, successCallback, errorCallback];
+Store.prototype.count = function(
+  successCallback,
+  { query, errorCallback = voidFn } = {}
+) {
+  var args = [ query, successCallback, errorCallback ];
   var task = {
     args: args,
     fn: count
@@ -830,7 +878,7 @@ Store.prototype.count = function(successCallback, { query, errorCallback = voidF
   tasks.push(tkOpen);
   initStore('store.count()', this.name, 'readonly');
   tasks.push(task);
-}
+};
 
 /**
  * Deletes an Index from the store.
@@ -841,8 +889,11 @@ Store.prototype.count = function(successCallback, { query, errorCallback = voidF
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.delIndex = function(indexName, { successCallback = voidFn, errorCallback=voidFn }={}) {
-  let args = [this.name, indexName, successCallback, errorCallback];
+Store.prototype.delIndex = function(
+  indexName,
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let args = [ this.name, indexName, successCallback, errorCallback ];
   let task = {
     args: args,
     fn: delIndex
@@ -850,7 +901,7 @@ Store.prototype.delIndex = function(indexName, { successCallback = voidFn, error
 
   tasks.push(tkOpen);
   tasks.push(task);
-}
+};
 
 /**
  * Iterates the store by applying a function to each record in a specified property.
@@ -900,10 +951,73 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore('initStore',this.name, 'readonly');
+  initStore('initStore', this.name, 'readonly');
   makeAggregateTask(args);
-  
-}</code></pre>
+};
+
+/**
+ * Updates one or more records in the store.
+ * @method Store#update
+ * @instance
+ * @param  {query} query The query used to select the records to update.
+ * @param  {object} objectValues Object wich contains the properties with the new values.&lt;br>
+ * Example: {property1: newValue1, property4: newValue4}&lt;br>
+ * The value can be a function that receives the old value and returns a new value:&lt;br>
+ * Example: {property2: function(oldValue){return oldValue + 100;}}
+ * @param  {object} [options]
+ * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.errorCallback
+ * @example
+ * // An example of object stored in the object store
+ * //
+ * let person = {
+ *     name: 'Peter',
+ *     age: 32,
+ *     salary: 1100
+ * };
+ * 
+ * const mydb = new sixdb('myDatabase');
+ * 
+ * // Instantiates the store "southFactory"
+ * //
+ * let store = mydb.openStore('southFactory');
+ * 
+ * // Updates salary of record with primary key 4 (only in the case that object store has autoincrement primary key)
+ * //
+ * store.update(4, {salary: 1200});
+ * 
+ * // Updates salary and age of Peter
+ * //
+ * store.update('name = Peter', {age: 33, salary: 1150});
+ * 
+ * // Increases salary of employees with age > 40 by 100 using a function
+ * //
+ * store.update(
+ *     'age > 40', 
+ *     {
+ *         salary: function(oldSalary){ return oldSalary + 100;} 
+ *     }
+ * );
+ * 
+ * mydb.execTasks();
+ */
+Store.prototype.update = function(
+  query,
+  objectValues,
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let options = { successCallback, errorCallback };
+  let args = [ query, objectValues, options ];
+  let task = {
+    args: args,
+    fn: update
+  };
+
+  tasks.push(tkOpen);
+  initStore('initStore()', this.name, 'readwrite');
+  tasks.push(task);
+};
+</code></pre>
         </article>
     </section>
 
@@ -915,7 +1029,7 @@ Store.prototype.aggregateFn = function(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Fri Dec 07 2018 21:18:16 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Dec 08 2018 13:08:15 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

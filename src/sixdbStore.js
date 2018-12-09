@@ -545,7 +545,7 @@ function makeAggregateTask({
 
   tasks.push({ args: args, fn: getaggregateFunction });
 }
-
+// Updates one or more records 
 function update(query, objectValues, { successCallback, errorCallback }) {
   let origin = 'Store.update()';
   logger(origin + logEnum.begin);
@@ -914,6 +914,52 @@ Store.prototype.aggregateFn = function(
   makeAggregateTask(args);
 };
 
+/**
+ * Updates one or more records in the store.
+ * @method Store#update
+ * @instance
+ * @param  {query} query The query used to select the records to update.
+ * @param  {object} objectValues Object wich contains the properties with the new values.<br>
+ * Example: {property1: newValue1, property4: newValue4}<br>
+ * The value can be a function that receives the old value and returns a new value:<br>
+ * Example: {property2: function(oldValue){return oldValue + 100;}}
+ * @param  {object} [options]
+ * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.errorCallback
+ * @example
+ * // An example of object stored in the object store
+ * //
+ * let person = {
+ *     name: 'Peter',
+ *     age: 32,
+ *     salary: 1100
+ * };
+ * 
+ * const mydb = new sixdb('myDatabase');
+ * 
+ * // Instantiates the store "southFactory"
+ * //
+ * let store = mydb.openStore('southFactory');
+ * 
+ * // Updates salary of record with primary key 4 (only in the case that object store has autoincrement primary key)
+ * //
+ * store.update(4, {salary: 1200});
+ * 
+ * // Updates salary and age of Peter
+ * //
+ * store.update('name = Peter', {age: 33, salary: 1150});
+ * 
+ * // Increases salary of employees with age > 40 by 100 using a function
+ * //
+ * store.update(
+ *     'age > 40', 
+ *     {
+ *         salary: function(oldSalary){ return oldSalary + 100;} 
+ *     }
+ * );
+ * 
+ * mydb.execTasks();
+ */
 Store.prototype.update = function(
   query,
   objectValues,

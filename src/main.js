@@ -10,7 +10,7 @@ let dbName;
 const voidFn = function() {
   return 0;
 };
-let customOperator = function(value1, value2) {
+export let customOperator = function(value1, value2) {
   return value1 == value2;
 };
 
@@ -128,7 +128,7 @@ window.sixdb = function(_dbName) {
   }
 
   // Adds newDB function to the task queue
-  function _addDB(errorCallback) {
+  function addDB(errorCallback) {
     let args = [ errorCallback ];
     let task = {
       args: args,
@@ -149,7 +149,7 @@ window.sixdb = function(_dbName) {
 
   //// Initialization ///////////////////////////////
   qrySys.init();
-  _addDB();
+  addDB();
   execTasks();
 };
 

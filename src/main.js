@@ -89,11 +89,11 @@ let _newStore = function(
 };
 
 /**
- * Constructs a sixdb instance.
+ * Constructs a Sixdb instance.
  * @class
  * @param  {string} _dbName Name of the database 
  */
-window.sixdb = function(_dbName) {
+window.Sixdb = function(_dbName) {
   dbName = _dbName;
 
   // Query system from qrySys.js
@@ -155,11 +155,11 @@ window.sixdb = function(_dbName) {
 
 /**
  * Gets the database name.
- * @method window.sixdb#name
+ * @method window.Sixdb#name
  * @instance
  * @return Name of the database
  */
-sixdb.prototype.name = function() {
+Sixdb.prototype.name = function() {
   return dbName;
 };
 
@@ -167,19 +167,19 @@ sixdb.prototype.name = function() {
  * Sets the consoleOff value.
  * @param  {boolean} _consoleOff If true, the console output is off and only errors appear in console.
  */
-sixdb.prototype.setConsoleOff = function(_consoleOff){  
+Sixdb.prototype.setConsoleOff = function(_consoleOff){  
   consoleOff = consoleOff;
 }
 
 /**
- * Add a specific function to the SIXDB task queue.
- * @method window.sixdb#customTask
+ * Add a specific function to the Sixdb task queue.
+ * @method window.Sixdb#customTask
  * @instance
  * @param  {function} fn Our custom function that we want to add to the task queue.
  * @param  {object} context Usually the keyword "this"
  * @param  {...any} args Arguments for the function.
  * @example
- * var mydb = new sixdb('companyDB');
+ * var mydb = new Sixdb('companyDB');
  * 
  * // Creates new store
  * mydb.newStore('southFactory');
@@ -196,7 +196,7 @@ sixdb.prototype.setConsoleOff = function(_consoleOff){
  *
  *
  * //
- * // To add an own function to the task queue, the method  customTask() of the sixdb object is used
+ * // To add an own function to the task queue, the method  customTask() of the Sixdb object is used
  * //
  * //     customTask( fn, context, args)
  * //
@@ -223,7 +223,7 @@ sixdb.prototype.setConsoleOff = function(_consoleOff){
  * //
  * mydb.execTasks();
  */
-sixdb.prototype.customTask = function(fn, context, args) {
+Sixdb.prototype.customTask = function(fn, context, args) {
   let argsArray = [];
   if (args) {
     var i = 0;
@@ -239,10 +239,10 @@ sixdb.prototype.customTask = function(fn, context, args) {
  * Contains predefined aggregate functions to use in aggregateFn method.<br>
  * The method aggregateFn accepts too custom functions.
  * 
- * @memberof window.sixdb
+ * @memberof window.Sixdb
  * @namespace
 */
-sixdb.prototype.aggregateFuncs = {
+Sixdb.prototype.aggregateFuncs = {
 
   /**
    * Sums two values
@@ -292,13 +292,13 @@ sixdb.prototype.aggregateFuncs = {
 };
 
 /**
-   * Sets customOperator. To make the queries we can add to the SIXDB comparison operators our own operator.<br>
+   * Sets customOperator. To make the queries we can add to the Sixdb comparison operators our own operator.<br>
    * This operator will be represented by <b>~~</b>.
-   * @method window.sixdb#setCustomOperator
+   * @method window.Sixdb#setCustomOperator
    * @instance
    * @param  {function} compareFunction Function to compare a property value with a test value.<br>
    * @example
-   * var mydb = new sixdb('myDatabase');
+   * var mydb = new Sixdb('myDatabase');
    *
    * //
    * // The compare function must have two arguments, property value and test value. If this function triggers
@@ -310,7 +310,7 @@ sixdb.prototype.aggregateFuncs = {
    *     });
    *
    */
-sixdb.prototype.setCustomOperator = function(compareFunction) {
+Sixdb.prototype.setCustomOperator = function(compareFunction) {
   if (compareFunction) {
     if (typeof compareFunction == 'function') {
       if (compareFunction.length == 2) {
@@ -324,16 +324,16 @@ sixdb.prototype.setCustomOperator = function(compareFunction) {
    * Execs pending tasks. The tasks are executed sequentially.
    * A task does not run until the previous one ends.
    * <br>This avoids problems arising from the asynchronous nature of the indexedDB api.
-   * @method window.sixdb#execTask
+   * @method window.Sixdb#execTask
    * @instance
    */
-sixdb.prototype.execTasks = function() {
+Sixdb.prototype.execTasks = function() {
   execTasks();
 };
 
 /**
  * Creates a task wich creates a store object in the database.
- * @method window.sixdb#newStore
+ * @method window.Sixdb#newStore
  * @instance
  * @param  {string} storeName The store name.
  * @param  {object} [options]
@@ -344,7 +344,7 @@ sixdb.prototype.execTasks = function() {
  * @param  {function} [options.succesCallback] Function called on success. Receives as parameters event and origin.
  * @param  {function} [options.errorCallback] Optional function to handle errors. Receives an error object as argument.
  */
-sixdb.prototype.newStore = function(
+Sixdb.prototype.newStore = function(
   storeName,
   { keyPath, autoIncrement, successCallback, errorCallback } = {}
 ) {
@@ -367,12 +367,12 @@ sixdb.prototype.newStore = function(
 
 /**
  * Returns an existing store object ready to use
- * @method window.sixdb#openStore
+ * @method window.Sixdb#openStore
  * @instance
  * @param  {string} storeName Name of the store.
  * @return {object}
  */
-sixdb.prototype.openStore = function(storeName) {
+Sixdb.prototype.openStore = function(storeName) {
   return new Store(storeName);
 };
 

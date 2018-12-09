@@ -587,7 +587,7 @@ function update(query, objectValues, { successCallback, errorCallback }) {
 }
 
 /**
- * Constructs a sixdb Store instance. This constructor is used via sixdb.openStore() method.
+ * Constructs a Sixdb Store instance. This constructor is used via Sixdb.openStore() method.
  * @class
  * @param  {string} storeName Name of the object store
  * @return {object}
@@ -656,7 +656,7 @@ Store.prototype.openIndex = function(indexName) {
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
- * var mydb = new sixdb('myDatabase');
+ * var mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * var store = mydb.openStore('southFactory');
@@ -701,7 +701,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * @param  {function} successCallback Function called on success. Receives event and origin as parameters.
  * @param  {function} [errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -767,7 +767,7 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -881,7 +881,7 @@ Store.prototype.delIndex = function(
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -935,7 +935,7 @@ Store.prototype.aggregateFn = function(
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //

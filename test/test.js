@@ -87,9 +87,9 @@ var tableResults = document.getElementById('tbl_results');
 var failed = false;
 
 //
-// First step is instantiate a sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
+// First step is instantiate a Sixdb object, it checks if already exists a database called "companyDB" (If doesn't, a new one is created).
 //
-var mydb = new sixdb('companyDB');
+var mydb = new Sixdb('companyDB');
 
 // Creates a new object store named "southFactory"
 mydb.newStore('southFactory', {keyPath: 'id', autoIncrement: true, successCallback: successCallback, errorCallback: errorCallback});
@@ -149,6 +149,12 @@ myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'de
 
 // Updates salary an age of the record with id = 4
 myStore.update(4,{age: 42, salary: 1450}, {successCallback: successCallback, errorCallback: errorCallback});
+
+// Gets all records from store
+myStore.getAll(successCallback, errorCallback);
+
+// Increases salary of manufacturing department in 100 using a function 
+myStore.update('department = manufacturing',{salary: function(oldSalary){return oldSalary + 100;}}, {successCallback: successCallback, errorCallback: errorCallback});
 
 // Gets all records from store
 myStore.getAll(successCallback, errorCallback);

@@ -324,7 +324,7 @@ function makeAggregateTask({
 }
 
 export /**
- * Constructs a sixdb Index instance. This constructor is used via Store.openStore() method.
+ * Constructs a Sixdb Index instance. This constructor is used via Store.openStore() method.
  * @class
  * @param  {string} storeName Name of the parent store.
  * @param  {string} indexName Name of the index.
@@ -347,7 +347,7 @@ let Index = function(storeName, indexName) {
  * @param  {function} successCallback Function called on success. Receives event and origin as parameters.
  * @param  {function} [errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -417,7 +417,7 @@ Index.prototype.getAll = function(successCallback, errorCallback = voidFn) {
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -485,7 +485,7 @@ Index.prototype.count = function(successCallback, { query, errorCallback = voidF
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //

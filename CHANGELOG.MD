@@ -1,3 +1,6 @@
+## v3.0.1
+* Fix: unique attribute unassigned in Store.newIndex().
+* Fix: consoleOff self assigned in Sixdb.setConsoleOff().
 ## v3.0.0
 * Redesigned api. Now databases, stores and indexes are objects with its own methods.
 ## v2.0.1

@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
   entry: './src/main.js',
@@ -19,5 +20,13 @@ module.exports = {
         }
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.BannerPlugin({
+      banner: '@author       Juan Jose Capellan <soycape@hotmail.com>\n' +
+      '@copyright    2018 Juan Jose Capellan\n' +
+      '@license      {@link https://github.com/jjcapellan/SIXDB/blob/master/LICENSE | MIT license}',
+      entryOnly: true
+    })
+  ]
 };

@@ -90,7 +90,7 @@ function newIndex(
     }
 
     if (!_store.indexNames.contains(indexName)) {
-      _store.createIndex(indexName, keyPath, ({ unique } = {}));
+      _store.createIndex(indexName, keyPath, { unique: unique });
     } else {
       _db.close();
       logger(`The index "${indexName}" already exists in store "${storeName}"`);

@@ -6,6 +6,7 @@
 ![GitHub file size](https://img.shields.io/github/size/jjcapellan/SIXDB/dist/sixdb.js.svg)
 ![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
 ![GitHub license](https://img.shields.io/github/license/jjcapellan/SIXDB.svg)
+[![codebeat badge](https://codebeat.co/badges/171abcfc-a9df-4832-a878-9218db6cc0ee)](https://codebeat.co/projects/github-com-jjcapellan-sixdb-master)
 
 
   
@@ -53,13 +54,13 @@ You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.0.0/dist/sixdb.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.0.1/dist/sixdb.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.0.0/dist/sixdb.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.0.1/dist/sixdb.js"></script>
 ``` 
 
 

@@ -219,7 +219,7 @@ Sixdb.prototype.name = function() {
  * @param  {boolean} _consoleOff If true, the console output is off and only errors appear in console.
  */
 Sixdb.prototype.setConsoleOff = function(_consoleOff) {
-  consoleOff = consoleOff;
+  consoleOff = _consoleOff;
 };
 
 /**

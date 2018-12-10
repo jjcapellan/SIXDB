@@ -1,4 +1,4 @@
-import { logger, logEnum } from './logger';
+import { logger } from './logger';
 import { done, tasks, checkTasks } from './taskQueue';
 import { makeErrorObject, lastErrorObj } from './errorSys';
 import { db } from './main';

@@ -1,3 +1,8 @@
+/**
+ * @author       Juan Jose Capellan <soycape@hotmail.com>
+ * @copyright    2018 Juan Jose Capellan
+ * @license      {@link https://github.com/jjcapellan/SIXDB/blob/master/LICENSE | MIT license}
+ */
 import { _qrySys } from './qrySys.js';
 import { tasks, done, execTasks } from './taskQueue';
 import { logEnum, logger } from './logger.js';

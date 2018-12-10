@@ -446,7 +446,7 @@ myStore.add(
 
 // Our function is executed after the previous insertion task and before the next reading task.
 //
-mydb.add.customTask(
+mydb.customTask(
     function(m){                                // Custom function
         alert(m);
     },

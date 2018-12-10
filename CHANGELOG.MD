@@ -1,3 +1,5 @@
+## v3.0.0
+* Redesigned api. Now databases, stores and indexes are objects with its own methods.
 ## v2.0.1
 * Fix: succesCallback null in cursorLoop().
 ## v2.0.0

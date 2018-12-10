@@ -19,7 +19,7 @@ import {
   tryGetByKey,
   isKey
 } from './helpers';
-import { _qrySys } from './qrySys.js';
+import { _qrySys } from './qrySys';
 
 //// Private variables //////////////////////////////
 let _index = null;
@@ -181,23 +181,23 @@ function count(query, successCallback, errorCallback) {
 
   setSharedObj(obj);
 
-    initCursorLoop(_index, errorCallback);
+  initCursorLoop(_index, errorCallback);
 }
 
 // Counts all records in the index
-function countAll(successCallback, errorCallback){
+function countAll(successCallback, errorCallback) {
   let origin = 'Index.countAll()';
   logger(origin + logEnum.begin);
   let request = _index.count();
-  
-  request.onsuccess = function(event){
-    let message = `${event.target.result} records in index "${_indexName}"`;
-    requestSuccessAction(event.target.result, origin, successCallback, message)
-  }
 
-  request.onerror = function(){
+  request.onsuccess = function(event) {
+    let message = `${event.target.result} records in index "${_indexName}"`;
+    requestSuccessAction(event.target.result, origin, successCallback, message);
+  };
+
+  request.onerror = function() {
     requestErrorAction(origin, request.error, errorCallback);
-  }
+  };
 }
 
 // Apply a function (aggregatefn) to the values of a property.
@@ -206,9 +206,8 @@ function getaggregateFunction(
   aggregatefn,
   successCallback = voidFn,
   origin,
-  {query,
-  errorCallback = voidFn}
-) {  
+  { query, errorCallback = voidFn }
+) {
   logger(origin + logEnum.begin);
 
   var commonArgs = {
@@ -222,9 +221,13 @@ function getaggregateFunction(
   if (!query) getaggregateFunctionA(commonArgs);
   else getAggregateFunctionB(query, commonArgs);
 }
-function getaggregateFunctionA(
-  { origin, property, aggregatefn, successCallback, errorCallback }
-) {
+function getaggregateFunctionA({
+  origin,
+  property,
+  aggregatefn,
+  successCallback,
+  errorCallback
+}) {
   let actualValue = null;
   let counter = 0;
 
@@ -311,26 +314,25 @@ function makeAggregateTask({
   origin,
   query,
   errorCallback
-}) { 
-
+}) {
   let options = {
     query: query,
     errorCallback: errorCallback
   };
 
-  let args = [property, aggregatefn, successCallback, origin, options];
-  
-  tasks.push({args: args, fn: getaggregateFunction});
+  let args = [ property, aggregatefn, successCallback, origin, options ];
+
+  tasks.push({ args: args, fn: getaggregateFunction });
 }
 
-export /**
+/**
  * Constructs a Sixdb Index instance. This constructor is used via Store.openStore() method.
  * @class
  * @param  {string} storeName Name of the parent store.
  * @param  {string} indexName Name of the index.
  * @return {object}
  */
-let Index = function(storeName, indexName) {
+export let Index = function(storeName, indexName) {
   _storeName = storeName;
   _indexName = indexName;
   this.name = indexName;
@@ -454,8 +456,11 @@ Index.prototype.get = function(query, successCallback, errorCallback = voidFn) {
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Index.prototype.count = function(successCallback, { query, errorCallback = voidFn }={}) {
-  let args = [query, successCallback, errorCallback];
+Index.prototype.count = function(
+  successCallback,
+  { query, errorCallback = voidFn } = {}
+) {
+  let args = [ query, successCallback, errorCallback ];
   let task = {
     args: args,
     fn: count
@@ -464,7 +469,7 @@ Index.prototype.count = function(successCallback, { query, errorCallback = voidF
   tasks.push(tkOpen);
   initIndex('Index.count()', 'readonly');
   tasks.push(task);
-}
+};
 
 /**
  * Iterates the index by applying a function to each record in a specified property.
@@ -519,5 +524,5 @@ Index.prototype.aggregateFn = function(
 
   tasks.push(tkOpen);
   initIndex('initStore', 'readonly');
-  makeAggregateTask(args);  
-}
+  makeAggregateTask(args);
+};

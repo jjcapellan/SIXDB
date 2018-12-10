@@ -122,7 +122,7 @@ function delStore(storeName, { successCallback, errorCallback }) {
   };
 }
 
-function delDB({ successCallback, errorCallback}) {
+function delDB({ successCallback, errorCallback }) {
   let origin = 'Sixdb.destroy()';
   logger(origin + logEnum.begin);
 
@@ -451,7 +451,6 @@ Sixdb.prototype.delStore = function(
   tasks.push(tkOpen);
   tasks.push(task);
 };
-
 
 /**
  * The current database is deleted.

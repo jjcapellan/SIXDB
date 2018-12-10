@@ -1,4 +1,4 @@
-export let lastErrorObj={};
+export let lastErrorObj = {};
 
 export function makeErrorObject(origin, domException) {
   let errorObj = {};

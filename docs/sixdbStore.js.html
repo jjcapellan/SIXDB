@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.sixdb.html">sixdb</a><ul class='methods'><li data-type='method'><a href="window.sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.sixdb.html#name">name</a></li><li data-type='method'><a href="window.sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.sixdb.sixdb_aggregateFuncs.html">sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.sixdb.sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -93,14 +93,14 @@ function initStore(origin, storeName, rwMode) {
 //// Private functions //////////////////////////////
 
 // Creates a new index in the store
-function _newIndex(
+function newIndex(
   storeName,
   indexName,
   keyPath,
   { unique, successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
   let version;
-  let origin = 'add -> newIndex(...)';
+  let origin = 'Store.newIndex()';
   logger(origin + logEnum.begin);
 
   //// Gets the new version
@@ -154,7 +154,7 @@ function _newIndex(
 
 // Adds one(A) or more(B) records to the store
 function addRecord(obj, { successCallback = voidFn, errorCallback = voidFn }) {
-  let origin = 'addRecord(...)';
+  let origin = 'Store.add()';
   logger(origin + logEnum.begin);
   let args = { obj, origin, successCallback, errorCallback };
 
@@ -200,7 +200,7 @@ function addRecordB({ obj, origin, successCallback, errorCallback }) {
 // Gets all records from a store
 function getAll(successCallback, errorCallback) {
   let request = null;
-  let origin = 'store.getAll()';
+  let origin = 'Store.getAll()';
   logger(origin + logEnum.begin);
 
   /// Callbacks of request
@@ -227,7 +227,7 @@ function getAll(successCallback, errorCallback) {
 }
 // Gets records filtered by a query
 function get(query, successCallback, errorCallback) {
-  let origin = 'store.get()';
+  let origin = 'Store.get()';
   logger(origin + logEnum.begin);
   if (isKey(query)) {
     getBykey(query, successCallback, errorCallback);
@@ -275,7 +275,7 @@ function get(query, successCallback, errorCallback) {
 }
 // Gets records with key as query
 function getBykey(query, successCallback, errorCallback) {
-  let origin = 'store.getByKey()';
+  let origin = 'Store.getByKey()';
   logger(origin + logEnum.begin);
   let request;
 
@@ -299,7 +299,7 @@ function getBykey(query, successCallback, errorCallback) {
 }
 // Deletes one or more records using a query
 function del(query, successCallback, errorCallback) {
-  let origin = 'store.del()';
+  let origin = 'Store.del()';
   logger(origin + logEnum.begin);
 
   if (isKey(query)) {
@@ -348,7 +348,7 @@ function del(query, successCallback, errorCallback) {
 }
 // Deletes records using primary key as query. Is more fast.
 function delByKey(query, successCallback, errorCallback) {
-  let origin = 'store.delByKey()';
+  let origin = 'Store.delByKey()';
   logger(origin + logEnum.begin);
 
   let request = _store.delete(query);
@@ -366,7 +366,7 @@ function delByKey(query, successCallback, errorCallback) {
 }
 // Counts records filtered by a query
 function count(query, successCallback, errorCallback) {
-  let origin = 'store.count()';
+  let origin = 'Store.count()';
   logger(origin + logEnum.begin);
 
   if (!query) {
@@ -402,7 +402,7 @@ function count(query, successCallback, errorCallback) {
 }
 // Counts all records in the store
 function countAll(successCallback, errorCallback) {
-  let origin = 'store.countAll()';
+  let origin = 'Store.countAll()';
   logger(origin + logEnum.begin);
   let request = _store.count();
 
@@ -418,7 +418,7 @@ function countAll(successCallback, errorCallback) {
 // Deletes an index
 function delIndex(storeName, indexName, successCallback, errorCallback) {
   let version;
-  let origin = 'store.delIndex()';
+  let origin = 'Store.delIndex()';
   logger(origin + logEnum.begin);
 
   //// Gets the new version
@@ -585,8 +585,7 @@ function makeAggregateTask({
 
   tasks.push({ args: args, fn: getaggregateFunction });
 }
-
-// Updates one or more records 
+// Updates one or more records
 function update(query, objectValues, { successCallback, errorCallback }) {
   let origin = 'Store.update()';
   logger(origin + logEnum.begin);
@@ -628,7 +627,7 @@ function update(query, objectValues, { successCallback, errorCallback }) {
 }
 
 /**
- * Constructs a sixdb Store instance. This constructor is used via sixdb.openStore() method.
+ * Constructs a Sixdb Store instance. This constructor is used via Sixdb.openStore() method.
  * @class
  * @param  {string} storeName Name of the object store
  * @return {object}
@@ -678,7 +677,7 @@ Store.prototype.newIndex = function(
   ];
   let task = {
     args: args,
-    fn: _newIndex
+    fn: newIndex
   };
   tasks.push(tkOpen);
   tasks.push(task);
@@ -697,7 +696,7 @@ Store.prototype.openIndex = function(indexName) {
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
- * var mydb = new sixdb('myDatabase');
+ * var mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * var store = mydb.openStore('southFactory');
@@ -742,7 +741,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * @param  {function} successCallback Function called on success. Receives event and origin as parameters.
  * @param  {function} [errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -808,7 +807,7 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -922,7 +921,7 @@ Store.prototype.delIndex = function(
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -940,7 +939,7 @@ Store.prototype.aggregateFn = function(
   successCallback,
   { query, errorCallback } = {}
 ) {
-  var origin = 'store.aggregateFn()';
+  var origin = 'Store.aggregateFn()';
   var args = {
     property: property,
     successCallback: successCallback,
@@ -976,7 +975,7 @@ Store.prototype.aggregateFn = function(
  *     salary: 1100
  * };
  * 
- * const mydb = new sixdb('myDatabase');
+ * const mydb = new Sixdb('myDatabase');
  * 
  * // Instantiates the store "southFactory"
  * //
@@ -1029,7 +1028,7 @@ Store.prototype.update = function(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sat Dec 08 2018 13:08:15 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Dec 10 2018 18:56:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

@@ -53,14 +53,14 @@ function initStore(origin, storeName, rwMode) {
 //// Private functions //////////////////////////////
 
 // Creates a new index in the store
-function _newIndex(
+function newIndex(
   storeName,
   indexName,
   keyPath,
   { unique, successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
   let version;
-  let origin = 'add -> newIndex(...)';
+  let origin = 'Store.newIndex()';
   logger(origin + logEnum.begin);
 
   //// Gets the new version
@@ -114,7 +114,7 @@ function _newIndex(
 
 // Adds one(A) or more(B) records to the store
 function addRecord(obj, { successCallback = voidFn, errorCallback = voidFn }) {
-  let origin = 'addRecord(...)';
+  let origin = 'Store.add()';
   logger(origin + logEnum.begin);
   let args = { obj, origin, successCallback, errorCallback };
 
@@ -160,7 +160,7 @@ function addRecordB({ obj, origin, successCallback, errorCallback }) {
 // Gets all records from a store
 function getAll(successCallback, errorCallback) {
   let request = null;
-  let origin = 'store.getAll()';
+  let origin = 'Store.getAll()';
   logger(origin + logEnum.begin);
 
   /// Callbacks of request
@@ -187,7 +187,7 @@ function getAll(successCallback, errorCallback) {
 }
 // Gets records filtered by a query
 function get(query, successCallback, errorCallback) {
-  let origin = 'store.get()';
+  let origin = 'Store.get()';
   logger(origin + logEnum.begin);
   if (isKey(query)) {
     getBykey(query, successCallback, errorCallback);
@@ -235,7 +235,7 @@ function get(query, successCallback, errorCallback) {
 }
 // Gets records with key as query
 function getBykey(query, successCallback, errorCallback) {
-  let origin = 'store.getByKey()';
+  let origin = 'Store.getByKey()';
   logger(origin + logEnum.begin);
   let request;
 
@@ -259,7 +259,7 @@ function getBykey(query, successCallback, errorCallback) {
 }
 // Deletes one or more records using a query
 function del(query, successCallback, errorCallback) {
-  let origin = 'store.del()';
+  let origin = 'Store.del()';
   logger(origin + logEnum.begin);
 
   if (isKey(query)) {
@@ -308,7 +308,7 @@ function del(query, successCallback, errorCallback) {
 }
 // Deletes records using primary key as query. Is more fast.
 function delByKey(query, successCallback, errorCallback) {
-  let origin = 'store.delByKey()';
+  let origin = 'Store.delByKey()';
   logger(origin + logEnum.begin);
 
   let request = _store.delete(query);
@@ -326,7 +326,7 @@ function delByKey(query, successCallback, errorCallback) {
 }
 // Counts records filtered by a query
 function count(query, successCallback, errorCallback) {
-  let origin = 'store.count()';
+  let origin = 'Store.count()';
   logger(origin + logEnum.begin);
 
   if (!query) {
@@ -362,7 +362,7 @@ function count(query, successCallback, errorCallback) {
 }
 // Counts all records in the store
 function countAll(successCallback, errorCallback) {
-  let origin = 'store.countAll()';
+  let origin = 'Store.countAll()';
   logger(origin + logEnum.begin);
   let request = _store.count();
 
@@ -378,7 +378,7 @@ function countAll(successCallback, errorCallback) {
 // Deletes an index
 function delIndex(storeName, indexName, successCallback, errorCallback) {
   let version;
-  let origin = 'store.delIndex()';
+  let origin = 'Store.delIndex()';
   logger(origin + logEnum.begin);
 
   //// Gets the new version
@@ -545,7 +545,7 @@ function makeAggregateTask({
 
   tasks.push({ args: args, fn: getaggregateFunction });
 }
-// Updates one or more records 
+// Updates one or more records
 function update(query, objectValues, { successCallback, errorCallback }) {
   let origin = 'Store.update()';
   logger(origin + logEnum.begin);
@@ -637,7 +637,7 @@ Store.prototype.newIndex = function(
   ];
   let task = {
     args: args,
-    fn: _newIndex
+    fn: newIndex
   };
   tasks.push(tkOpen);
   tasks.push(task);
@@ -899,7 +899,7 @@ Store.prototype.aggregateFn = function(
   successCallback,
   { query, errorCallback } = {}
 ) {
-  var origin = 'store.aggregateFn()';
+  var origin = 'Store.aggregateFn()';
   var args = {
     property: property,
     successCallback: successCallback,

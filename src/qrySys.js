@@ -1,5 +1,5 @@
 /* eslint-disable */
-import {customOperator} from './main';
+import { customOperator } from './main';
 
 export const _qrySys = {
   init() {

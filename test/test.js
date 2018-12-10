@@ -79,10 +79,6 @@ var employeesArray = [
 // HTML element to show the resuls
 var tableResults = document.getElementById('tbl_results');
 
-
-
-
-
 // True if there are not errors
 var failed = false;
 
@@ -91,22 +87,36 @@ var failed = false;
 //
 var mydb = new Sixdb('companyDB');
 
+// Activate this line to turn off the console output
+// mydb.setConsoleOff(true);
+
 // Creates a new object store named "southFactory"
-mydb.newStore('southFactory', {keyPath: 'id', autoIncrement: true, successCallback: successCallback, errorCallback: errorCallback});
+mydb.newStore('southFactory', {
+  keyPath: 'id',
+  autoIncrement: true,
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
 
 // Stores "southFactory" in a variable
 var myStore = mydb.openStore('southFactory');
 
 // Creates a new index named "Names" with keyPath "name"
-myStore.newIndex('Names','name', {successCallback:successCallback, errorCallback:errorCallback});
+myStore.newIndex('Names', 'name', {
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
 
 var myIndex = myStore.openIndex('Names');
 
 // Inserts one object in store "southFactory"
-myStore.add(employee, {successCallback: successCallback, errorCallback:errorCallback});
+myStore.add(employee, { successCallback: successCallback, errorCallback: errorCallback });
 
 // Inserts an array of objects in the store
-myStore.add(employeesArray, {successCallback: successCallback, errorCallback:errorCallback});
+myStore.add(employeesArray, {
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
 
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
@@ -124,7 +134,10 @@ myIndex.get('salary > 1200', successCallback, errorCallback);
 myStore.get(4, successCallback, errorCallback);
 
 // Counts records in manufacturing department
-myStore.count(successCallback, {query:'department = manufacturing', errorCallback: errorCallback});
+myStore.count(successCallback, {
+  query: 'department = manufacturing',
+  errorCallback: errorCallback
+});
 
 // Counts all records in the store
 myStore.count(successCallback);
@@ -133,313 +146,86 @@ myStore.count(successCallback);
 myIndex.count(successCallback);
 
 // Counts records in manufacturing department in index
-myIndex.count(successCallback, {query:'department = manufacturing', errorCallback: errorCallback});
+myIndex.count(successCallback, {
+  query: 'department = manufacturing',
+  errorCallback: errorCallback
+});
 
 mydb.customTask(showInfo, this, 'Sum of salaries');
 // Sum of salaries
-myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{errorCallback: errorCallback});
+myStore.aggregateFn('salary', mydb.aggregateFuncs.sum, successCallback, {
+  errorCallback: errorCallback
+});
 // Sum of salaries in index 'Names'
-myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{errorCallback: errorCallback});
+myIndex.aggregateFn('salary', mydb.aggregateFuncs.sum, successCallback, {
+  errorCallback: errorCallback
+});
 
 mydb.customTask(showInfo, this, 'Sum of salaries from manufacturing department');
 // Sum of salaries of manufacturing department
-myStore.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
+myStore.aggregateFn('salary', mydb.aggregateFuncs.sum, successCallback, {
+  query: 'department = manufacturing',
+  errorCallback: errorCallback
+});
 // Sum of salaries of manufacturing department
-myIndex.aggregateFn('salary',mydb.aggregateFuncs.sum, successCallback,{query:'department = manufacturing' , errorCallback: errorCallback});
-
-// Updates salary an age of the record with id = 4
-myStore.update(4,{age: 42, salary: 1450}, {successCallback: successCallback, errorCallback: errorCallback});
-
-// Gets all records from store
-myStore.getAll(successCallback, errorCallback);
-
-// Increases salary of manufacturing department in 100 using a function 
-myStore.update('department = manufacturing',{salary: function(oldSalary){return oldSalary + 100;}}, {successCallback: successCallback, errorCallback: errorCallback});
-
-// Gets all records from store
-myStore.getAll(successCallback, errorCallback);
-
-// Deletes record with primary key = 3;
-myStore.del(3,{successCallback: successCallback, errorCallback: errorCallback});
-
-// Gets all records
-myStore.getAll(successCallback, errorCallback);
-
-// Deletes records with salary > 1500
-myStore.del('salary > 1500', {successCallback: successCallback, errorCallback: errorCallback});
-
-// Gets all records
-myStore.getAll(successCallback, errorCallback);
-
-// Deletes index "Names" from store
-myStore.delIndex('Names', {successCallback: successCallback});
-
-mydb.execTasks();
-
-
-
-
-
-/*
-// Example of custom comparison operator (represented in querys by "~~")
-mydb.setCustomOperator(function(value1, value2) {
-  return value1.length == value2.length;
-});
-
-// Activate this line to turn off the console output
-// mydb.setConsoleOff(true);
-
-
-// Insert one object
-mydb.add.records(store, employee, {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
-
-Insert a totally different object
-mydb.add.records(store, {
-    model: 'large',
-    power: 500
-}, successCallback, errorCallback);
-
-// Gets the record with id = 1
-mydb.get.records(store, successCallback, {
-  indexName: index,
-  query: 1,
-  errorCallback: errorCallback
-});
-
-// Insert an array of objects
-mydb.add.records(store, employeesArray, {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
-
-// Execs the custom task showInfo
-mydb.add.customTask(showInfo, this, 'Custom task executed');
-
-// Gets all records
-mydb.get.lastRecords(store, null, successCallback, errorCallback);
-
-// Gets all records
-mydb.get.records(store, successCallback, { errorCallback: errorCallback });
-
-// Sum of salaries
-//mydb.get.sum(store, 'salary', successCallback, {errorCallback: errorCallback});
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.sum,
-  successCallback,
-  { errorCallback: errorCallback }
-);
-
-// Sum of salaries with index
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.sum,
-  successCallback,
-  { errorCallback: errorCallback, indexName: index }
-);
-
-// Sum of salaries with index and query
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.sum,
-  successCallback,
-  { errorCallback: errorCallback, indexName: index, query: 'name ^ Al' }
-);
-
-// Sum of salaries with index and indexKey
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.sum,
-  successCallback,
-  { errorCallback: errorCallback, indexName: index, query: 3 }
-);
-
-// Average of salaries
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.avg,
-  successCallback,
-  successCallback,
-  { errorCallback: errorCallback }
-);
-
-// Average of salaries with index and query
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.avg,
-  successCallback,
-  { errorCallback: errorCallback, indexName: index, query: 'name ^ Al' }
-);
-
-// Max of salaries
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.max,
-  successCallback,
-  { errorCallback: errorCallback }
-);
-
-// Min of salaries
-mydb.get.aggregateFn(
-  store,
-  'salary',
-  mydb.aggregateFuncs.min,
-  successCallback,
-  { errorCallback: errorCallback }
-);
-
-// Longest name with custom aggregate function
-mydb.get.aggregateFn(
-  store,
-  'name',
-  function(actual, selected, counter) {
-    if (counter == 1) actual = selected;
-    return actual.length < selected.length ? selected : actual;
-  },
-  successCallback,
-  { errorCallback: errorCallback, query: 'salary > 900' }
-);
-
-// Gets records wich name contains "ul" with index
-mydb.get.records(store, successCallback, {
-  indexName: index,
-  query: 'name <> ul',
-  errorCallback: errorCallback
-});
-
-// Gets records wich name starts with "al"
-mydb.get.records(store, successCallback, {
-  query: 'name ^ Al',
-  errorCallback: errorCallback
-});
-
-// Gets records wich name ends with "e"
-mydb.get.records(store, successCallback, {
-  query: 'name $ e',
-  errorCallback: errorCallback
-});
-
-// Gets records wich name have same number of characters than "Mary" (custom operator)
-mydb.get.records(store, successCallback, {
-  query: 'name ~~ Mary',
-  errorCallback: errorCallback
-});
-
-// Gets records using a query of 2 conditions and logical operator &
-mydb.get.records(store, successCallback, {
-  query: 'department = manufacturing & age > 30',
-  errorCallback: errorCallback
-});
-
-// Gets records using a query with quotes and the logical operator ||
-mydb.get.records(store, successCallback, {
-  query: 'department= "manufacturing" || salary > 1390',
-  errorCallback: errorCallback
-});
-
-//Counts records
-mydb.get.count(store, successCallback, { query: 'salary > 1000' });
-
-//Counts records
-mydb.get.count(store, successCallback, { indexName: index, query: 'id = 3' });
-
-//Counts all records in store
-mydb.get.count(store, successCallback, {});
-
-//Counts all records in index
-mydb.get.count(store, successCallback, { indexName: index });
-
-// Query with 2 sets of conditions
-mydb.get.records(store, successCallback, {
-  query:
-    '(department="manufacturing" & salary > 1500) || (department!="manufacturing" & salary>1400)',
+myIndex.aggregateFn('salary', mydb.aggregateFuncs.sum, successCallback, {
+  query: 'department = manufacturing',
   errorCallback: errorCallback
 });
 
 // Updates salary an age of the record with id = 4
-mydb.update.records(
-  store,
+myStore.update(
   4,
-  { salary: 1450, age: 42 },
-  {
-    indexName: index,
-    successCallback: successCallback,
-    errorCallback: errorCallback
-  }
+  { age: 42, salary: 1450 },
+  { successCallback: successCallback, errorCallback: errorCallback }
 );
 
-// Gets all records
-mydb.get.lastRecords(store, null, successCallback, errorCallback);
+// Gets all records from store
+myStore.getAll(successCallback, errorCallback);
 
-// Updates the salary of records with accounting department using a function
-mydb.update.records(
-  store,
-  'department="accounting"',
+// Increases salary of manufacturing department in 100 using a function
+myStore.update(
+  'department = manufacturing',
   {
     salary: function(oldSalary) {
-      return oldSalary + 200;
+      return oldSalary + 100;
     }
   },
   { successCallback: successCallback, errorCallback: errorCallback }
 );
 
-// Gets the records from the accounting department
-mydb.get.records(store, successCallback, {
-  query: 'department="accounting"',
-  errorCallback: errorCallback
-});
+// Gets all records from store
+myStore.getAll(successCallback, errorCallback);
 
-// Delete the record wich id = 4
-mydb.del.records(store, 4, {
-  indexName: index,
+// Deletes record with primary key = 3;
+myStore.del(3, { successCallback: successCallback, errorCallback: errorCallback });
+
+// Gets all records
+myStore.getAll(successCallback, errorCallback);
+
+// Deletes records with salary > 1500
+myStore.del('salary > 1500', {
   successCallback: successCallback,
   errorCallback: errorCallback
 });
 
 // Gets all records
-mydb.get.lastRecords(store, null, successCallback, errorCallback);
+myStore.getAll(successCallback, errorCallback);
 
-// Delete records with a query
-mydb.del.records(store, 'salary>1300', {
-  indexName: index,
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
+// Deletes index "Names" from store
+myStore.delIndex('Names', { successCallback: successCallback });
 
-// Gets all records
-mydb.get.lastRecords(store, null, successCallback, errorCallback);
+// Deletes store "southFactory"
+mydb.delStore('southFactory', { successCallback: successCallback });
 
-// Deletes a index
-mydb.del.index(store, index, {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
-
-// Deletes a store
-mydb.del.store(store, {
-  successCallback: successCallback,
-  errorCallback: errorCallback
-});
-
-// Deletes the database
-mydb.del.db({ successCallback: successCallback, errorCallback: errorCallback });
+// Deletes database
+mydb.destroy({ successCallback: successCallback });
 
 // Sends a custom task
-mydb.add.customTask(checkTest, this);
+mydb.customTask(checkTest, this);
 
-// Execs all pending task
 mydb.execTasks();
-*/
+
 //
 //Custom Functions
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -450,7 +236,8 @@ function successCallback(result, origin, query) {
   showInfo(message);
 
   if (
-    (origin.indexOf('get') > 0) || (origin.indexOf('count') > 0 || (origin.indexOf('aggregate') > 0))
+    origin.indexOf('get') > 0 ||
+    (origin.indexOf('count') > 0 || origin.indexOf('aggregate') > 0)
   ) {
     showResults(result);
   }
@@ -462,6 +249,7 @@ function errorCallback(error) {
 }
 
 function checkTest() {
+  var message = '';
   if (failed) {
     message = 'Test failed';
     showInfo(message, true);
@@ -476,6 +264,11 @@ function showResults(results) {
     showInfo('No results');
     return;
   }
+  var cell= null;
+  var keys = null;
+  var headerRow = null;
+  var row = null;
+  var i,j,k,l;
 
   if (Array.isArray(results)) {
     if (!results[0]) {
@@ -483,51 +276,48 @@ function showResults(results) {
       console.log(results);
       return;
     }
-    var keys = Object.keys(results[0]);
+    keys = Object.keys(results[0]);
     //Headers
-    var headerRow = document.createElement('tr');
-    var i = 0;
+    headerRow = document.createElement('tr');
     for (i = 0; i < keys.length; i++) {
-      var cell = document.createElement('th');
+      cell = document.createElement('th');
       cell.textContent = keys[i];
       headerRow.appendChild(cell);
     }
     tableResults.appendChild(headerRow);
 
     //Data rows
-    for (i = 0; i < results.length; i++) {
-      var row = document.createElement('tr');
-      var j = 0;
-      for (j = 0; j < keys.length; j++) {
-        var cell = document.createElement('td');
-        cell.textContent = results[i][keys[j]];
+    for (i = 0, j = results.length; i < j; i++) {
+      row = document.createElement('tr');
+      for (k = 0, l = keys.length; k < l; k++) {
+        cell = document.createElement('td');
+        cell.textContent = results[i][keys[k]];
         row.appendChild(cell);
       }
       tableResults.appendChild(row);
     }
   } else {
     if (typeof results == 'object') {
-      var keys = Object.keys(results);
+      keys = Object.keys(results);
       // Headers
-      var headerRow = document.createElement('tr');
-      var i = 0;
-      for (i = 0; i < keys.length; i++) {
-        var cell = document.createElement('th');
+      headerRow = document.createElement('tr');
+      for (i = 0, j = keys.length; i < j; i++) {
+        cell = document.createElement('th');
         cell.textContent = keys[i];
         headerRow.appendChild(cell);
       }
       tableResults.appendChild(headerRow);
       //Data row
-      var row = document.createElement('tr');
-      for (i = 0; i < keys.length; i++) {
-        var cell = document.createElement('td');
+      row = document.createElement('tr');
+      for (i = 0, j = keys.length; i < j; i++) {
+        cell = document.createElement('td');
         cell.textContent = results[keys[i]];
         row.appendChild(cell);
       }
       tableResults.appendChild(row);
     } else {
-      var row = document.createElement('tr');
-      var cell = document.createElement('td');
+      row = document.createElement('tr');
+      cell = document.createElement('td');
       cell.textContent = results;
       row.appendChild(cell);
       tableResults.appendChild(row);

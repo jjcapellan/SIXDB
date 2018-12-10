@@ -15,7 +15,7 @@ export let customOperator = function(value1, value2) {
 };
 
 // Opens the database and stores the result in db
-const openDb = function() {
+function openDb() {
   let request = window.indexedDB.open(dbName);
 
   request.onerror = function() {
@@ -26,23 +26,23 @@ const openDb = function() {
     db = event.target.result;
     done();
   };
-};
+}
 
 // Predefined task to open the actual database
 const tkOpen = { args: null, fn: openDb };
 
 // Allows other modules modify variable db
-const setDb = function(_db) {
+function setDb(_db) {
   db = _db;
-};
+}
 
 // Creates a store in the database
-let _newStore = function(
+function newStore(
   storeName,
   { keyPath, autoIncrement, successCallback, errorCallback } = {}
 ) {
   let version;
-  let origin = 'add -> newStore(...)';
+  let origin = 'Sixdb.newStore()';
   logger(origin + logEnum.begin);
 
   // If store already exist then returns
@@ -86,7 +86,58 @@ let _newStore = function(
       `New object store "${storeName}" created`
     );
   };
-};
+}
+
+function delStore(storeName, { successCallback, errorCallback }) {
+  let origin = 'Sixdb.delStore()';
+  logger(origin + logEnum.begin);
+
+  //// Gets the new version
+  //
+  let version = db.version;
+  db.close();
+  let newVersion = version + 1;
+
+  //// The change of the database schema only can be performed in the onupgradedneeded event
+  //// so a new version number is needed to trigger that event.
+  //
+  let request = window.indexedDB.open(dbName, newVersion);
+
+  request.onupgradeneeded = function(event) {
+    db = event.target.result;
+    db.deleteObjectStore(storeName);
+  };
+
+  request.onsuccess = function(event) {
+    requestSuccessAction(
+      event,
+      origin,
+      successCallback,
+      `Object store "${storeName}" deleted`
+    );
+  };
+
+  request.onerror = function() {
+    requestErrorAction(origin, request.error, errorCallback);
+  };
+}
+
+function delDB({ successCallback, errorCallback}) {
+  let origin = 'Sixdb.destroy()';
+  logger(origin + logEnum.begin);
+
+  let request = window.indexedDB.deleteDatabase(dbName);
+
+  request.onerror = function() {
+    requestErrorAction(origin, request.error, errorCallback);
+  };
+
+  request.onsuccess = function(event) {
+    successCallback(event, origin);
+    logger(`Database "${dbName}" deleted`);
+    done();
+  };
+}
 
 /**
  * Constructs a Sixdb instance.
@@ -99,12 +150,10 @@ window.Sixdb = function(_dbName) {
   // Query system from qrySys.js
   let qrySys = _qrySys;
 
-  
-
   // Creates or opens the database
   function newDB(errorCallback = voidFn) {
     let request = window.indexedDB.open(dbName);
-    let origin = 'add -> newDB(...)';
+    let origin = 'Sixdb.newDB()';
     logger(origin + logEnum.begin);
 
     // Boolean: Database doesn't exist
@@ -146,6 +195,8 @@ window.Sixdb = function(_dbName) {
   this.setCustomOperator;
   this.newStore;
   this.openStore;
+  this.delStore;
+  this.destroy;
 
   //// Initialization ///////////////////////////////
   qrySys.init();
@@ -167,9 +218,9 @@ Sixdb.prototype.name = function() {
  * Sets the consoleOff value.
  * @param  {boolean} _consoleOff If true, the console output is off and only errors appear in console.
  */
-Sixdb.prototype.setConsoleOff = function(_consoleOff){  
+Sixdb.prototype.setConsoleOff = function(_consoleOff) {
   consoleOff = consoleOff;
-}
+};
 
 /**
  * Add a specific function to the Sixdb task queue.
@@ -226,8 +277,7 @@ Sixdb.prototype.setConsoleOff = function(_consoleOff){
 Sixdb.prototype.customTask = function(fn, context, args) {
   let argsArray = [];
   if (args) {
-    var i = 0;
-    for (i = 2; i < arguments.length; i++) {
+    for (let i = 2, j = arguments.length; i < j; i++) {
       argsArray[2 - i] = arguments[i];
     }
   }
@@ -243,7 +293,6 @@ Sixdb.prototype.customTask = function(fn, context, args) {
  * @namespace
 */
 Sixdb.prototype.aggregateFuncs = {
-
   /**
    * Sums two values
    * @param  {string | number} actual Acumulated value
@@ -359,7 +408,7 @@ Sixdb.prototype.newStore = function(
   ];
   let task = {
     args: args,
-    fn: _newStore
+    fn: newStore
   };
   tasks.push(tkOpen);
   tasks.push(task);
@@ -376,4 +425,57 @@ Sixdb.prototype.openStore = function(storeName) {
   return new Store(storeName);
 };
 
-export { consoleOff, db, _newStore, dbName, tkOpen, setDb, voidFn };
+/**
+ * Deletes an object store.
+ * @method window.Sixdb#delStore
+ * @instance
+ * @param  {string} storeName Name of the object store. 
+ * @param  {object} options
+ * @param  {function} [options.succesCallback] Function called on success. Receives as parameters event and origin.
+ * @param  {function} [options.errorCallback] Optional function to handle errors. Receives an error object as argument.
+ */
+Sixdb.prototype.delStore = function(
+  storeName,
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let options = {
+    successCallback: successCallback,
+    errorCallback: errorCallback
+  };
+  let args = [ storeName, options ];
+  let task = {
+    args: args,
+    fn: delStore
+  };
+
+  tasks.push(tkOpen);
+  tasks.push(task);
+};
+
+
+/**
+ * The current database is deleted.
+ * @method window.Sixdb#destroy
+ * @instance
+ * @param  {object} options
+ * @param  {function} [options.succesCallback] Function called on success. Receives as parameters event and origin.
+ * @param  {function} [options.errorCallback] Optional function to handle errors. Receives an error object as argument.
+ */
+Sixdb.prototype.destroy = function(
+  { successCallback = voidFn, errorCallback = voidFn } = {}
+) {
+  let options = {
+    successCallback: successCallback,
+    errorCallback: errorCallback
+  };
+
+  let args = [ options ];
+  let task = {
+    args: args,
+    fn: delDB
+  };
+
+  tasks.push(task);
+};
+
+export { consoleOff, db, newStore, dbName, tkOpen, setDb, voidFn };

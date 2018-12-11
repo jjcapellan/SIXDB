@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#clear">clear</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -68,8 +68,9 @@ import { Index } from './sixdbIndex';
 let _store;
 const qrySys = _qrySys;
 
-function setStore(origin, storeName, rwMode) {
+function setStore(storeName, rwMode) {
   _store = null;
+  let origin = 'initStore()';
   try {
     _store = db.transaction(storeName, rwMode).objectStore(storeName);
   } catch (e) {
@@ -80,8 +81,8 @@ function setStore(origin, storeName, rwMode) {
 }
 
 // Puts setStore() in task queue
-function initStore(origin, storeName, rwMode) {
-  let args = [ origin, storeName, rwMode ];
+function initStore(storeName, rwMode) {
+  let args = [ storeName, rwMode ];
   let task = {
     args: args,
     fn: setStore
@@ -130,7 +131,7 @@ function newIndex(
     }
 
     if (!_store.indexNames.contains(indexName)) {
-      _store.createIndex(indexName, keyPath, ({ unique } = {}));
+      _store.createIndex(indexName, keyPath, { unique: unique });
     } else {
       _db.close();
       logger(`The index "${indexName}" already exists in store "${storeName}"`);
@@ -626,6 +627,37 @@ function update(query, objectValues, { successCallback, errorCallback }) {
   initCursorLoop(_store, errorCallback);
 }
 
+function clear({ successCallback, errorCallback }) {
+  let origin = 'Store.clear()';
+  logger(origin + logEnum.begin);
+
+  let request = null;
+  try {
+    request = _store.clear();
+  } catch (e) {
+    requestErrorAction(origin, request.error, errorCallback);
+    return;
+  }
+  request.onsuccess = function(event) {
+    requestSuccessAction(
+      event.target.result,
+      origin,
+      successCallback,
+      `Store "${_store.name}" cleared.`
+    );
+  };
+
+  request.onerror = function(event) {
+    requestErrorAction(origin, request.error, errorCallback);
+  };
+}
+
+function initTasks(storeName, rwMode, task){
+  tasks.push(tkOpen);
+  initStore(storeName, rwMode);
+  tasks.push(task);
+}
+
 /**
  * Constructs a Sixdb Store instance. This constructor is used via Sixdb.openStore() method.
  * @class
@@ -637,7 +669,7 @@ export let Store = function(storeName) {
   this.name = storeName;
 
   //// Public Methods declaration ///////////////////
-  this.newIndex;
+  /*this.newIndex;
   this.openIndex;
   this.delIndex;
   this.add;
@@ -647,6 +679,7 @@ export let Store = function(storeName) {
   this.count;
   this.aggregateFn;
   this.update;
+  this.clear;*/
 };
 
 /**
@@ -729,9 +762,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
   let args = [ obj, { successCallback, errorCallback } ];
   let task = { args: args, fn: addRecord };
 
-  tasks.push(tkOpen);
-  initStore('store.add(...)', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
 
 /**
@@ -786,9 +817,8 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     args: args,
     fn: getAll
   };
-  tasks.push(tkOpen);
-  initStore('store.getAll()', this.name, 'readonly');
-  tasks.push(task);
+
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -826,9 +856,8 @@ Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     args: args,
     fn: get
   };
-  tasks.push(tkOpen);
-  initStore('store.get()', this.name, 'readonly');
-  tasks.push(task);
+
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -850,9 +879,7 @@ Store.prototype.del = function(
     fn: del
   };
 
-  tasks.push(tkOpen);
-  initStore('store.del()', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
 
 /**
@@ -874,9 +901,7 @@ Store.prototype.count = function(
     fn: count
   };
 
-  tasks.push(tkOpen);
-  initStore('store.count()', this.name, 'readonly');
-  tasks.push(task);
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -950,7 +975,7 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore('initStore', this.name, 'readonly');
+  initStore(this.name, 'readonly');
   makeAggregateTask(args);
 };
 
@@ -965,7 +990,7 @@ Store.prototype.aggregateFn = function(
  * Example: {property2: function(oldValue){return oldValue + 100;}}
  * @param  {object} [options]
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
- * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.errorCallback
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
  * // An example of object stored in the object store
  * //
@@ -1012,10 +1037,28 @@ Store.prototype.update = function(
     fn: update
   };
 
-  tasks.push(tkOpen);
-  initStore('initStore()', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
+
+/**
+ * Deletes all records in the object store.
+ * @method Store#clear
+ * @instance
+ * @param  {object} options
+ * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument. 
+ * @return {void}
+ */
+Store.prototype.clear = function({successCallback = voidFn, errorCallback = voidFn}){
+  let options = {successCallback, errorCallback};
+  let args = [options];
+  let task = {
+    args: args,
+    fn: clear
+  }
+
+  initTasks(this.name, 'readwrite', task);
+}
 </code></pre>
         </article>
     </section>
@@ -1028,7 +1071,7 @@ Store.prototype.update = function(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Dec 10 2018 18:56:09 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 11 2018 11:28:02 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

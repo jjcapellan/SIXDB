@@ -212,6 +212,12 @@ myStore.del('salary > 1500', {
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
 
+// Clear store
+myStore.clear({successCallback, errorCallback});
+
+// Gets all records
+myStore.getAll(successCallback, errorCallback);
+
 // Deletes index "Names" from store
 myStore.delIndex('Names', { successCallback: successCallback });
 

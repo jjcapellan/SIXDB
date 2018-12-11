@@ -28,8 +28,9 @@ import { Index } from './sixdbIndex';
 let _store;
 const qrySys = _qrySys;
 
-function setStore(origin, storeName, rwMode) {
+function setStore(storeName, rwMode) {
   _store = null;
+  let origin = 'initStore()';
   try {
     _store = db.transaction(storeName, rwMode).objectStore(storeName);
   } catch (e) {
@@ -40,8 +41,8 @@ function setStore(origin, storeName, rwMode) {
 }
 
 // Puts setStore() in task queue
-function initStore(origin, storeName, rwMode) {
-  let args = [ origin, storeName, rwMode ];
+function initStore(storeName, rwMode) {
+  let args = [ storeName, rwMode ];
   let task = {
     args: args,
     fn: setStore
@@ -586,6 +587,37 @@ function update(query, objectValues, { successCallback, errorCallback }) {
   initCursorLoop(_store, errorCallback);
 }
 
+function clear({ successCallback, errorCallback }) {
+  let origin = 'Store.clear()';
+  logger(origin + logEnum.begin);
+
+  let request = null;
+  try {
+    request = _store.clear();
+  } catch (e) {
+    requestErrorAction(origin, request.error, errorCallback);
+    return;
+  }
+  request.onsuccess = function(event) {
+    requestSuccessAction(
+      event.target.result,
+      origin,
+      successCallback,
+      `Store "${_store.name}" cleared.`
+    );
+  };
+
+  request.onerror = function(event) {
+    requestErrorAction(origin, request.error, errorCallback);
+  };
+}
+
+function initTasks(storeName, rwMode, task){
+  tasks.push(tkOpen);
+  initStore(storeName, rwMode);
+  tasks.push(task);
+}
+
 /**
  * Constructs a Sixdb Store instance. This constructor is used via Sixdb.openStore() method.
  * @class
@@ -597,7 +629,7 @@ export let Store = function(storeName) {
   this.name = storeName;
 
   //// Public Methods declaration ///////////////////
-  this.newIndex;
+  /*this.newIndex;
   this.openIndex;
   this.delIndex;
   this.add;
@@ -607,6 +639,7 @@ export let Store = function(storeName) {
   this.count;
   this.aggregateFn;
   this.update;
+  this.clear;*/
 };
 
 /**
@@ -689,9 +722,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
   let args = [ obj, { successCallback, errorCallback } ];
   let task = { args: args, fn: addRecord };
 
-  tasks.push(tkOpen);
-  initStore('store.add(...)', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
 
 /**
@@ -746,9 +777,8 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     args: args,
     fn: getAll
   };
-  tasks.push(tkOpen);
-  initStore('store.getAll()', this.name, 'readonly');
-  tasks.push(task);
+
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -786,9 +816,8 @@ Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     args: args,
     fn: get
   };
-  tasks.push(tkOpen);
-  initStore('store.get()', this.name, 'readonly');
-  tasks.push(task);
+
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -810,9 +839,7 @@ Store.prototype.del = function(
     fn: del
   };
 
-  tasks.push(tkOpen);
-  initStore('store.del()', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
 
 /**
@@ -834,9 +861,7 @@ Store.prototype.count = function(
     fn: count
   };
 
-  tasks.push(tkOpen);
-  initStore('store.count()', this.name, 'readonly');
-  tasks.push(task);
+  initTasks(this.name, 'readonly', task);
 };
 
 /**
@@ -910,7 +935,7 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore('initStore', this.name, 'readonly');
+  initStore(this.name, 'readonly');
   makeAggregateTask(args);
 };
 
@@ -925,7 +950,7 @@ Store.prototype.aggregateFn = function(
  * Example: {property2: function(oldValue){return oldValue + 100;}}
  * @param  {object} [options]
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
- * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.errorCallback
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  * @example
  * // An example of object stored in the object store
  * //
@@ -972,7 +997,25 @@ Store.prototype.update = function(
     fn: update
   };
 
-  tasks.push(tkOpen);
-  initStore('initStore()', this.name, 'readwrite');
-  tasks.push(task);
+  initTasks(this.name, 'readwrite', task);
 };
+
+/**
+ * Deletes all records in the object store.
+ * @method Store#clear
+ * @instance
+ * @param  {object} options
+ * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
+ * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument. 
+ * @return {void}
+ */
+Store.prototype.clear = function({successCallback = voidFn, errorCallback = voidFn}){
+  let options = {successCallback, errorCallback};
+  let args = [options];
+  let task = {
+    args: args,
+    fn: clear
+  }
+
+  initTasks(this.name, 'readwrite', task);
+}

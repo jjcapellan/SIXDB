@@ -571,6 +571,7 @@ function update(query, objectValues, { successCallback, errorCallback }) {
     keys: Object.keys(objectValues),
     newObjectValuesSize: Object.keys(objectValues).length,
     extMode: extMode,
+    source: _store.name,
     objectValues: objectValues,
     event: event,
     origin: origin,
@@ -625,11 +626,22 @@ function initTasks(storeName, rwMode, task){
  * @return {object}
  */
 export let Store = function(storeName) {
-  //// Public properties ////////////////////////////
-  this.name = storeName;
+  //// Private properties ////////////////////////////
+  let _storeName = storeName;
 
-  //// Public Methods declaration ///////////////////
-  /*this.newIndex;
+  
+/**
+ * Gets the name of the store.
+ * @method Store#name
+ * @return  {string} Name of the store.
+ */
+this.name = function(){
+  return _storeName;
+}
+
+  //// Public Methods///////////////////
+  /*
+  this.newIndex;
   this.openIndex;
   this.delIndex;
   this.add;
@@ -639,7 +651,8 @@ export let Store = function(storeName) {
   this.count;
   this.aggregateFn;
   this.update;
-  this.clear;*/
+  this.clear;
+  */
 };
 
 /**
@@ -659,7 +672,7 @@ Store.prototype.newIndex = function(
   { unique, successCallback, errorCallback } = {}
 ) {
   let args = [
-    this.name,
+    this.name(),
     indexName,
     keyPath,
     {
@@ -677,7 +690,7 @@ Store.prototype.newIndex = function(
 };
 
 Store.prototype.openIndex = function(indexName) {
-  return new Index(this.name, indexName);
+  return new Index(this.name(), indexName);
 };
 
 /**
@@ -722,7 +735,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
   let args = [ obj, { successCallback, errorCallback } ];
   let task = { args: args, fn: addRecord };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -778,7 +791,7 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     fn: getAll
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -817,7 +830,7 @@ Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     fn: get
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -839,7 +852,7 @@ Store.prototype.del = function(
     fn: del
   };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -861,7 +874,7 @@ Store.prototype.count = function(
     fn: count
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -877,7 +890,7 @@ Store.prototype.delIndex = function(
   indexName,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
-  let args = [ this.name, indexName, successCallback, errorCallback ];
+  let args = [ this.name(), indexName, successCallback, errorCallback ];
   let task = {
     args: args,
     fn: delIndex
@@ -935,7 +948,7 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore(this.name, 'readonly');
+  initStore(this.name(), 'readonly');
   makeAggregateTask(args);
 };
 
@@ -997,7 +1010,7 @@ Store.prototype.update = function(
     fn: update
   };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -1017,5 +1030,5 @@ Store.prototype.clear = function({successCallback = voidFn, errorCallback = void
     fn: clear
   }
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 }

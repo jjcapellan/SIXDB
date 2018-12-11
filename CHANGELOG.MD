@@ -1,4 +1,4 @@
-## v3.2.0
+## v3.1.0
 * Added function Store.clear(). Deletes all records in the store.
 * Added getters Store.name(), Index.name(), Index.storeName().
 * Fix: New instance of Index modifies indexName and storeName of previous instances.

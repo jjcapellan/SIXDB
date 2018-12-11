@@ -23,15 +23,14 @@ import { _qrySys } from './qrySys';
 
 //// Private variables //////////////////////////////
 let _index = null;
-let _storeName = '';
-let _indexName = '';
 let qrySys = _qrySys;
 
-function setIndex(origin, rwMode) {
+function setIndex(storeName, indexName, rwMode) {
   _index = null;
+  let origin = 'initIndex()';
   try {
-    let objectStore = db.transaction(_storeName, rwMode).objectStore(_storeName);
-    _index = objectStore.index(_indexName);
+    let objectStore = db.transaction(storeName, rwMode).objectStore(storeName);
+    _index = objectStore.index(indexName);
   } catch (e) {
     makeErrorObject(origin, e);
     logger(lastErrorObj, true);
@@ -40,8 +39,8 @@ function setIndex(origin, rwMode) {
 }
 
 // Adds setIndex to the task queue
-function initIndex(origin, rwMode) {
-  let args = [ origin, rwMode ];
+function initIndex(storeName, indexName, rwMode) {
+  let args = [ storeName, indexName, rwMode ];
   let task = {
     args: args,
     fn: setIndex
@@ -66,7 +65,7 @@ function getAll(successCallback, errorCallback) {
       event.target.result,
       origin,
       successCallback,
-      `All records returned from index "${_indexName}"`
+      `All records returned from index "${_index.name}"`
     );
   };
 
@@ -93,7 +92,7 @@ function get(query, successCallback, errorCallback) {
   let exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
   let obj = {
     counter: 0,
-    source: _indexName,
+    source: _index.name,
     extMode: extMode,
     event: resultFiltered,
     resultFiltered: resultFiltered,
@@ -138,7 +137,7 @@ function getBykey(query, successCallback, errorCallback) {
   request.onsuccess = function(event) {
     successCallback(event.target.result, origin, query);
     db.close();
-    logger(`Records with key "${query}" returned from index "${_indexName}"`);
+    logger(`Records with key "${query}" returned from index "${_index.name}"`);
     done();
   };
 
@@ -168,7 +167,7 @@ function count(query, successCallback, errorCallback) {
     get event() {
       return this.counter;
     },
-    source: _indexName,
+    source: _index.name,
     extMode: extMode,
     origin: origin,
     query: query,
@@ -191,7 +190,7 @@ function countAll(successCallback, errorCallback) {
   let request = _index.count();
 
   request.onsuccess = function(event) {
-    let message = `${event.target.result} records in index "${_indexName}"`;
+    let message = `${event.target.result} records in index "${_index.name}"`;
     requestSuccessAction(event.target.result, origin, successCallback, message);
   };
 
@@ -325,6 +324,12 @@ function makeAggregateTask({
   tasks.push({ args: args, fn: getaggregateFunction });
 }
 
+function initTasks(storeName, indexName, task) {
+  tasks.push(tkOpen);
+  initIndex(storeName, indexName, 'readonly');
+  tasks.push(task);
+}
+
 /**
  * Constructs a Sixdb Index instance. This constructor is used via Store.openStore() method.
  * @class
@@ -333,13 +338,34 @@ function makeAggregateTask({
  * @return {object}
  */
 export let Index = function(storeName, indexName) {
-  _storeName = storeName;
-  _indexName = indexName;
-  this.name = indexName;
+  let _indexName = indexName;
+  let _storeName = storeName;
+
+  /**
+   * Gets the name of the index.
+   * @method Index#name
+   * @return  {string} Name of the index.
+   */
+  this.name = function() {
+    return _indexName;
+  };
+
+  /**
+   * Gets the name of the parent store.
+   * @method Index#storeName
+   * @return  {string} Name of the parent store.
+   */
+  this.storeName = function() {
+    return _storeName;
+  };
+
+  //// Public methods /////////////////////////////////////
+  /*
   this.getAll;
   this.get;
   this.count;
   this.aggregateFn;
+  */
 };
 
 /**
@@ -398,9 +424,8 @@ Index.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     args: args,
     fn: getAll
   };
-  tasks.push(tkOpen);
-  initIndex('Index.getAll()', 'readonly');
-  tasks.push(task);
+
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -442,9 +467,8 @@ Index.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     args: args,
     fn: get
   };
-  tasks.push(tkOpen);
-  initIndex('Index.get()', 'readonly');
-  tasks.push(task);
+
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -466,9 +490,7 @@ Index.prototype.count = function(
     fn: count
   };
 
-  tasks.push(tkOpen);
-  initIndex('Index.count()', 'readonly');
-  tasks.push(task);
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -523,6 +545,6 @@ Index.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initIndex('initStore', 'readonly');
+  initIndex(this.storeName(), this.name(), 'readonly');
   makeAggregateTask(args);
 };

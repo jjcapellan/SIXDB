@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#clear">clear</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li><li data-type='method'><a href="Index_.html#name">name</a></li><li data-type='method'><a href="Index_.html#storeName">storeName</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#clear">clear</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#name">name</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -611,6 +611,7 @@ function update(query, objectValues, { successCallback, errorCallback }) {
     keys: Object.keys(objectValues),
     newObjectValuesSize: Object.keys(objectValues).length,
     extMode: extMode,
+    source: _store.name,
     objectValues: objectValues,
     event: event,
     origin: origin,
@@ -665,11 +666,22 @@ function initTasks(storeName, rwMode, task){
  * @return {object}
  */
 export let Store = function(storeName) {
-  //// Public properties ////////////////////////////
-  this.name = storeName;
+  //// Private properties ////////////////////////////
+  let _storeName = storeName;
 
-  //// Public Methods declaration ///////////////////
-  /*this.newIndex;
+  
+/**
+ * Gets the name of the store.
+ * @method Store#name
+ * @return  {string} Name of the store.
+ */
+this.name = function(){
+  return _storeName;
+}
+
+  //// Public Methods///////////////////
+  /*
+  this.newIndex;
   this.openIndex;
   this.delIndex;
   this.add;
@@ -679,7 +691,8 @@ export let Store = function(storeName) {
   this.count;
   this.aggregateFn;
   this.update;
-  this.clear;*/
+  this.clear;
+  */
 };
 
 /**
@@ -699,7 +712,7 @@ Store.prototype.newIndex = function(
   { unique, successCallback, errorCallback } = {}
 ) {
   let args = [
-    this.name,
+    this.name(),
     indexName,
     keyPath,
     {
@@ -717,7 +730,7 @@ Store.prototype.newIndex = function(
 };
 
 Store.prototype.openIndex = function(indexName) {
-  return new Index(this.name, indexName);
+  return new Index(this.name(), indexName);
 };
 
 /**
@@ -762,7 +775,7 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
   let args = [ obj, { successCallback, errorCallback } ];
   let task = { args: args, fn: addRecord };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -818,7 +831,7 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     fn: getAll
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -857,7 +870,7 @@ Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     fn: get
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -879,7 +892,7 @@ Store.prototype.del = function(
     fn: del
   };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -901,7 +914,7 @@ Store.prototype.count = function(
     fn: count
   };
 
-  initTasks(this.name, 'readonly', task);
+  initTasks(this.name(), 'readonly', task);
 };
 
 /**
@@ -917,7 +930,7 @@ Store.prototype.delIndex = function(
   indexName,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
-  let args = [ this.name, indexName, successCallback, errorCallback ];
+  let args = [ this.name(), indexName, successCallback, errorCallback ];
   let task = {
     args: args,
     fn: delIndex
@@ -975,7 +988,7 @@ Store.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initStore(this.name, 'readonly');
+  initStore(this.name(), 'readonly');
   makeAggregateTask(args);
 };
 
@@ -1037,7 +1050,7 @@ Store.prototype.update = function(
     fn: update
   };
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 };
 
 /**
@@ -1057,7 +1070,7 @@ Store.prototype.clear = function({successCallback = voidFn, errorCallback = void
     fn: clear
   }
 
-  initTasks(this.name, 'readwrite', task);
+  initTasks(this.name(), 'readwrite', task);
 }
 </code></pre>
         </article>
@@ -1071,7 +1084,7 @@ Store.prototype.clear = function({successCallback = voidFn, errorCallback = void
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 11 2018 11:28:02 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 11 2018 13:01:37 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

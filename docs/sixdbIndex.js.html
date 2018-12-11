@@ -23,7 +23,7 @@
 <label for="nav-trigger" class="overlay"></label>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#clear">clear</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Index_.html">Index</a><ul class='methods'><li data-type='method'><a href="Index_.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Index_.html#count">count</a></li><li data-type='method'><a href="Index_.html#get">get</a></li><li data-type='method'><a href="Index_.html#getAll">getAll</a></li><li data-type='method'><a href="Index_.html#name">name</a></li><li data-type='method'><a href="Index_.html#storeName">storeName</a></li></ul></li><li><a href="Store.html">Store</a><ul class='methods'><li data-type='method'><a href="Store.html#add">add</a></li><li data-type='method'><a href="Store.html#aggregateFn">aggregateFn</a></li><li data-type='method'><a href="Store.html#clear">clear</a></li><li data-type='method'><a href="Store.html#count">count</a></li><li data-type='method'><a href="Store.html#del">del</a></li><li data-type='method'><a href="Store.html#delIndex">delIndex</a></li><li data-type='method'><a href="Store.html#get">get</a></li><li data-type='method'><a href="Store.html#getAll">getAll</a></li><li data-type='method'><a href="Store.html#name">name</a></li><li data-type='method'><a href="Store.html#newIndex">newIndex</a></li><li data-type='method'><a href="Store.html#update">update</a></li></ul></li><li><a href="window.Sixdb.html">Sixdb</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.html#customTask">customTask</a></li><li data-type='method'><a href="window.Sixdb.html#delStore">delStore</a></li><li data-type='method'><a href="window.Sixdb.html#destroy">destroy</a></li><li data-type='method'><a href="window.Sixdb.html#execTask">execTask</a></li><li data-type='method'><a href="window.Sixdb.html#name">name</a></li><li data-type='method'><a href="window.Sixdb.html#newStore">newStore</a></li><li data-type='method'><a href="window.Sixdb.html#openStore">openStore</a></li><li data-type='method'><a href="window.Sixdb.html#setCustomOperator">setCustomOperator</a></li></ul></li></ul><h3>Namespaces</h3><ul><li><a href="window.Sixdb.Sixdb_aggregateFuncs.html">Sixdb#aggregateFuncs</a><ul class='methods'><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.avg">avg</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.max">max</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.min">min</a></li><li data-type='method'><a href="window.Sixdb.Sixdb_aggregateFuncs.html#.sum">sum</a></li></ul></li></ul><h3><a href="global.html">Global</a></h3>
 </nav>
 
 <div id="main">
@@ -63,15 +63,14 @@ import { _qrySys } from './qrySys';
 
 //// Private variables //////////////////////////////
 let _index = null;
-let _storeName = '';
-let _indexName = '';
 let qrySys = _qrySys;
 
-function setIndex(origin, rwMode) {
+function setIndex(storeName, indexName, rwMode) {
   _index = null;
+  let origin = 'initIndex()';
   try {
-    let objectStore = db.transaction(_storeName, rwMode).objectStore(_storeName);
-    _index = objectStore.index(_indexName);
+    let objectStore = db.transaction(storeName, rwMode).objectStore(storeName);
+    _index = objectStore.index(indexName);
   } catch (e) {
     makeErrorObject(origin, e);
     logger(lastErrorObj, true);
@@ -80,8 +79,8 @@ function setIndex(origin, rwMode) {
 }
 
 // Adds setIndex to the task queue
-function initIndex(origin, rwMode) {
-  let args = [ origin, rwMode ];
+function initIndex(storeName, indexName, rwMode) {
+  let args = [storeName, indexName, rwMode ];
   let task = {
     args: args,
     fn: setIndex
@@ -106,7 +105,7 @@ function getAll(successCallback, errorCallback) {
       event.target.result,
       origin,
       successCallback,
-      `All records returned from index "${_indexName}"`
+      `All records returned from index "${_index.name}"`
     );
   };
 
@@ -133,7 +132,7 @@ function get(query, successCallback, errorCallback) {
   let exitsInFirstTrue = extMode == null || extMode == 'and' ? false : true;
   let obj = {
     counter: 0,
-    source: _indexName,
+    source: _index.name,
     extMode: extMode,
     event: resultFiltered,
     resultFiltered: resultFiltered,
@@ -178,7 +177,7 @@ function getBykey(query, successCallback, errorCallback) {
   request.onsuccess = function(event) {
     successCallback(event.target.result, origin, query);
     db.close();
-    logger(`Records with key "${query}" returned from index "${_indexName}"`);
+    logger(`Records with key "${query}" returned from index "${_index.name}"`);
     done();
   };
 
@@ -208,7 +207,7 @@ function count(query, successCallback, errorCallback) {
     get event() {
       return this.counter;
     },
-    source: _indexName,
+    source: _index.name,
     extMode: extMode,
     origin: origin,
     query: query,
@@ -231,7 +230,7 @@ function countAll(successCallback, errorCallback) {
   let request = _index.count();
 
   request.onsuccess = function(event) {
-    let message = `${event.target.result} records in index "${_indexName}"`;
+    let message = `${event.target.result} records in index "${_index.name}"`;
     requestSuccessAction(event.target.result, origin, successCallback, message);
   };
 
@@ -365,6 +364,12 @@ function makeAggregateTask({
   tasks.push({ args: args, fn: getaggregateFunction });
 }
 
+function initTasks(storeName, indexName, task){
+  tasks.push(tkOpen);
+  initIndex(storeName, indexName,'readonly');
+  tasks.push(task);
+}
+
 /**
  * Constructs a Sixdb Index instance. This constructor is used via Store.openStore() method.
  * @class
@@ -373,13 +378,35 @@ function makeAggregateTask({
  * @return {object}
  */
 export let Index = function(storeName, indexName) {
-  _storeName = storeName;
-  _indexName = indexName;
-  this.name = indexName;
+  let _indexName = indexName;
+  let _storeName = storeName;
+
+  /**
+   * Gets the name of the index.
+   * @method Index#name
+   * @return  {string} Name of the index.
+   */
+  this.name = function(){
+    return _indexName;
+  };
+
+  /**
+   * Gets the name of the parent store.
+   * @method Index#storeName
+   * @return  {string} Name of the parent store.
+   */
+  this.storeName = function(){
+    return _storeName;
+  }
+
+
+  //// Public methods /////////////////////////////////////
+  /*
   this.getAll;
   this.get;
   this.count;
   this.aggregateFn;
+  */
 };
 
 /**
@@ -438,9 +465,8 @@ Index.prototype.getAll = function(successCallback, errorCallback = voidFn) {
     args: args,
     fn: getAll
   };
-  tasks.push(tkOpen);
-  initIndex('Index.getAll()', 'readonly');
-  tasks.push(task);
+
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -482,9 +508,8 @@ Index.prototype.get = function(query, successCallback, errorCallback = voidFn) {
     args: args,
     fn: get
   };
-  tasks.push(tkOpen);
-  initIndex('Index.get()', 'readonly');
-  tasks.push(task);
+
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -506,9 +531,7 @@ Index.prototype.count = function(
     fn: count
   };
 
-  tasks.push(tkOpen);
-  initIndex('Index.count()', 'readonly');
-  tasks.push(task);
+  initTasks(this.storeName(), this.name(), task);
 };
 
 /**
@@ -563,7 +586,7 @@ Index.prototype.aggregateFn = function(
   };
 
   tasks.push(tkOpen);
-  initIndex('initStore', 'readonly');
+  initIndex(this.storeName(), this.name(), 'readonly');
   makeAggregateTask(args);
 };
 </code></pre>
@@ -578,7 +601,7 @@ Index.prototype.aggregateFn = function(
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 11 2018 11:28:02 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Dec 11 2018 13:01:37 GMT+0100 (GMT+01:00) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

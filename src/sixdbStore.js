@@ -613,7 +613,7 @@ function clear({ successCallback, errorCallback }) {
   };
 }
 
-function initTasks(storeName, rwMode, task){
+function initTasks(storeName, rwMode, task) {
   tasks.push(tkOpen);
   initStore(storeName, rwMode);
   tasks.push(task);
@@ -629,15 +629,14 @@ export let Store = function(storeName) {
   //// Private properties ////////////////////////////
   let _storeName = storeName;
 
-  
-/**
+  /**
  * Gets the name of the store.
  * @method Store#name
  * @return  {string} Name of the store.
  */
-this.name = function(){
-  return _storeName;
-}
+  this.name = function() {
+    return _storeName;
+  };
 
   //// Public Methods///////////////////
   /*
@@ -1022,13 +1021,13 @@ Store.prototype.update = function(
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument. 
  * @return {void}
  */
-Store.prototype.clear = function({successCallback = voidFn, errorCallback = voidFn}){
-  let options = {successCallback, errorCallback};
-  let args = [options];
+Store.prototype.clear = function({ successCallback = voidFn, errorCallback = voidFn }) {
+  let options = { successCallback, errorCallback };
+  let args = [ options ];
   let task = {
     args: args,
     fn: clear
-  }
+  };
 
   initTasks(this.name(), 'readwrite', task);
-}
+};

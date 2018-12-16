@@ -150,6 +150,7 @@ function join({ store1Name, store2Name, indexName, succesCallback, errorCallback
   let store1Result = [];
   let store2Result = [];
   let origin = 'getJoin()';
+  logger(origin + logEnum.begin);
   let transaction = db.transaction([ store1Name, store2Name ]);
   let indexKeyPath;
   let posCursor1 = 0;
@@ -538,12 +539,47 @@ Sixdb.prototype.destroy = function(
 /**
  * Creates a join operation on two stores. Joins those objects where store1.keypath = store2.index.keypath <br>
  * and returns the result to a success callback.
+ * @method window.Sixdb#join
+ * @instance
  * @param  {object} options
- * @param  {string} store1Name Name of the store with a primary unique key
- * @param  {string} store2Name Name of the second store
- * @param  {string} indexName Name of the second store index
- * @param  {function} succesCallback Function called on success. Receives as parameters the join result and origin.
- * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+ * @param  {string} options.store1Name Name of the store with a primary unique key
+ * @param  {string} options.store2Name Name of the second store
+ * @param  {string} options.indexName Name of the second store index
+ * @param  {function} options.succesCallback Function called on success. Receives as parameters the join result and origin.
+ * @param  {function} [options.errorCallback] Optional function to handle errors. Receives an error object as argument.
+ * @example
+ * // An example of object stored in store "Employees"
+ * //
+ * let person = {
+ *     id: 1,                // <<<<<< keyPath of store1
+ *     name: 'Peter',
+ *     age: 32,
+ *     salary: 1100
+ * };
+ * // An example of object stored in store "Productions"
+ * //
+ * let report = {
+ *     reportId: 5,                
+ *     employeeId: 1,        // <<<<<<<<<< keyPath of index "employeeIds" in store "Productions"
+ *     production: 150
+ * };
+ * 
+ * const mydb = new Sixdb('myDatabase');
+ * 
+ * mydb.join(
+ * {
+ * store1Name: 'Employees',
+ * store2Name: 'Productions',
+ * indexName: 'employeeIds',
+ * successCallback: mySuccessCallback
+ * }
+ * );
+ * 
+ * // The expected results array received by the successCallback contains objects like:
+ * // {id:1, name:'Peter, age:32, salary:1100, reportId:5, employeeId:1, production:150}   <<<<<<< id = employeeId
+ * 
+ *  
+ * mydb.execTasks();
  */
 Sixdb.prototype.join = function({
   store1Name,

@@ -249,8 +249,9 @@ myStore.del('salary > 1500', {
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
 
-// Clear store
+// Clear stores
 myStore.clear({successCallback, errorCallback});
+productionStore.clear({successCallback, errorCallback});
 
 // Gets all records
 myStore.getAll(successCallback, errorCallback);

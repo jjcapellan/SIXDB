@@ -42,6 +42,7 @@ You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).
 * [Task queue](#Task-queue) system that manages all asynchronous operations.
 * Natural and intuitive [Query language](#Query-system).
 * Simple and flexible methods to perform CRUD operations.
+* Join operations support.
 * In addition to the predefined aggregate functions (sum, max, min, avg) you can use your own functions.
 * Insertion operations allow several entries to be entered at the same time.
 * Update operations accept [functions as value](#Using-functions) to modify the current value of the record.
@@ -54,13 +55,13 @@ You can learn how to use SIXDB in less than 5 minutes (or maybe 6 ;)).
 ## <a name="Installation"></a>Installation
 ***
 There are two alternatives:
-* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.1.0/dist/sixdb.js) to your proyect folder and add a reference in your html:
+* Download the file [sixdb.js](https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.2.0/dist/sixdb.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "sixdb.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.1.0/dist/sixdb.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/SIXDB@3.2.0/dist/sixdb.js"></script>
 ``` 
 
 

@@ -64,6 +64,19 @@ function newIndex(
   let origin = 'Store.newIndex()';
   logger(origin + logEnum.begin);
 
+  //checks if index exists
+  let transaction = db.transaction(storeName);
+  if (transaction.objectStore(storeName).indexNames.contains(indexName)) {
+    console.log('activated');
+    requestSuccessAction(
+      null,
+      origin,
+      successCallback,
+      `The index "${indexName}" already exists in store "${storeName}"`
+    );
+    return;
+  }
+
   //// Gets the new version
   //
   version = db.version;
@@ -88,14 +101,6 @@ function newIndex(
     } catch (e) {
       requestErrorAction(origin, e, errorCallback);
       return;
-    }
-
-    if (!_store.indexNames.contains(indexName)) {
-      _store.createIndex(indexName, keyPath, { unique: unique });
-    } else {
-      _db.close();
-      logger(`The index "${indexName}" already exists in store "${storeName}"`);
-      done();
     }
   };
 

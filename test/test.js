@@ -98,8 +98,10 @@ mydb.newStore('southFactory', {
   errorCallback: errorCallback
 });
 
+
 // Stores "southFactory" in a variable
 var myStore = mydb.openStore('southFactory');
+
 
 // Creates a new index named "Names" with keyPath "name"
 myStore.newIndex('Names', 'name', {
@@ -112,6 +114,8 @@ var myIndex = myStore.openIndex('Names');
 // Inserts one object in store "southFactory"
 myStore.add(employee, { successCallback: successCallback, errorCallback: errorCallback });
 
+
+
 // Inserts an array of objects in the store
 myStore.add(employeesArray, {
   successCallback: successCallback,
@@ -120,6 +124,39 @@ myStore.add(employeesArray, {
 
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
+
+// Creates other store with an index and some records to test join operation
+mydb.newStore('production', {
+  keyPath: 'reportId',
+  autoIncrement: true,
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
+var productionStore = mydb.openStore('production');
+productionStore.newIndex('employeeIds', 'employeeId', {
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
+productionStore.add([
+  {employeeId: 2, production: 120},
+  {employeeId: 2, production: 110},
+  {employeeId: 5, production: 150},
+  {employeeId: 2, production: 180},
+  {employeeId: 5, production: 100},
+  {employeeId: 5, production: 90},
+  {employeeId: 9, production: 200},
+  {employeeId: 2, production: 85}
+], { successCallback: successCallback, errorCallback: errorCallback });
+
+// Join operation
+mydb.join({
+  store1Name: 'southFactory',
+  store2Name: 'production',
+  indexName: 'employeeIds',
+  successCallback: successCallback,
+  errorCallback: errorCallback
+});
+
 
 // Gets all records in index "Names"
 myIndex.getAll(successCallback, errorCallback);
@@ -242,7 +279,7 @@ function successCallback(result, origin, query) {
   showInfo(message);
 
   if (
-    origin.indexOf('get') > 0 ||
+    origin.indexOf('get') >= 0 ||
     (origin.indexOf('count') > 0 || origin.indexOf('aggregate') > 0)
   ) {
     showResults(result);
@@ -334,7 +371,7 @@ function showResults(results) {
 function showInfo(message, error) {
   var headerRow = document.createElement('tr');
   var cell = document.createElement('th');
-  cell.setAttribute('colspan', 6);
+  cell.setAttribute('colspan', 8);
   if (error) {
     cell.style.backgroundColor = 'red';
   }

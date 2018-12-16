@@ -144,6 +144,59 @@ function delDB({ successCallback, errorCallback }) {
   };
 }
 
+// Join operation. (ON store1.primaryKey = store2.index.keyPath)
+function join({ store1Name, store2Name, indexName, succesCallback, errorCallback }) {
+  let joinResult = [];
+  let store1Result = [];
+  let store2Result = [];
+  let origin = 'getJoin()';
+  let transaction = db.transaction([ store1Name, store2Name ]);
+  let indexKeyPath;
+  let posCursor1 = 0;
+  let posCursor2 = 0;
+  let store1ResultLength;
+  let store2ResultLength;
+
+  let store1 = transaction.objectStore(store1Name);
+  let store1KeyPath = store1.keyPath;
+  store1.getAll().onsuccess = function(event) {
+    store1Result = event.target.result;
+    store1ResultLength = store1Result.length;
+
+    let store2 = transaction.objectStore(store2Name);
+    let store2Index = store2.index(indexName);
+    store2Index.getAll().onsuccess = function(event) {
+      store2Result = event.target.result;
+      store2ResultLength = store2Result.length;
+      console.log(store2ResultLength);
+      indexKeyPath = store2Index.keyPath;
+      makeJoinResult();
+    };
+  };
+
+  function makeJoinResult() {
+    if (
+      store1Result[posCursor1][store1KeyPath] == store2Result[posCursor2][indexKeyPath]
+    ) {
+      joinResult.push(Object.assign(store2Result[posCursor2], store1Result[posCursor1]));
+      posCursor2++;
+    } else {
+      posCursor1++;
+    }
+
+    if (posCursor1 == store1ResultLength || posCursor2 == store2ResultLength) {
+      requestSuccessAction(
+        joinResult,
+        origin,
+        successCallback,
+        'Join operation completed'
+      );
+    } else {
+      makeJoinResult();
+    }
+  }
+}
+
 /**
  * Constructs a Sixdb instance.
  * @class
@@ -479,6 +532,42 @@ Sixdb.prototype.destroy = function(
     fn: delDB
   };
 
+  tasks.push(task);
+};
+
+/**
+ * Creates a join operation on two stores. Joins those objects where store1.keypath = store2.index.keypath <br>
+ * and returns the result to a success callback.
+ * @param  {object} options
+ * @param  {string} store1Name Name of the store with a primary unique key
+ * @param  {string} store2Name Name of the second store
+ * @param  {string} indexName Name of the second store index
+ * @param  {function} succesCallback Function called on success. Receives as parameters the join result and origin.
+ * @param  {function} [errorCallback] Optional function to handle errors. Receives an error object as argument.
+ */
+Sixdb.prototype.join = function({
+  store1Name,
+  store2Name,
+  indexName,
+  succesCallback,
+  errorCallback = voidFn
+}) {
+  let args = [
+    {
+      store1Name,
+      store2Name,
+      indexName,
+      succesCallback,
+      errorCallback
+    }
+  ];
+
+  let task = {
+    args: args,
+    fn: join
+  };
+
+  tasks.push(tkOpen);
   tasks.push(task);
 };
 

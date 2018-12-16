@@ -1,8 +1,11 @@
+## v3.2.0
+* Added function Sixdb.join(). Add basic support to join operations.
+* Fix: Store.newIndex() close connection when index exists.
 ## v3.1.0
 * Added function Store.clear(). Deletes all records in the store.
 * Added getters Store.name(), Index.name(), Index.storeName().
 * Fix: New instance of Index modifies indexName and storeName of previous instances.
-* Fix: New instance os Store modifies storeName of previous instances.
+* Fix: New instance of Store modifies storeName of previous instances.
 ## v3.0.1
 * Fix: unique attribute unassigned in Store.newIndex().
 * Fix: consoleOff self assigned in Sixdb.setConsoleOff().

@@ -98,6 +98,7 @@ function newIndex(
     //// Gets store
     try {
       _store = upgradeTransaction.objectStore(storeName);
+      _store.createIndex(indexName, keyPath);
     } catch (e) {
       requestErrorAction(origin, e, errorCallback);
       return;

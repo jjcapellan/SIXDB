@@ -1,15 +1,14 @@
 {
+    "name": "sixdb",
+    "source": "src/main.js",
+    "umd:main": "dist/sixdb.js",
     "devDependencies": {
-      "@babel/core": "^7.1.6",
-      "@babel/preset-env": "^7.1.6",
-      "babel-loader": "^8.0.4",
-      "jsdoc": "^3.5.5",
-      "webpack": "^4.26.1",
-      "webpack-cli": "^3.1.2"
+        "jsdoc": "^3.5.5",
+        "microbundle": "^0.15.1"
     },
     "scripts": {
-      "build": "webpack --mode development",
-      "release": "webpack --mode production -o dist/sixdb.js",
-      "docs": "jsdoc --readme README.md src/jsdocsdefs.js src/main.js src/sixdbStore.js src/sixdbIndex.js -d docs -t doctemplate"
+        "build": "microbundle -f umd -o indevelop/sixdb.js",
+        "release": "microbundle -f umd -o dist/sixdb.js --no-sourcemap",
+        "docs": "jsdoc --readme README.md src/jsdocsdefs.js src/main.js src/sixdbStore.js src/sixdbIndex.js -d docs -t doctemplate"
     }
-  }
+}

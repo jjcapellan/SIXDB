@@ -3,3 +3,5 @@ doctemplate
 notas.txt
 node_modules
 *.json
+!package.json
+.vscode

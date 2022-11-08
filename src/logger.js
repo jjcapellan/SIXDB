@@ -1,5 +1,3 @@
-import { consoleOff } from './main.js';
-
 export const logEnum = {
   begin: '//--------------------------------------->'
 };

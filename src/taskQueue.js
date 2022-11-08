@@ -1,4 +1,4 @@
-import { logEnum, logger } from './logger';
+import { logEnum, logger } from './index.js';
 
 let idle = true;
 export let tasks = [];

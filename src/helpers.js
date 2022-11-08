@@ -1,8 +1,13 @@
-import { logger } from './logger';
-import { done, tasks, checkTasks } from './taskQueue';
-import { makeErrorObject, lastErrorObj } from './errorSys';
-import { db } from './main';
-import { _qrySys } from './qrySys.js';
+import {
+  _qrySys,
+  checkTasks,
+  db,
+  done,
+  lastErrorObj,
+  logger,
+  makeErrorObject,
+  tasks,
+} from './index.js';
 
 const qrySys = _qrySys;
 let sharedObj = {};
@@ -178,11 +183,11 @@ export function initCursorLoop(source, errorCallback) {
     checkTasks();
     return;
   }
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }

@@ -1,28 +1,36 @@
-import { db, dbName, tkOpen, setDb, voidFn } from './main';
-import { logger, logEnum } from './logger';
-import { done, tasks, checkTasks } from './taskQueue';
-import { makeErrorObject, lastErrorObj } from './errorSys';
 import {
+  _qrySys,
+  aggregateLog,
+  checkTasks,
+  countLog,
+  cursorAggregate,
+  cursorCount,
+  cursorDelRecords,
+  cursorGetRecords,
+  cursorLoop,
+  cursorUpdate,
+  db,
+  dbName,
+  done,
+  Index,
+  initCursorLoop,
+  isKey,
+  lastErrorObj,
+  logEnum,
+  logger,
+  makeErrorObject,
+  queryLog,
   requestErrorAction,
   requestSuccessAction,
-  tryGetAll,
-  cursorAggregate,
-  cursorLoop,
-  cursorGetRecords,
-  cursorDelRecords,
-  cursorCount,
-  cursorUpdate,
-  countLog,
-  aggregateLog,
-  initCursorLoop,
+  setDb,
   setSharedObj,
-  queryLog,
-  tryOpenCursor,
+  tasks,
+  tkOpen,
+  tryGetAll,
   tryGetByKey,
-  isKey
-} from './helpers';
-import { _qrySys } from './qrySys.js';
-import { Index } from './sixdbIndex';
+  tryOpenCursor,
+  voidFn,
+} from './index.js';
 
 //// Private variables //////////////////////////////
 let _store;
@@ -42,7 +50,7 @@ function setStore(storeName, rwMode) {
 
 // Puts setStore() in task queue
 function initStore(storeName, rwMode) {
-  let args = [ storeName, rwMode ];
+  let args = [storeName, rwMode];
   let task = {
     args: args,
     fn: setStore
@@ -88,7 +96,7 @@ function newIndex(
   //
   let request = window.indexedDB.open(dbName, newVersion);
 
-  request.onupgradeneeded = function(event) {
+  request.onupgradeneeded = function (event) {
     let _db = event.target.result;
     setDb(_db);
     let _store = null;
@@ -105,7 +113,7 @@ function newIndex(
     }
   };
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     requestSuccessAction(
       event,
       origin,
@@ -114,7 +122,7 @@ function newIndex(
     );
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -138,7 +146,7 @@ function addRecordA({ obj, origin, successCallback, errorCallback }) {
   while (counter < objSize) {
     let request = _store.add(obj[counter]);
     counter++;
-    request.onerror = function() {
+    request.onerror = function () {
       requestErrorAction(origin, request.error, errorCallback);
     };
   }
@@ -151,7 +159,7 @@ function addRecordA({ obj, origin, successCallback, errorCallback }) {
 }
 function addRecordB({ obj, origin, successCallback, errorCallback }) {
   let request = _store.add(obj);
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     requestSuccessAction(
       event,
       origin,
@@ -160,7 +168,7 @@ function addRecordB({ obj, origin, successCallback, errorCallback }) {
     );
   };
 
-  request.onerror = function(event) {
+  request.onerror = function (event) {
     requestErrorAction(origin, event.target.error, errorCallback);
   };
 }
@@ -171,7 +179,7 @@ function getAll(successCallback, errorCallback) {
   logger(origin + logEnum.begin);
 
   /// Callbacks of request
-  let onsuccess = function(event) {
+  let onsuccess = function (event) {
     requestSuccessAction(
       event.target.result,
       origin,
@@ -179,7 +187,7 @@ function getAll(successCallback, errorCallback) {
       `All records returned from store "${_store.name}"`
     );
   };
-  let onerror = function() {
+  let onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 
@@ -231,12 +239,12 @@ function get(query, successCallback, errorCallback) {
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -246,13 +254,13 @@ function getBykey(query, successCallback, errorCallback) {
   logger(origin + logEnum.begin);
   let request;
 
-  let onsuccess = function(event) {
+  let onsuccess = function (event) {
     successCallback(event.target.result, origin, query);
     db.close();
     logger(`Records with key "${query}" returned from store "${_store.name}"`);
     done();
   };
-  let onerror = function() {
+  let onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 
@@ -304,12 +312,12 @@ function del(query, successCallback, errorCallback) {
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -320,14 +328,14 @@ function delByKey(query, successCallback, errorCallback) {
 
   let request = _store.delete(query);
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     successCallback(event, origin, query);
     db.close();
     logger(`Records with primary key "${query}" deleted from store "${_store.name}"`);
     done();
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -373,12 +381,12 @@ function countAll(successCallback, errorCallback) {
   logger(origin + logEnum.begin);
   let request = _store.count();
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let message = `${event.target.result} records in store "${_store.name}"`;
     requestSuccessAction(event.target.result, origin, successCallback, message);
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -399,7 +407,7 @@ function delIndex(storeName, indexName, successCallback, errorCallback) {
   //
   let request = window.indexedDB.open(dbName, newVersion);
 
-  request.onupgradeneeded = function(event) {
+  request.onupgradeneeded = function (event) {
     let _db = event.target.result;
     setDb(_db);
     let _store = null;
@@ -417,7 +425,7 @@ function delIndex(storeName, indexName, successCallback, errorCallback) {
     _store.deleteIndex(indexName);
   };
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     requestSuccessAction(
       event,
       origin,
@@ -426,7 +434,7 @@ function delIndex(storeName, indexName, successCallback, errorCallback) {
     );
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -467,7 +475,7 @@ function getaggregateFunctionA({
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
 
     if (cursor) {
@@ -484,7 +492,7 @@ function getaggregateFunctionA({
     }
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -526,11 +534,11 @@ function getAggregateFunctionB(
     checkTasks();
     return;
   }
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -548,7 +556,7 @@ function makeAggregateTask({
     errorCallback: errorCallback
   };
 
-  let args = [ property, aggregatefn, successCallback, origin, options ];
+  let args = [property, aggregatefn, successCallback, origin, options];
 
   tasks.push({ args: args, fn: getaggregateFunction });
 }
@@ -605,7 +613,7 @@ function clear({ successCallback, errorCallback }) {
     requestErrorAction(origin, request.error, errorCallback);
     return;
   }
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     requestSuccessAction(
       event.target.result,
       origin,
@@ -614,7 +622,7 @@ function clear({ successCallback, errorCallback }) {
     );
   };
 
-  request.onerror = function(event) {
+  request.onerror = function (event) {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -631,7 +639,7 @@ function initTasks(storeName, rwMode, task) {
  * @param  {string} storeName Name of the object store
  * @return {object}
  */
-export let Store = function(storeName) {
+export let Store = function (storeName) {
   //// Private properties ////////////////////////////
   let _storeName = storeName;
 
@@ -640,7 +648,7 @@ export let Store = function(storeName) {
  * @method Store#name
  * @return  {string} Name of the store.
  */
-  this.name = function() {
+  this.name = function () {
     return _storeName;
   };
 
@@ -671,7 +679,7 @@ export let Store = function(storeName) {
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.newIndex = function(
+Store.prototype.newIndex = function (
   indexName,
   keyPath,
   { unique, successCallback, errorCallback } = {}
@@ -694,7 +702,7 @@ Store.prototype.newIndex = function(
   tasks.push(task);
 };
 
-Store.prototype.openIndex = function(indexName) {
+Store.prototype.openIndex = function (indexName) {
   return new Index(this.name(), indexName);
 };
 
@@ -736,8 +744,8 @@ Store.prototype.openIndex = function(indexName) {
  * //
  * mydb.execTasks();
  */
-Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
-  let args = [ obj, { successCallback, errorCallback } ];
+Store.prototype.add = function (obj, { successCallback, errorCallback } = {}) {
+  let args = [obj, { successCallback, errorCallback }];
   let task = { args: args, fn: addRecord };
 
   initTasks(this.name(), 'readwrite', task);
@@ -789,8 +797,8 @@ Store.prototype.add = function(obj, { successCallback, errorCallback } = {}) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
-  let args = [ successCallback, errorCallback ];
+Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
+  let args = [successCallback, errorCallback];
   let task = {
     args: args,
     fn: getAll
@@ -828,8 +836,8 @@ Store.prototype.getAll = function(successCallback, errorCallback = voidFn) {
  * mydb.execTasks();
  * 
  */
-Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
-  let args = [ query, successCallback, errorCallback ];
+Store.prototype.get = function (query, successCallback, errorCallback = voidFn) {
+  let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
     fn: get
@@ -847,11 +855,11 @@ Store.prototype.get = function(query, successCallback, errorCallback = voidFn) {
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.del = function(
+Store.prototype.del = function (
   query,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
-  let args = [ query, successCallback, errorCallback ];
+  let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
     fn: del
@@ -869,11 +877,11 @@ Store.prototype.del = function(
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.count = function(
+Store.prototype.count = function (
   successCallback,
   { query, errorCallback = voidFn } = {}
 ) {
-  var args = [ query, successCallback, errorCallback ];
+  var args = [query, successCallback, errorCallback];
   var task = {
     args: args,
     fn: count
@@ -891,11 +899,11 @@ Store.prototype.count = function(
  * @param  {function} [options.successCallback] Function called on success. Receives event and origin as parameters.
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Store.prototype.delIndex = function(
+Store.prototype.delIndex = function (
   indexName,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
-  let args = [ this.name(), indexName, successCallback, errorCallback ];
+  let args = [this.name(), indexName, successCallback, errorCallback];
   let task = {
     args: args,
     fn: delIndex
@@ -936,7 +944,7 @@ Store.prototype.delIndex = function(
  * 
  * mydb.execTasks();
  */
-Store.prototype.aggregateFn = function(
+Store.prototype.aggregateFn = function (
   property,
   aggregatefn,
   successCallback,
@@ -1003,13 +1011,13 @@ Store.prototype.aggregateFn = function(
  * 
  * mydb.execTasks();
  */
-Store.prototype.update = function(
+Store.prototype.update = function (
   query,
   objectValues,
   { successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
   let options = { successCallback, errorCallback };
-  let args = [ query, objectValues, options ];
+  let args = [query, objectValues, options];
   let task = {
     args: args,
     fn: update
@@ -1027,9 +1035,9 @@ Store.prototype.update = function(
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument. 
  * @return {void}
  */
-Store.prototype.clear = function({ successCallback = voidFn, errorCallback = voidFn }) {
+Store.prototype.clear = function ({ successCallback = voidFn, errorCallback = voidFn }) {
   let options = { successCallback, errorCallback };
-  let args = [ options ];
+  let args = [options];
   let task = {
     args: args,
     fn: clear

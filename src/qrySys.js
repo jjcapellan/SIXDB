@@ -1,5 +1,3 @@
-import { customOperator } from './main';
-
 export const _qrySys = {
   init() {
     this.blockRgx = /\(.*?(?=\))/g;

@@ -1,25 +1,31 @@
-import { db, tkOpen, voidFn } from './main';
-import { logger, logEnum } from './logger';
-import { done, tasks, checkTasks } from './taskQueue';
-import { makeErrorObject, lastErrorObj } from './errorSys';
 import {
+  _qrySys,
+  aggregateLog,
+  checkTasks,
+  countLog,
+  cursorAggregate,
+  cursorCount,
+  cursorGetRecords,
+  cursorLoop,
+  db,
+  done,
+  initCursorLoop,
+  isKey,
+  lastErrorObj,
+  logEnum,
+  logger,
+  makeErrorObject,
+  queryLog,
   requestErrorAction,
   requestSuccessAction,
-  tryGetAll,
-  cursorAggregate,
-  cursorLoop,
-  cursorGetRecords,
-  cursorCount,
-  countLog,
-  aggregateLog,
-  initCursorLoop,
   setSharedObj,
-  queryLog,
-  tryOpenCursor,
+  tasks,
+  tkOpen,
+  tryGetAll,
   tryGetByKey,
-  isKey
-} from './helpers';
-import { _qrySys } from './qrySys';
+  tryOpenCursor,
+  voidFn,
+} from './index.js';
 
 //// Private variables //////////////////////////////
 let _index = null;
@@ -40,7 +46,7 @@ function setIndex(storeName, indexName, rwMode) {
 
 // Adds setIndex to the task queue
 function initIndex(storeName, indexName, rwMode) {
-  let args = [ storeName, indexName, rwMode ];
+  let args = [storeName, indexName, rwMode];
   let task = {
     args: args,
     fn: setIndex
@@ -60,7 +66,7 @@ function getAll(successCallback, errorCallback) {
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     requestSuccessAction(
       event.target.result,
       origin,
@@ -69,7 +75,7 @@ function getAll(successCallback, errorCallback) {
     );
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -113,12 +119,12 @@ function get(query, successCallback, errorCallback) {
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -134,14 +140,14 @@ function getBykey(query, successCallback, errorCallback) {
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     successCallback(event.target.result, origin, query);
     db.close();
     logger(`Records with key "${query}" returned from index "${_index.name}"`);
     done();
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -189,12 +195,12 @@ function countAll(successCallback, errorCallback) {
   logger(origin + logEnum.begin);
   let request = _index.count();
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let message = `${event.target.result} records in index "${_index.name}"`;
     requestSuccessAction(event.target.result, origin, successCallback, message);
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -236,7 +242,7 @@ function getaggregateFunctionA({
     return;
   }
 
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
 
     if (cursor) {
@@ -253,7 +259,7 @@ function getaggregateFunctionA({
     }
   };
 
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -296,11 +302,11 @@ function getAggregateFunctionB(
     checkTasks();
     return;
   }
-  request.onsuccess = function(event) {
+  request.onsuccess = function (event) {
     let cursor = event.target.result;
     cursorLoop(cursor);
   };
-  request.onerror = function() {
+  request.onerror = function () {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
@@ -319,7 +325,7 @@ function makeAggregateTask({
     errorCallback: errorCallback
   };
 
-  let args = [ property, aggregatefn, successCallback, origin, options ];
+  let args = [property, aggregatefn, successCallback, origin, options];
 
   tasks.push({ args: args, fn: getaggregateFunction });
 }
@@ -337,7 +343,7 @@ function initTasks(storeName, indexName, task) {
  * @param  {string} indexName Name of the index.
  * @return {object}
  */
-export let Index = function(storeName, indexName) {
+export let Index = function (storeName, indexName) {
   let _indexName = indexName;
   let _storeName = storeName;
 
@@ -346,7 +352,7 @@ export let Index = function(storeName, indexName) {
    * @method Index#name
    * @return  {string} Name of the index.
    */
-  this.name = function() {
+  this.name = function () {
     return _indexName;
   };
 
@@ -355,7 +361,7 @@ export let Index = function(storeName, indexName) {
    * @method Index#storeName
    * @return  {string} Name of the parent store.
    */
-  this.storeName = function() {
+  this.storeName = function () {
     return _storeName;
   };
 
@@ -418,8 +424,8 @@ export let Index = function(storeName, indexName) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Index.prototype.getAll = function(successCallback, errorCallback = voidFn) {
-  let args = [ successCallback, errorCallback ];
+Index.prototype.getAll = function (successCallback, errorCallback = voidFn) {
+  let args = [successCallback, errorCallback];
   let task = {
     args: args,
     fn: getAll
@@ -461,8 +467,8 @@ Index.prototype.getAll = function(successCallback, errorCallback = voidFn) {
  * mydb.execTasks();
  * 
  */
-Index.prototype.get = function(query, successCallback, errorCallback = voidFn) {
-  let args = [ query, successCallback, errorCallback ];
+Index.prototype.get = function (query, successCallback, errorCallback = voidFn) {
+  let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
     fn: get
@@ -480,11 +486,11 @@ Index.prototype.get = function(query, successCallback, errorCallback = voidFn) {
  * @param  {query} [options.query] The query used to select the records to count.Array
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
-Index.prototype.count = function(
+Index.prototype.count = function (
   successCallback,
   { query, errorCallback = voidFn } = {}
 ) {
-  let args = [ query, successCallback, errorCallback ];
+  let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
     fn: count
@@ -528,7 +534,7 @@ Index.prototype.count = function(
  * 
  * mydb.execTasks();
  */
-Index.prototype.aggregateFn = function(
+Index.prototype.aggregateFn = function (
   property,
   aggregatefn,
   successCallback,

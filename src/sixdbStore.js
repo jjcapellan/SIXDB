@@ -763,6 +763,20 @@ Store.prototype.add = function (obj, { successCallback, errorCallback } = {}) {
   initTasks(this.name(), 'readwrite', task);
 };
 
+/**
+ * Gets all records from the object store.
+ * @method Store#checkIndex
+ * @instance
+ * @param {string} indexName Name of the index 
+ * @param  {function} callback Receives a boolean (true if index exists in the store) and origin as parameters. 
+ * @param  {function} [errorCallback] Function to handle errors. Receives an error object as argument.
+ * @example
+ * myStore.checkIndex('Names', (exists) => {
+ *  if(exists){
+ *   console.log('Index Names exists in this store')
+ *  }
+ * });
+ */
 Store.prototype.checkIndex = function (indexName, callback) {
   let args = [indexName, callback];
   let task = { args: args, fn: checkIndex };

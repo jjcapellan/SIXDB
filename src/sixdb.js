@@ -454,7 +454,20 @@ Sixdb.prototype.execTasks = function () {
   execTasks();
 };
 
-Sixdb.prototype.checkStore = function (storeName, callback=voidFn) {
+/**
+ * Gets all records from the object store.
+ * @method window.Sixdb#checkStore
+ * @instance
+ * @param {string} storeName Name of the store 
+ * @param  {function} callback Receives a boolean (true if store exists in the database) and origin as parameters. 
+ * @example
+ * mydb.checkStore('Products', (exists) => {
+ *  if(exists){
+ *   console.log('Store Products exists in this database')
+ *  }
+ * });
+ */
+Sixdb.prototype.checkStore = function (storeName, callback = voidFn) {
   let args = [
     storeName,
     callback

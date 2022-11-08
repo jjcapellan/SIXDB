@@ -777,7 +777,7 @@ Store.prototype.add = function (obj, { successCallback, errorCallback } = {}) {
  *  }
  * });
  */
-Store.prototype.checkIndex = function (indexName, callback) {
+Store.prototype.checkIndex = function (indexName, callback = voidFn) {
   let args = [indexName, callback];
   let task = { args: args, fn: checkIndex };
 

@@ -3,10 +3,7 @@
 
 
 ![GitHub tag (latest by date)](https://img.shields.io/github/tag-date/jjcapellan/sixdb.svg)
-![GitHub file size](https://img.shields.io/github/size/jjcapellan/SIXDB/dist/sixdb.js.svg)
-![Docs status](https://inch-ci.org/github/jjcapellan/SIXDB.svg?branch=master)
 ![GitHub license](https://img.shields.io/github/license/jjcapellan/SIXDB.svg)
-[![codebeat badge](https://codebeat.co/badges/171abcfc-a9df-4832-a878-9218db6cc0ee)](https://codebeat.co/projects/github-com-jjcapellan-sixdb-master)
 
 
   

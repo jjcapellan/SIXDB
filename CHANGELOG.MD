@@ -1,3 +1,6 @@
+## v3.3.0
+* Added function Sixdb.checkStore().
+* Added function Store.checkIndex().
 ## v3.2.1
 * Fix: Store.newIndex() disabled.
 ## v3.2.0

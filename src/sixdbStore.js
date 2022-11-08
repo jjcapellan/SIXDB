@@ -390,6 +390,18 @@ function countAll(successCallback, errorCallback) {
     requestErrorAction(origin, request.error, errorCallback);
   };
 }
+
+function checkIndex(indexName, callback) {
+  let origin = 'Store.checkIndex()';
+  logger(origin + logEnum.begin);
+  let exists = _store.indexNames.contains(indexName);
+  let message = `Index "${indexName}" check result -> ${exists}`;
+  db.close();
+  callback(exists, origin);
+  logger(message);
+  done();
+}
+
 // Deletes an index
 function delIndex(storeName, indexName, successCallback, errorCallback) {
   let version;
@@ -747,6 +759,13 @@ Store.prototype.openIndex = function (indexName) {
 Store.prototype.add = function (obj, { successCallback, errorCallback } = {}) {
   let args = [obj, { successCallback, errorCallback }];
   let task = { args: args, fn: addRecord };
+
+  initTasks(this.name(), 'readwrite', task);
+};
+
+Store.prototype.checkIndex = function (indexName, callback) {
+  let args = [indexName, callback];
+  let task = { args: args, fn: checkIndex };
 
   initTasks(this.name(), 'readwrite', task);
 };

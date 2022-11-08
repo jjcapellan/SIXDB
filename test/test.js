@@ -114,6 +114,13 @@ var myIndex = myStore.openIndex('Names');
 // Inserts one object in store "southFactory"
 myStore.add(employee, { successCallback: successCallback, errorCallback: errorCallback });
 
+myStore.checkIndex('Names', (exists, origin) => {
+  successCallback(exists, origin);
+  if (!exists) {
+    errorCallback({ origin: origin, description: 'exists should be true' });
+  }
+});
+
 
 
 // Inserts an array of objects in the store
@@ -266,6 +273,13 @@ myStore.getAll(successCallback, errorCallback);
 
 // Deletes index "Names" from store
 myStore.delIndex('Names', { successCallback: successCallback });
+
+myStore.checkIndex('Names', (exists, origin) => {
+  successCallback(exists, origin);
+  if (exists) {
+    errorCallback({ origin: origin, description: 'exists should be false' });
+  }
+});
 
 // Deletes store "southFactory"
 mydb.delStore('southFactory', { successCallback: successCallback });

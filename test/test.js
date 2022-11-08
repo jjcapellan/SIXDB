@@ -138,15 +138,23 @@ productionStore.newIndex('employeeIds', 'employeeId', {
   errorCallback: errorCallback
 });
 productionStore.add([
-  {employeeId: 2, production: 120},
-  {employeeId: 2, production: 110},
-  {employeeId: 5, production: 150},
-  {employeeId: 2, production: 180},
-  {employeeId: 5, production: 100},
-  {employeeId: 5, production: 90},
-  {employeeId: 9, production: 200},
-  {employeeId: 2, production: 85}
+  { employeeId: 2, production: 120 },
+  { employeeId: 2, production: 110 },
+  { employeeId: 5, production: 150 },
+  { employeeId: 2, production: 180 },
+  { employeeId: 5, production: 100 },
+  { employeeId: 5, production: 90 },
+  { employeeId: 9, production: 200 },
+  { employeeId: 2, production: 85 }
 ], { successCallback: successCallback, errorCallback: errorCallback });
+
+// Checks store "production"
+mydb.checkStore('production', (exists, origin) => {
+  successCallback(exists, origin);
+  if (!exists) {
+    errorCallback({ origin: origin, description: 'exists should be true' });
+  }
+});
 
 // Join operation
 mydb.join({
@@ -224,7 +232,7 @@ myStore.getAll(successCallback, errorCallback);
 myStore.update(
   'department = manufacturing',
   {
-    salary: function(oldSalary) {
+    salary: function (oldSalary) {
       return oldSalary + 100;
     }
   },
@@ -250,8 +258,8 @@ myStore.del('salary > 1500', {
 myStore.getAll(successCallback, errorCallback);
 
 // Clear stores
-myStore.clear({successCallback, errorCallback});
-productionStore.clear({successCallback, errorCallback});
+myStore.clear({ successCallback, errorCallback });
+productionStore.clear({ successCallback, errorCallback });
 
 // Gets all records
 myStore.getAll(successCallback, errorCallback);
@@ -261,6 +269,14 @@ myStore.delIndex('Names', { successCallback: successCallback });
 
 // Deletes store "southFactory"
 mydb.delStore('southFactory', { successCallback: successCallback });
+
+// Checks store "southFactory"
+mydb.checkStore('southFactory', (exists, origin) => {
+  successCallback(exists, origin);
+  if (exists) {
+    errorCallback({ origin: origin, description: 'exists should be false' });
+  }
+});
 
 // Deletes database
 mydb.destroy({ successCallback: successCallback });
@@ -308,11 +324,11 @@ function showResults(results) {
     showInfo('No results');
     return;
   }
-  var cell= null;
+  var cell = null;
   var keys = null;
   var headerRow = null;
   var row = null;
-  var i,j,k,l;
+  var i, j, k, l;
 
   if (Array.isArray(results)) {
     if (!results[0]) {

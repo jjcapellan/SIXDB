@@ -45,6 +45,16 @@ function setDb(_db) {
   db = _db;
 }
 
+function checkStore(storeName, callback) {
+  let origin = 'Sixdb.checkStore()';
+  logger(origin + logEnum.begin);
+  let exists = db.objectStoreNames.contains(storeName);
+  db.close();
+  callback(exists, origin);
+  done();
+  return;
+}
+
 // Creates a store in the database
 function newStore(
   storeName,
@@ -256,6 +266,7 @@ window.Sixdb = function (_dbName) {
   this.aggregateFuncs;
   this.execTasks;
   this.setCustomOperator;
+  this.checkStore;
   this.newStore;
   this.openStore;
   this.delStore;
@@ -441,6 +452,19 @@ Sixdb.prototype.setCustomOperator = function (compareFunction) {
    */
 Sixdb.prototype.execTasks = function () {
   execTasks();
+};
+
+Sixdb.prototype.checkStore = function (storeName, callback=voidFn) {
+  let args = [
+    storeName,
+    callback
+  ];
+  let task = {
+    args: args,
+    fn: checkStore
+  };
+  tasks.push(tkOpen);
+  tasks.push(task);
 };
 
 /**

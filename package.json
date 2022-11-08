@@ -1,6 +1,6 @@
 {
     "name": "sixdb",
-    "source": "src/main.js",
+    "source": "src/index.js",
     "umd:main": "dist/sixdb.js",
     "devDependencies": {
         "jsdoc": "^3.5.5",

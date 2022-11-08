@@ -1,3 +1,5 @@
+## v3.2.1
+* Fix: Store.newIndex() disabled.
 ## v3.2.0
 * Added function Sixdb.join(). Add basic support to join operations.
 * Fix: Store.newIndex() close connection when index exists.

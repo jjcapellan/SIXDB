@@ -10,5 +10,7 @@
         "build": "microbundle -f umd -o indevelop/sixdb.js",
         "release": "microbundle -f umd -o dist/sixdb.js --no-sourcemap",
         "docs": "jsdoc --readme README.md src/jsdocsdefs.js src/sixdb.js src/sixdbStore.js src/sixdbIndex.js -d docs -t doctemplate"
-    }
+    },
+    "author": "Juan Jose Capellan",
+    "license": "MIT"
 }

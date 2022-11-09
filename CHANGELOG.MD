@@ -1,3 +1,5 @@
+## v3.3.1
+* Fix: null callback parammeters cause errors in several functions.
 ## v3.3.0
 * Added function Sixdb.checkStore().
 * Added function Store.checkIndex().

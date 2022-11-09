@@ -626,7 +626,7 @@ Sixdb.prototype.join = function ({
   store1Name,
   store2Name,
   indexName,
-  succesCallback,
+  succesCallback = voidFn,
   errorCallback = voidFn
 }) {
   let args = [

@@ -424,7 +424,7 @@ export let Index = function (storeName, indexName) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Index.prototype.getAll = function (successCallback, errorCallback = voidFn) {
+Index.prototype.getAll = function (successCallback = voidFn, errorCallback = voidFn) {
   let args = [successCallback, errorCallback];
   let task = {
     args: args,
@@ -467,7 +467,7 @@ Index.prototype.getAll = function (successCallback, errorCallback = voidFn) {
  * mydb.execTasks();
  * 
  */
-Index.prototype.get = function (query, successCallback, errorCallback = voidFn) {
+Index.prototype.get = function (query, successCallback = voidFn, errorCallback = voidFn) {
   let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
@@ -487,7 +487,7 @@ Index.prototype.get = function (query, successCallback, errorCallback = voidFn) 
  * @param  {function} [options.errorCallback] Function to handle errors. Receives an error object as argument.
  */
 Index.prototype.count = function (
-  successCallback,
+  successCallback = voidFn,
   { query, errorCallback = voidFn } = {}
 ) {
   let args = [query, successCallback, errorCallback];
@@ -537,7 +537,7 @@ Index.prototype.count = function (
 Index.prototype.aggregateFn = function (
   property,
   aggregatefn,
-  successCallback,
+  successCallback = voidFn,
   { query, errorCallback } = {}
 ) {
   let origin = 'Index.aggregateFn()';

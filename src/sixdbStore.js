@@ -66,7 +66,7 @@ function newIndex(
   storeName,
   indexName,
   keyPath,
-  { unique, successCallback = voidFn, errorCallback = voidFn } = {}
+  { unique, successCallback, errorCallback } = {}
 ) {
   let version;
   let origin = 'Store.newIndex()';
@@ -128,7 +128,7 @@ function newIndex(
 }
 
 // Adds one(A) or more(B) records to the store
-function addRecord(obj, { successCallback = voidFn, errorCallback = voidFn }) {
+function addRecord(obj, { successCallback, errorCallback }) {
   let origin = 'Store.add()';
   logger(origin + logEnum.begin);
   let args = { obj, origin, successCallback, errorCallback };
@@ -694,7 +694,7 @@ export let Store = function (storeName) {
 Store.prototype.newIndex = function (
   indexName,
   keyPath,
-  { unique, successCallback, errorCallback } = {}
+  { unique, successCallback = voidFn, errorCallback = voidFn } = {}
 ) {
   let args = [
     this.name(),
@@ -756,7 +756,7 @@ Store.prototype.openIndex = function (indexName) {
  * //
  * mydb.execTasks();
  */
-Store.prototype.add = function (obj, { successCallback, errorCallback } = {}) {
+Store.prototype.add = function (obj, { successCallback = voidFn, errorCallback = voidFn } = {}) {
   let args = [obj, { successCallback, errorCallback }];
   let task = { args: args, fn: addRecord };
 
@@ -830,7 +830,7 @@ Store.prototype.checkIndex = function (indexName, callback = voidFn) {
  * // Execs all pending tasks
  * mydb.execTasks();
 */
-Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
+Store.prototype.getAll = function (successCallback = voidFn, errorCallback = voidFn) {
   let args = [successCallback, errorCallback];
   let task = {
     args: args,
@@ -869,7 +869,7 @@ Store.prototype.getAll = function (successCallback, errorCallback = voidFn) {
  * mydb.execTasks();
  * 
  */
-Store.prototype.get = function (query, successCallback, errorCallback = voidFn) {
+Store.prototype.get = function (query, successCallback = voidFn, errorCallback = voidFn) {
   let args = [query, successCallback, errorCallback];
   let task = {
     args: args,
@@ -980,8 +980,8 @@ Store.prototype.delIndex = function (
 Store.prototype.aggregateFn = function (
   property,
   aggregatefn,
-  successCallback,
-  { query, errorCallback } = {}
+  successCallback = voidFn,
+  { query, errorCallback = voidFn } = {}
 ) {
   var origin = 'Store.aggregateFn()';
   var args = {

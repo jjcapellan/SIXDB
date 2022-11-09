@@ -495,7 +495,7 @@ Sixdb.prototype.checkStore = function (storeName, callback = voidFn) {
  */
 Sixdb.prototype.newStore = function (
   storeName,
-  { keyPath, autoIncrement, successCallback, errorCallback } = {}
+  { keyPath, autoIncrement, successCallback=voidFn, errorCallback=voidFn } = {}
 ) {
   let args = [
     storeName,
